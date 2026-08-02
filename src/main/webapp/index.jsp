@@ -63,7 +63,7 @@
 <div class="container">
     <h1><%= "¡Hola Compañeros!" %></h1>
     <p>El entorno de desarrollo, los JSP y los servlets están listos para chambear</p>
-    <p> --- Version 1.4 --- (Omg espero no haber arruinado la conexion a la DB)
+    <p> --- Version 1.5 --- (Estable para trabajar)
     <a href="hello-servlet" class="btn">Probar Servlet</a>
     <a href="probar-conexion" class="btn">Probar conexion a la base de datos</a>
     <a href="nuevo-usuario" class="btn">Formulario</a>

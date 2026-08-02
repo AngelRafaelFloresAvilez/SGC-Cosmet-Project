@@ -1,4 +1,4 @@
-package com.proyecto.sgccosmetproject;
+package com.proyecto.sgccosmetproject.model;
 import java.sql.Date;
 // Clase de usuario (Se usa en UsuariosServlet para convertir el contenido devuelto
 // de la peticion al servidor que pide todos los usuarios, para luego ser

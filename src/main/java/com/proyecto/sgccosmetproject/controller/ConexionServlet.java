@@ -1,5 +1,6 @@
-package com.proyecto.sgccosmetproject;
+package com.proyecto.sgccosmetproject.controller;
 
+import com.proyecto.sgccosmetproject.util.ConexionBD;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,4 +1,4 @@
-package com.proyecto.sgccosmetproject;
+package com.proyecto.sgccosmetproject.dao;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

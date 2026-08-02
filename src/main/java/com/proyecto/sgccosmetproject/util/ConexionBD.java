@@ -1,4 +1,4 @@
-package com.proyecto.sgccosmetproject;
+package com.proyecto.sgccosmetproject.util;
 
 import jakarta.servlet.ServletContext;
 import java.sql.Connection;
