@@ -42,5 +42,5 @@ build/
 .idea/
 
 # Carpeta de seguridad de Oracle (¡NUNCA SUBIR!)
-Wallet_DB/
+src/main/webapp/WEB-INF/Wallet_DB/
 *.zip
