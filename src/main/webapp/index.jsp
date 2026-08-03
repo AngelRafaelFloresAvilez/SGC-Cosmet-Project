@@ -68,6 +68,6 @@
     <a href="probar-conexion" class="btn">Probar conexion a la base de datos</a>
     <a href="nuevo-usuario" class="btn">Formulario</a>
     <a href="usuarios" class="btn">Ver usuarios</a>
-</div>
+        <a href="${pageContext.request.contextPath}/pagina-principal" class="btn">Página principal</a></div>
 </body>
 </html>
