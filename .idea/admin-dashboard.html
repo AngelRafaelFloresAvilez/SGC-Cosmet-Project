@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Administrador - SGC Cosmetic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin-dashboard.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <header class="admin-header">
+      <div class="admin-hero">
+        <span class="admin-tag">Panel administrativo</span>
+        <h1>Bienvenido de nuevo, <span id="adminName">Administrador</span></h1>
+        <p class="admin-description">Supervisa citas, servicios, especialistas y actividad desde una sola vista.</p>
+      </div>
+      <div class="admin-actions">
+        <div class="admin-user-card">
+          <div class="admin-user-avatar">A</div>
+          <div>
+            <p class="admin-user-title">Administrador</p>
+            <p class="admin-user-meta">Panel general</p>
+          </div>
+        </div>
+        <button id="signOutBtn" class="btn btn-secondary">Cerrar sesión</button>
+      </div>
+    </header>
+
+    <section class="admin-stats-grid">
+      <article class="stat-card">
+        <p class="stat-label">Citas realizadas hoy</p>
+        <h2 id="statAppointmentsToday">0</h2>
+      </article>
+      <article class="stat-card">
+        <p class="stat-label">Clientes nuevos este mes</p>
+        <h2 id="statNewClients">0</h2>
+      </article>
+      <article class="stat-card">
+        <p class="stat-label">Especialistas activos</p>
+        <h2 id="statSpecialistsActive">0</h2>
+      </article>
+      <article class="stat-card">
+        <p class="stat-label">Ventas este mes</p>
+        <h2 id="statSalesMonth">$0</h2>
+      </article>
+    </section>
+
+    <section class="admin-main-grid">
+      <article class="card card-chart">
+        <div class="card-header">
+          <div>
+            <p class="card-title">Estadísticas generales</p>
+            <p class="card-subtitle">Actividades de la última semana</p>
+          </div>
+          <div class="card-badges">
+            <span class="badge badge-large">Resumen</span>
+          </div>
+        </div>
+        <div class="chart-legend">
+          <div><span class="legend-dot legend-dot-primary"></span><small>Citas</small></div>
+          <div><span class="legend-dot legend-dot-secondary"></span><small>Clientes</small></div>
+        </div>
+        <div class="chart-area" id="appointmentsChart"></div>
+      </article>
+
+      <aside class="admin-side-grid">
+        <article class="card card-list">
+          <div class="card-header">
+            <div>
+              <p class="card-title">Citas pendientes</p>
+              <p class="card-subtitle">Revisa las solicitudes más recientes</p>
+            </div>
+            <button class="text-button" id="viewAllAppointments">Ver todas</button>
+          </div>
+          <div class="mini-list" id="pendingAppointmentsList"></div>
+        </article>
+
+        <article class="card card-list">
+          <div class="card-header">
+            <div>
+              <p class="card-title">Servicios más solicitados</p>
+              <p class="card-subtitle">Ranking por número de citas</p>
+            </div>
+          </div>
+          <div class="mini-list" id="topServicesList"></div>
+        </article>
+      </aside>
+    </section>
+
+    <section class="admin-bottom-grid">
+      <article class="card card-activity">
+        <div class="card-header">
+          <div>
+            <p class="card-title">Actividad reciente</p>
+            <p class="card-subtitle">Eventos y movimientos del sistema</p>
+          </div>
+        </div>
+        <div class="activity-list" id="activityFeed"></div>
+      </article>
+
+      <article class="card card-compact">
+        <div class="card-header">
+          <div>
+            <p class="card-title">Recordatorios</p>
+            <p class="card-subtitle">Mantente al día con acciones importantes</p>
+          </div>
+        </div>
+        <div class="reminder-list" id="remindersList"></div>
+      </article>
+
+      <article class="card card-compact">
+        <div class="card-header">
+          <div>
+            <p class="card-title">Especialistas disponibles</p>
+            <p class="card-subtitle">Perfil y disponibilidad rápida</p>
+          </div>
+        </div>
+        <div class="specialists-list" id="specialistsList"></div>
+      </article>
+
+      <article class="card card-compact">
+        <div class="card-header">
+          <div>
+            <p class="card-title">Promociones</p>
+            <p class="card-subtitle">Gestiona códigos y ofertas</p>
+          </div>
+          <button class="text-button" id="createPromotionBtn">Crear promoción</button>
+        </div>
+        <div class="promotions-list" id="promotionsList"></div>
+      </article>
+    </section>
+  </div>
+
+  <script src="appointments-system.js"></script>
+  <script src="admin-dashboard.js"></script>
+</body>
+</html>
