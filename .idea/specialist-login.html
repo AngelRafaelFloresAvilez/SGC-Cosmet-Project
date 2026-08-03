@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso especialista - SGC Cosmetic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    if (!window.location.pathname.includes('/.idea/')) {
+      const b = document.createElement('base');
+      b.href = './.idea/';
+      document.head.appendChild(b);
+    }
+  </script>
+</head>
+<body>
+  <div class="screen">
+    <div class="form-card">
+      <div class="form-content">
+        <div class="form-header">
+          <h1>Acceso especialista</h1>
+          <p class="hero-copy">Gestiona la agenda, tus servicios y el detalle de cada cliente desde un solo lugar.</p>
+        </div>
+
+        <form id="specialistLoginForm" class="form-grid" action="#" method="post">
+          <label for="specialistEmail">
+            <span class="field-label">Correo</span>
+            <input id="specialistEmail" name="specialistEmail" type="email" placeholder="correo@sgc.com" required>
+          </label>
+
+          <label for="specialistPassword">
+            <span class="field-label">Contraseña</span>
+            <input id="specialistPassword" name="specialistPassword" type="password" placeholder="tu contraseña" required>
+          </label>
+
+          <button type="submit" class="btn-primary">Entrar al panel</button>
+
+          <div class="footer-link">
+            <span>¿No eres especialista?</span>
+            <a href="Loggin.html">Regresa al login</a>
+          </div>
+        </form>
+      </div>
+      <div class="form-side-image" aria-hidden="true"></div>
+    </div>
+  </div>
+  <script src="appointments-system.js"></script>
+  </body>
+  </html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restablecer contraseña - SGC Cosmetic</title>
+  
+  <!-- Fuentes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Archivo CSS compartido -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="screen reset-screen">
+    <div class="reset-card">
+      
+      <!-- PANEL IZQUIERDO: FORMULARIO -->
+      <div class="reset-panel reset-panel-left">
+        <div class="reset-content">
+          <h1>Restablecer<br/>contraseña</h1>
+          <p class="reset-description">Ingresa y confirma tu nueva contraseña.<br/>Asegurate de que sea segura y facil de recordar.</p>
+
+          <form>
+            <label for="new-password" class="reset-label">
+              <span>Nueva contraseña</span>
+              <input id="new-password" type="password" placeholder="Introduce tu nueva contraseña" required>
+            </label>
+
+            <label for="confirm-password" class="reset-label">
+              <span>Confirmar contraseña</span>
+              <input id="confirm-password" type="password" placeholder="Introduce de nuevo tu contraseña" required>
+            </label>
+
+            <!-- Botón principal de acción -->
+            <button type="button" class="btn-primary reset-btn" onclick="window.location.href='Loggin.html'">
+              Iniciar sesion
+            </button>
+          </form>
+
+          <div class="reset-divider">o</div>
+
+          <!-- Enlace inferior -->
+          <a href="Loggin.html" class="back-link">Volver al inicio de sesion</a>
+        </div>
+      </div>
+
+      <!-- PANEL DERECHO: FRASE Y IMAGEN DE FONDO -->
+      <div class="reset-panel reset-panel-right">
+        <div class="reset-quote">
+          <p>“Tu bienestar es nuestra prioridad.<br/>Estamos aqui para servirte.”</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
