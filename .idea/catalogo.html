@@ -1063,7 +1063,10 @@
         </nav>
 
         <div class="sidebar-footer">
-            <button class="btn-logout-green" onclick="window.location.href='index.html'">
+            <button class="btn-logout-green" onclick="(window.appointmentsSystem && typeof window.appointmentsSystem.signOut === 'function') ? window.appointmentsSystem.signOut() : window.location.href='Loggin.html'">
+                <i class="fa-solid fa-right-from-bracket"></i> CERRAR SESIÓN
+            </button>
+        </div>
         <script>
             (function () {
                 function updateProfessionalCard() {
@@ -1084,9 +1087,6 @@
                 document.addEventListener('DOMContentLoaded', updateProfessionalCard);
             })();
         </script>
-                <i class="fa-solid fa-right-from-bracket"></i> CERRAR SESIÓN
-            </button>
-        </div>
     </aside>
 
     <div class="main-wrapper">
@@ -1428,8 +1428,8 @@
                                 select.innerHTML = '<option value="">-- Selecciona una promoción (opcional) --</option>' + (state.promotions || []).map(p => `<option value="${p.id}">${p.title}</option>`).join('');
                                 select.onchange = function () {
                                     const val = select.value;
-                                    if (val && window.appointmentsSystem && typeof window.appointmentsSystem.applyPromotion === 'function') {
-                                        window.appointmentsSystem.applyPromotion(val);
+                                    if (window.appointmentsSystem && typeof window.appointmentsSystem.applyPromotion === 'function') {
+                                        window.appointmentsSystem.applyPromotion(val || null);
                                     }
                                     // adjust displayed price heuristically
                                     try {

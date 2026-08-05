@@ -13,8 +13,6 @@
     <!-- FontAwesome para los íconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <script src="appointments-system.js"></script>
-
     <style>
         /* === ESTILOS BASE === */
         * {
@@ -529,7 +527,7 @@
         </nav>
 
         <div class="sidebar-footer">
-            <button class="btn btn-logout-green w-100" onclick="window.location.href='index.html'">
+            <button class="btn btn-logout-green w-100" onclick="(window.appointmentsSystem && typeof window.appointmentsSystem.signOut === 'function') ? window.appointmentsSystem.signOut() : window.location.href='Loggin.html'">
                 <i class="fa-solid fa-right-from-bracket"></i> CERRAR SESIÓN
             </button>
         </div>

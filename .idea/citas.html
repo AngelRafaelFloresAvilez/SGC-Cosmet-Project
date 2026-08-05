@@ -549,7 +549,7 @@
     </nav>
 
     <div class="sidebar-footer">
-      <button class="btn-logout-green" onclick="window.location.href='index.html'">
+      <button class="btn-logout-green" onclick="(window.appointmentsSystem && typeof window.appointmentsSystem.signOut === 'function') ? window.appointmentsSystem.signOut() : window.location.href='Loggin.html'">
         <i class="fa-solid fa-right-from-bracket"></i> CERRAR SESIÓN
       </button>
     </div>

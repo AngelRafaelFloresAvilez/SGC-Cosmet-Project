@@ -27,7 +27,7 @@
           <p class="hero-copy">¡Bienvenido/a! Hemos preparado este espacio para facilitarte la vida. Comienza a gestionar tus servicios o descubre nuestras promociones exclusivas.</p>
         </div>
 
-        <form id="loginForm" class="form-grid" action="#" method="post">
+        <form id="loginForm" class="form-grid" onsubmit="event.preventDefault();">
           <label for="loginEmail">
             <span class="field-label">Correo</span>
             <input id="loginEmail" name="loginEmail" type="email" placeholder="introduce tu correo" required>
@@ -46,7 +46,7 @@
             <a href="ResetPassword.html" class="secondary-link">Olvidaste la contraseña?</a>
           </div>
 
-          <button type="submit" class="btn-primary">Iniciar Sesion</button>
+          <button id="loginSubmitButton" type="submit" class="btn-primary">Iniciar Sesion</button>
 
           <div class="footer-link">
             <span>¿No tienes una cuenta de sgc-cosmetic?</span>

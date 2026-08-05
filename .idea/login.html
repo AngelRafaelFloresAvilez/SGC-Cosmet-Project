@@ -27,7 +27,7 @@
           <p>Regístrate para administrar tus clientes, citas y servicios desde una sola plataforma.</p>
         </div>
 
-        <form id="registerForm" class="form-grid" action="#" method="post">
+        <form id="registerForm" class="form-grid" onsubmit="event.preventDefault();">
           <div class="input-row">
             <label for="nombre">
               <span>Nombre</span>
@@ -66,7 +66,7 @@
             </label>
           </div>
 
-          <button type="submit" class="btn-primary">Crear cuenta</button>
+          <button id="registerSubmitButton" type="submit" class="btn-primary">Crear cuenta</button>
 
           <div class="footer-link">
             <span>¿Ya tienes una cuenta?</span>

@@ -51,7 +51,7 @@
     <div class="topbar">
       <div class="brand">Panel del especialista</div>
       <div class="topbar-actions">
-        <button class="btn secondary" onclick="(window.sgcAuth && typeof window.sgcAuth.signOut === 'function') ? window.sgcAuth.signOut() : window.location.href='Loggin.html'">Cerrar sesión</button>
+        <button class="btn secondary" onclick="(window.appointmentsSystem && typeof window.appointmentsSystem.signOut === 'function') ? window.appointmentsSystem.signOut() : window.location.href='Loggin.html'">Cerrar sesión</button>
       </div>
     </div>
 
@@ -233,7 +233,10 @@
       button.addEventListener('click', () => {
         document.querySelectorAll('.filter-btn').forEach((item) => item.classList.remove('active'));
         button.classList.add('active');
-        document.getElementById('todayLabel').textContent = button.dataset.range === 'day' ? 'Hoy' : button.dataset.range === 'week' ? 'Semana' : 'Mes';
+        const todayLabel = document.getElementById('todayLabel');
+        if (todayLabel) {
+          todayLabel.textContent = button.dataset.range === 'day' ? 'Hoy' : button.dataset.range === 'week' ? 'Semana' : 'Mes';
+        }
       });
     });
 
@@ -263,6 +266,26 @@
       const svcCancel = document.getElementById('svcCancel');
       const svcSave = document.getElementById('svcSave');
       if (svcCancel) svcCancel.addEventListener('click', () => { if (modal) modal.classList.remove('active'); });
+
+      function validateServiceInput({ title, duration, price }) {
+        const titleValid = /^[\p{L}0-9 ]+$/u.test(title);
+        if (!titleValid) {
+          return 'El nombre del servicio solo puede contener letras, números y espacios.';
+        }
+
+        const durationValid = /^\d+\s*(?:min|mins|minutos?)$/i.test(duration);
+        if (!durationValid) {
+          return 'La duración debe tener un formato válido como "45 min" o "60 minutos".';
+        }
+
+        const priceValid = /^\$\d+(?:\.\d{2})?\s*MXN$/i.test(price);
+        if (!priceValid) {
+          return 'El precio debe tener un formato válido como "$450 MXN".';
+        }
+
+        return '';
+      }
+
       if (svcSave) svcSave.addEventListener('click', () => {
         const title = document.getElementById('svcTitle')?.value?.trim();
         if (!title) { alert('Ingresa el nombre del servicio.'); return; }
@@ -270,6 +293,46 @@
         const price = document.getElementById('svcPrice')?.value?.trim() || '$0 MXN';
         const image = document.getElementById('svcImage')?.value?.trim() || 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&q=80&w=500';
         const description = document.getElementById('svcDescription')?.value?.trim() || '';
+
+        const validationError = validateServiceInput({ title, duration, price });
+        if (validationError) {
+          alert(validationError);
+          return;
+        }
+
+        const existingServices = getSharedServices();
+        const normalizedTitle = title.toLowerCase();
+        const normalizedDuration = duration.toLowerCase().replace(/ /g, '').trim();
+        const normalizedPrice = price.toLowerCase().trim();
+
+        const exactDuplicate = existingServices.find((service) =>
+          (service.title || '').toLowerCase() === normalizedTitle &&
+          (service.duration || '').toLowerCase().trim() === normalizedDuration &&
+          (service.price || '').toLowerCase().trim() === normalizedPrice
+        );
+        if (exactDuplicate) {
+          alert('Ya existe un servicio con el mismo nombre, duración y precio.');
+          return;
+        }
+
+        const sameTitleDuration = existingServices.find((service) =>
+          (service.title || '').toLowerCase() === normalizedTitle &&
+          (service.duration || '').toLowerCase().trim() === normalizedDuration
+        );
+        if (sameTitleDuration) {
+          alert('Ya existe un servicio con el mismo nombre y duración. Cambia uno de los dos para evitar duplicados.');
+          return;
+        }
+
+        const sameTitlePrice = existingServices.find((service) =>
+          (service.title || '').toLowerCase() === normalizedTitle &&
+          (service.price || '').toLowerCase().trim() === normalizedPrice
+        );
+        if (sameTitlePrice) {
+          alert('Ya existe un servicio con el mismo nombre y precio. Ajusta el nombre o el precio.');
+          return;
+        }
+
         const system = window.appointmentsSystem;
         if (system && typeof system.createService === 'function') {
           system.createService({ title, duration, price, image, description, category: 'General', includes: '' });

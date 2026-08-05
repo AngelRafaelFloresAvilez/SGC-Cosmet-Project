@@ -98,6 +98,18 @@
     return seed;
   }
 
+  function getSession() {
+    return window.sgcAuth && typeof window.sgcAuth.getSession === 'function'
+      ? window.sgcAuth.getSession()
+      : null;
+  }
+
+  function readUsers() {
+    return window.sgcAuth && typeof window.sgcAuth.readUsers === 'function'
+      ? window.sgcAuth.readUsers()
+      : [];
+  }
+
   function readState() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -199,12 +211,9 @@
           const match = String(promo.title).match(/(\d+)%/);
           if (match) {
             const pct = Number(match[1]);
-            // try to parse numeric price from string like '$450 MXN'
             const num = Number(String(price).replace(/[^0-9.,]/g, '').replace(/,/g, '.')) || 0;
-            const after = Math.round((num * (100 - pct)) * 100) / 100 / 100; // adjust rounding
-            // more robust: compute as num * (1 - pct/100)
             const computed = Math.round((num * (1 - pct / 100)) * 100) / 100;
-            discountedPrice = (computed ? `$${computed} MXN` : null);
+            discountedPrice = computed ? `$${computed} MXN` : null;
           }
         }
       }
@@ -213,7 +222,7 @@
     const appointment = {
       id: `apt-${Date.now()}`,
       serviceName,
-      price,
+      price: discountedPrice || price,
       date,
       time,
       notes,
@@ -809,7 +818,11 @@
     }
   }
 
+  let appInitialized = false;
+
   function initialize() {
+    if (appInitialized) return;
+    appInitialized = true;
     const menuButton = document.getElementById('menuBtn') || document.querySelector('.menu-btn');
     const closeButton = document.getElementById('closeMenuBtn') || document.querySelector('.close-btn');
     const overlay = document.getElementById('menuOverlay') || document.querySelector('.menu-overlay');
@@ -827,7 +840,8 @@
     document.querySelectorAll('.user-profile').forEach((profileButton) => {
       profileButton.addEventListener('click', () => {
         if (window.location.pathname.includes('perfil.html')) return;
-        window.location.href = 'perfil.html';
+        const basePath = window.location.pathname.replace(/[^/]*$/, '');
+        window.location.href = window.location.pathname.includes('/.idea/') ? 'perfil.html' : basePath + '.idea/perfil.html';
       });
     });
 
@@ -960,11 +974,50 @@
     closeCancelModal,
     syncProfileUI,
     renderProfilePage,
+    getSession,
+    readUsers,
+    clearSession: function () {
+      if (window.sgcAuth && typeof window.sgcAuth.clearSession === 'function') {
+        window.sgcAuth.clearSession();
+      } else if (typeof sessionStorage !== 'undefined' && sessionStorage.removeItem) {
+        sessionStorage.removeItem('sgc_active_session_v1');
+      }
+    },
+    setSession: function (session) {
+      if (window.sgcAuth && typeof window.sgcAuth.setSession === 'function') {
+        window.sgcAuth.setSession(session);
+      } else if (typeof sessionStorage !== 'undefined' && sessionStorage.setItem) {
+        try { sessionStorage.setItem('sgc_active_session_v1', JSON.stringify(session)); } catch (e) { }
+      }
+    },
+    createUser: function (user) {
+      return window.sgcAuth && typeof window.sgcAuth.createUser === 'function'
+        ? window.sgcAuth.createUser(user)
+        : { ok: false, error: 'auth_not_ready' };
+    },
+    loginUser: function (email, password) {
+      return window.sgcAuth && typeof window.sgcAuth.loginUser === 'function'
+        ? window.sgcAuth.loginUser(email, password)
+        : { ok: false, error: 'auth_not_ready' };
+    },
+    signOut: function () {
+      if (window.sgcAuth && typeof window.sgcAuth.signOut === 'function') {
+        window.sgcAuth.signOut();
+        return;
+      }
+      if (typeof sessionStorage !== 'undefined' && sessionStorage.removeItem) {
+        sessionStorage.removeItem('sgc_active_session_v1');
+      }
+      const basePath = window.location.pathname.replace(/[^/]*$/, '');
+      window.location.href = window.location.pathname.includes('/.idea/') ? 'Loggin.html' : basePath + '.idea/Loggin.html';
+    },
     applyPromotion: function (promoId) {
       const state = readState();
       state.activePromotionId = promoId;
       saveState(state);
-      addNotification('Promoción activada', 'Tu próxima cita ya podrá aprovechar la promoción seleccionada.', 'promotion');
+      if (promoId) {
+        addNotification('Promoción activada', 'Tu próxima cita ya podrá aprovechar la promoción seleccionada.', 'promotion');
+      }
       renderProfilePage();
       syncProfileUI();
       return state.activePromotionId;
@@ -984,12 +1037,11 @@
     window.appointmentsSystem.adminConfirmAppointment = adminConfirmAppointment;
   }
 
-  // expose avatar setter
-  if (window.appointmentsSystem) {
-    window.appointmentsSystem.setProfileAvatar = setProfileAvatar;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
+  } else {
+    initialize();
   }
-
-  document.addEventListener('DOMContentLoaded', initialize);
 })();
 
 (function () {
@@ -1088,6 +1140,7 @@
   }
 
   function setSession(session) {
+    if (!session || typeof session !== 'object') return;
     sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
   }
 
@@ -1099,11 +1152,10 @@
     const users = readUsers();
     const existing = users.find((item) => item.email.toLowerCase() === user.email.toLowerCase());
     if (existing) return { ok: false, error: 'email_exists' };
-    // ensure avatar field exists
     const newUser = { avatar: 'https://i.pravatar.cc/150?img=47', ...user };
     users.push(newUser);
     saveUsers(users);
-    return { ok: true, user };
+    return { ok: true, user: newUser };
   }
 
   function setProfileAvatar(dataUrl) {
@@ -1168,7 +1220,7 @@
   function bindAuthForms() {
     function isLoginPage() {
       const page = window.location.pathname.split('/').pop();
-      return ['Loggin.html', 'login.html', 'specialist-login.html'].includes(page);
+      return ['Loggin.html', 'specialist-login.html'].includes(page);
     }
 
     if (isLoginPage()) {
@@ -1187,34 +1239,73 @@
         event.preventDefault();
         const passwordValue = document.getElementById('password')?.value || '';
         const confirmPasswordValue = document.getElementById('confirmPassword')?.value || '';
+        const birthDateValue = document.getElementById('fecha')?.value || '';
         const payload = {
           name: document.getElementById('nombre')?.value?.trim() || '',
           lastName: document.getElementById('apellido')?.value?.trim() || '',
           email: document.getElementById('email')?.value?.trim() || '',
           phone: document.getElementById('telefono')?.value?.trim() || '',
-          birthDate: document.getElementById('fecha')?.value || '',
+          birthDate: birthDateValue,
           password: passwordValue,
           role: 'client'
         };
-        if (!payload.email || !passwordValue || !confirmPasswordValue) {
+        if (!payload.email || !passwordValue || !confirmPasswordValue || !birthDateValue || !payload.name || !payload.lastName) {
           alert('Completa todos los campos requeridos para crear tu cuenta.');
           return;
         }
-        if (passwordValue !== confirmPasswordValue) {
-          alert('Las contraseñas no coinciden. Verifica e intenta de nuevo.');
+
+        const nameFormatValid = /^[^\d\s][^\d]*[^\d\s]$/u.test(payload.name);
+        const lastNameFormatValid = /^[^\d\s][^\d]*[^\d\s]$/u.test(payload.lastName);
+        if (!nameFormatValid || !lastNameFormatValid) {
+          alert('El nombre y apellido deben ser válidos y no pueden ser solo espacios ni contener números.');
           return;
         }
-        // Validate name and lastName: no digits allowed
-        const nameHasDigits = /\d/.test(payload.name);
-        const lastHasDigits = /\d/.test(payload.lastName);
-        if (nameHasDigits || lastHasDigits) {
-          alert('El nombre y apellido no deben contener números. Por favor corrige.');
+
+        const birthDate = new Date(birthDateValue);
+        const minBirthDate = new Date('1900-01-01');
+        const today = new Date();
+        if (Number.isNaN(birthDate.getTime())) {
+          alert('La fecha de nacimiento no es válida. Usa el selector de fecha.');
           return;
         }
-        // Validate phone: only digits, spaces, + or - allowed
-        const phoneValid = /^[0-9+\s-]{7,20}$/.test(payload.phone || '');
+
+        if (birthDate < minBirthDate) {
+          alert('La fecha de nacimiento es demasiado antigua. Debe ser posterior a 1900.');
+          return;
+        }
+
+        if (birthDate > today) {
+          alert('La fecha de nacimiento no puede ser en el futuro.');
+          return;
+        }
+
+        const age = today.getFullYear() - birthDate.getFullYear() - ((today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) ? 1 : 0);
+        if (age < 13) {
+          alert('Debes tener al menos 13 años para registrarte.');
+          return;
+        }
+
+        if (!/^[A-Za-z]{8}$/.test(passwordValue)) {
+          alert('La contraseña debe tener exactamente 8 letras y no puede contener espacios ni símbolos.');
+          return;
+        }
+
+        const nameAlphaOnly = /^[\p{L}]+$/u.test(payload.name);
+        const lastNameAlphaOnly = /^[\p{L}]+$/u.test(payload.lastName);
+        if (!nameAlphaOnly || !lastNameAlphaOnly) {
+          alert('El nombre y apellido solo pueden contener letras, sin números ni símbolos.');
+          return;
+        }
+
+        const emailValid = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/u.test(payload.email);
+        if (!emailValid) {
+          alert('Ingresa un correo electrónico válido sin caracteres raros.');
+          return;
+        }
+
+        const phoneValid = /^\d{10}$/.test(payload.phone || '');
         if (!phoneValid) {
-          alert('El número de teléfono no es válido. Usa solo dígitos, espacios, "+" o "-".');
+          alert('El número de teléfono debe tener exactamente 10 dígitos y no puede contener espacios ni símbolos.');
           return;
         }
         const result = createUser(payload);
@@ -1237,8 +1328,8 @@
 
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-      loginForm.addEventListener('submit', (event) => {
-        event.preventDefault();
+      const handleLoginSubmit = (event) => {
+        if (event) event.preventDefault();
         const email = document.getElementById('loginEmail')?.value?.trim() || '';
         const password = document.getElementById('loginPassword')?.value || '';
         if (!email || !password) {
@@ -1251,13 +1342,19 @@
           return;
         }
         navigateByRole(result.user.role);
-      });
+      };
+
+      loginForm.addEventListener('submit', handleLoginSubmit);
+      const loginButton = document.getElementById('loginSubmitButton');
+      if (loginButton) {
+        loginButton.addEventListener('click', handleLoginSubmit);
+      }
     }
 
     const specialistLoginForm = document.getElementById('specialistLoginForm');
     if (specialistLoginForm) {
-      specialistLoginForm.addEventListener('submit', (event) => {
-        event.preventDefault();
+      const handleSpecialistSubmit = (event) => {
+        if (event) event.preventDefault();
         const email = document.getElementById('specialistEmail')?.value?.trim() || '';
         const password = document.getElementById('specialistPassword')?.value || '';
         if (!email || !password) {
@@ -1270,7 +1367,13 @@
           return;
         }
         navigateByRole(result.user.role);
-      });
+      };
+
+      specialistLoginForm.addEventListener('submit', handleSpecialistSubmit);
+      const specialistButton = document.getElementById('specialistSubmitButton');
+      if (specialistButton) {
+        specialistButton.addEventListener('click', handleSpecialistSubmit);
+      }
     }
   }
 
@@ -1281,12 +1384,23 @@
   }
 
   window.sgcAuth = {
-    createUser,
-    loginUser,
-    getSession,
-    setSession,
-    clearSession,
-    signOut: function () { clearSession(); window.location.href = resolveRelative('Loggin.html'); },
-    readUsers
-  };
-})();
+      createUser,
+      loginUser,
+      getSession,
+      setSession,
+      clearSession,
+      signOut: function () { clearSession(); window.location.href = resolveRelative('Loggin.html'); },
+      readUsers
+    };
+
+    if (window.appointmentsSystem) {
+      window.appointmentsSystem.readUsers = readUsers;
+      window.appointmentsSystem.getSession = getSession;
+      window.appointmentsSystem.clearSession = clearSession;
+      window.appointmentsSystem.setSession = setSession;
+      window.appointmentsSystem.createUser = createUser;
+      window.appointmentsSystem.loginUser = loginUser;
+      window.appointmentsSystem.signOut = function () { clearSession(); window.location.href = resolveRelative('Loggin.html'); };
+      window.appointmentsSystem.setProfileAvatar = setProfileAvatar;
+    }
+  })();

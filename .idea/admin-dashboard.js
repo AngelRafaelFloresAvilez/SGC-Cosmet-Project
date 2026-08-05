@@ -19,10 +19,14 @@ document.addEventListener('DOMContentLoaded', function () {
   })();
 
   if (!session || session.role !== 'admin') {
-    if (window.appointmentsSystem && typeof window.appointmentsSystem.clearSession === 'function') {
+    if (window.appointmentsSystem && typeof window.appointmentsSystem.signOut === 'function') {
+      window.appointmentsSystem.signOut();
+    } else if (window.appointmentsSystem && typeof window.appointmentsSystem.clearSession === 'function') {
       window.appointmentsSystem.clearSession();
+      window.location.href = 'Loggin.html';
+    } else {
+      window.location.href = 'Loggin.html';
     }
-    window.location.href = 'Loggin.html';
     return;
   }
 
@@ -266,10 +270,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (signOutBtn) {
     signOutBtn.addEventListener('click', () => {
+      if (window.appointmentsSystem && typeof window.appointmentsSystem.signOut === 'function') {
+        window.appointmentsSystem.signOut();
+        return;
+      }
       if (window.appointmentsSystem && typeof window.appointmentsSystem.clearSession === 'function') {
         window.appointmentsSystem.clearSession();
       }
-      window.location.href = 'Loggin.html';
+      const basePath = window.location.pathname.replace(/[^/]*$/, '');
+      window.location.href = window.location.pathname.includes('/.idea/') ? 'Loggin.html' : basePath + '.idea/Loggin.html';
     });
   }
 
