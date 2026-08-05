@@ -58,7 +58,9 @@
             </form>
         </div>
 
-        <div class="form-side-image" aria-hidden="true"></div>
+        <div class="form-side-image" aria-hidden="true">
+            <img src="${pageContext.request.contextPath}/assets/img/ImagenFondoLogin.png" alt="SGC Logo" class="footer-logo">
+        </div>
     </div>
 </div>
 

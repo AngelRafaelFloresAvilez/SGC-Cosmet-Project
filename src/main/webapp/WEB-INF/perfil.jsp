@@ -1,0 +1,426 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="com.proyecto.sgccosmetproject.model.Usuario" %>
+<%
+    // Validar la sesión directamente al renderizar la vista
+    Usuario usuarioActivo = (Usuario) session.getAttribute("usuarioSesion");
+    if (usuarioActivo == null) {
+        response.sendRedirect(request.getContextPath() + "/login");
+        return;
+    }
+%>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil - SGC Cosmetic</title>
+
+    <!-- Fuentes y CDN -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Script de lógica de citas/perfil -->
+    <script src="${pageContext.request.contextPath}/js/appointments-system.js"></script>
+
+    <style>
+        :root {
+            --primary-dark: #1A2A1A;
+            --primary-green: #526B4A;
+            --primary-hover: #3E5237;
+            --accent-green: #B2D296;
+            --bg-light: #F4F7F2;
+            --card-bg: #FFFFFF;
+            --text-main: #2C3527;
+            --text-muted: #666666;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.12);
+            --shadow-card: 0 6px 20px rgba(0, 0, 0, 0.06);
+            --transition-smooth: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            --danger: #c95c5c;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body, html {
+            width: 100%;
+            min-height: 100%;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--primary-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        .main-wrapper {
+            position: relative;
+            min-height: 100vh;
+            width: 100%;
+            background-image: url('${pageContext.request.contextPath}/assets/img/ImagenFondoDashboard.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            overflow-x: hidden;
+        }
+
+        .bg-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(26, 42, 26, 0.74) 0%, rgba(10, 15, 10, 0.86) 100%);
+            z-index: 1;
+        }
+
+        header {
+            position: relative;
+            width: 100%;
+            padding: 24px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 22px;
+            color: #FFFFFF;
+            cursor: pointer;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+            transition: var(--transition-smooth);
+        }
+        .menu-btn:hover { transform: scale(1.05); background: rgba(255, 255, 255, 0.25); }
+
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+
+        .btn-notification {
+            background: rgba(255,255,255,0.95);
+            border: none;
+            font-size: 18px;
+            color: var(--text-main);
+            cursor: pointer;
+            position: relative;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-notification:hover { transform: translateY(-2px); background: #fff; }
+
+        .notification-panel {
+            position: absolute;
+            top: 58px;
+            right: 0;
+            width: 320px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
+            padding: 12px;
+            display: none;
+            z-index: 130;
+        }
+        .notification-panel.active { display: block; }
+        .notification-item { padding: 12px; border-radius: 12px; background: #f8fbf7; margin-bottom: 8px; }
+        .notification-item.unread { border-left: 4px solid var(--primary-green); }
+        .notification-title { font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+        .notification-message { font-size: 0.9rem; color: #5f6757; margin-bottom: 6px; }
+        .notification-meta { font-size: 0.75rem; color: #8a957e; }
+        .notification-badge { position: absolute; top: 11px; right: 12px; background-color: #D97777; width: 9px; height: 9px; border-radius: 50%; border: 2px solid #fff; }
+        .empty-state { padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.95rem; }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background-color: rgba(255,255,255,0.95);
+            padding: 8px 18px 8px 10px;
+            border-radius: 35px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transition: var(--transition-smooth);
+        }
+        .user-profile:hover { transform: translateY(-2px); background: #fff; }
+        .user-avatar { font-size: 1.9rem; color: var(--primary-green); }
+        .user-text { display: flex; flex-direction: column; text-align: left; }
+        .user-role { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .user-name { font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
+
+        .menu-overlay {
+            position: fixed; inset: 0; width: 100%; height: 100vh; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 99; opacity: 0; visibility: hidden; transition: var(--transition-smooth);
+        }
+        .menu-overlay.active { opacity: 1; visibility: visible; }
+
+        .sidebar-menu {
+            position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; background-color: var(--bg-light); color: var(--text-main); z-index: 100; display: flex; flex-direction: column; padding: 30px 25px; box-shadow: 10px 0 30px rgba(0,0,0,0.25); transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .sidebar-menu.active { left: 0; }
+        .sidebar-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; }
+        .sidebar-header h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 700; color: var(--text-main); letter-spacing: 0.5px; }
+        .close-btn { background: rgba(0,0,0,0.05); border: none; color: var(--text-main); width: 32px; height: 32px; border-radius: 50%; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .sidebar-profile { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 25px 0 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
+        .sidebar-profile img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent-green); margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .sidebar-profile h4 { font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+        .sidebar-profile p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; }
+        .sidebar-nav { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
+        .sidebar-nav a { display: flex; align-items: center; gap: 15px; color: #3A4E32; text-decoration: none; font-size: 0.95rem; font-weight: 600; padding: 12px 16px; border-radius: 10px; transition: var(--transition-smooth); }
+        .sidebar-nav a i { font-size: 1.1rem; width: 22px; text-align: center; color: var(--primary-green); }
+        .sidebar-nav a:hover, .sidebar-nav a.active { background-color: #E2ECE0; color: var(--primary-dark); transform: translateX(6px); }
+        .sidebar-footer { border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: auto; }
+
+        .btn-logout-green {
+            background-color: var(--primary-green);
+            color: #fff;
+            border: none;
+            box-shadow: 0 4px 12px rgba(82, 107, 74, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 13px;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            font-size: 0.9rem;
+            font-family: 'Inter';
+            transition: var(--transition-smooth);
+            text-decoration: none;
+        }
+        .btn-logout-green:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
+
+        .profile-shell { position: relative; z-index: 2; padding: 0 40px 40px; max-width: 1280px; margin: 0 auto; }
+        .profile-hero {
+            display: grid;
+            grid-template-columns: 1.25fr 0.75fr;
+            gap: 24px;
+            align-items: start;
+        }
+        .hero-card, .side-card {
+            background: rgba(255,255,255,0.96);
+            border-radius: 24px;
+            box-shadow: var(--shadow-soft);
+            padding: 28px;
+            backdrop-filter: blur(8px);
+        }
+        .hero-card h1 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; margin-bottom: 8px; color: var(--text-main); }
+        .hero-card p { color: var(--text-muted); line-height: 1.6; margin-bottom: 18px; }
+        .profile-top { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; }
+        .profile-avatar { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; border: 4px solid var(--accent-green); }
+        .profile-meta h2 { font-size: 1.2rem; margin-bottom: 4px; }
+        .profile-meta .profile-role { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .profile-status-pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; background: #eef5e7; color: var(--primary-green); font-weight: 700; font-size: 0.84rem; }
+        .profile-status-pill.alert { background: #fbe8e8; color: var(--danger); }
+        .profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+        .info-box { border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; background: #fcfdfb; }
+        .info-box label { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; }
+        .info-box span { color: var(--text-main); font-weight: 600; }
+        .profile-summary { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; padding: 16px; border-radius: 16px; background: linear-gradient(135deg, #f4f7f2 0%, #eef3eb 100%); }
+        .profile-summary strong { display: block; font-size: 0.95rem; }
+        .profile-summary p { margin: 0; font-size: 0.9rem; color: var(--text-muted); }
+        .mini-pill { display: inline-flex; align-items: center; gap: 8px; background: #fff; padding: 8px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; color: var(--primary-green); }
+        .side-card h3 { font-size: 1.05rem; margin-bottom: 16px; }
+        .stat-card { border: 1px solid var(--border-color); border-radius: 16px; padding: 14px; background: #fcfdfb; margin-bottom: 10px; }
+        .stat-card strong { display: block; font-size: 1.5rem; margin-top: 6px; color: var(--text-main); }
+        .stat-card.alert { border-color: #f3b3b3; background: #fff8f8; }
+        .stat-card.danger { border-color: #d47d7d; }
+        .history-item, .payment-item, .promo-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+        .history-item:last-child, .payment-item:last-child, .promo-item:last-child { border-bottom: 0; }
+        .history-badge, .payment-status { font-size: 0.78rem; padding: 6px 10px; border-radius: 999px; background: #eef5e7; color: var(--primary-green); font-weight: 700; }
+        .promo-btn { border: none; border-radius: 999px; padding: 8px 12px; background: var(--primary-green); color: #fff; font-weight: 700; cursor: pointer; }
+        .promo-btn:hover { background: var(--primary-hover); }
+        .active-promo-card { border-radius: 16px; padding: 14px; background: linear-gradient(135deg, #f4f7f2 0%, #eef3eb 100%); }
+        .active-promo-card strong { display: block; margin-bottom: 4px; }
+        .active-promo-card p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 4px; }
+        .active-promo-card small { color: var(--text-muted); }
+
+        @media (max-width: 920px) {
+            .profile-hero { grid-template-columns: 1fr; }
+            .profile-grid { grid-template-columns: 1fr; }
+            .profile-shell { padding: 0 24px 24px; }
+        }
+    </style>
+</head>
+<body>
+<div class="main-wrapper">
+    <div class="bg-overlay"></div>
+
+    <!-- Header -->
+    <header>
+        <button class="menu-btn" id="menuBtn" aria-label="Abrir menú"><i class="fa-solid fa-bars"></i></button>
+        <div class="header-actions">
+            <div style="position: relative;">
+                <button class="btn-notification" data-notification-toggle aria-label="Notificaciones">
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="notification-badge" hidden></span>
+                </button>
+                <div class="notification-panel" id="notificationPanel">
+                    <div id="notificationList"></div>
+                </div>
+            </div>
+            <div class="user-profile">
+                <div class="user-avatar"><i class="fa-solid fa-circle-user"></i></div>
+                <div class="user-text">
+                    <h4><%= usuarioActivo.getNombreCompleto() %></h4>
+
+                    <span class="user-name">${not empty usuarioActivo.nombreCompleto ? usuarioSesion.nombreCompleto : 'Cliente SGC'}</span>
+                    <span class="user-role">${usuarioSesion.idRol == 1 ? 'Cliente VIP' : 'Cliente'}</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar / Menú Lateral -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    <aside class="sidebar-menu" id="sidebarMenu">
+        <div class="sidebar-header">
+            <h3>SGC Cosmetic</h3>
+            <button class="close-btn" id="closeMenuBtn" aria-label="Cerrar menú"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="sidebar-profile">
+            <img id="sidebarProfileAvatar" src="https://i.pravatar.cc/150?img=47" alt="Foto de perfil" class="profile-avatar">
+            <h4 class="profile-name">${not empty usuarioSesion.nombreCompleto ? usuarioSesion.nombreCompleto : 'Cliente SGC'}</h4>
+            <p class="profile-role">${usuarioSesion.idRol == 1 ? 'Cliente VIP' : 'Cliente'}</p>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="${pageContext.request.contextPath}/DashboardServlet"><i class="fa-solid fa-house"></i> Inicio</a>
+            <a href="${pageContext.request.contextPath}/CatalogoServlet"><i class="fa-solid fa-border-all"></i> Catálogo</a>
+            <a href="${pageContext.request.contextPath}/CitasServlet"><i class="fa-regular fa-calendar-check"></i> Citas</a>
+            <a href="${pageContext.request.contextPath}/PerfilServlet" class="active"><i class="fa-regular fa-user"></i> Perfil</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="${pageContext.request.contextPath}/logout" class="btn-logout-green">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar sesión
+            </a>
+        </div>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <main class="profile-shell">
+        <section class="profile-hero">
+            <div class="hero-card">
+                <div class="profile-top">
+                    <div style="position:relative">
+                        <img id="profileAvatarImg" class="profile-avatar" src="https://i.pravatar.cc/150?img=47" alt="Foto de Perfil">
+                        <input id="profileAvatarInput" type="file" accept="image/*" title="Cambiar foto de perfil" style="position:absolute;right:6px;bottom:6px;opacity:0;width:40px;height:40px;cursor:pointer">
+                    </div>
+                    <div class="profile-meta">
+                        <h2 class="profile-name">${not empty usuarioSesion.nombreCompleto ? usuarioSesion.nombreCompleto : 'Cliente SGC'}</h2>
+                        <p class="profile-role">${usuarioSesion.idRol == 1 ? 'Cliente VIP' : 'Cliente'}</p>
+                        <div class="profile-status-pill ${usuarioSesion.estadoVeto != 'Normal' ? 'alert' : ''}">
+                            <i class="fa-solid ${usuarioSesion.estadoVeto == 'Normal' ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i>
+                            <span class="profile-status">${not empty usuarioSesion.estadoVeto ? usuarioSesion.estadoVeto : 'Normal'}</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="profile-status-message">Tu acceso sigue activo y puedes seguir disfrutando de tratamientos y promociones.</p>
+
+                <div class="profile-grid">
+                    <div class="info-box">
+                        <label>Correo</label>
+                        <span class="profile-email">${not empty usuarioSesion.correo ? usuarioSesion.correo : 'Sin registro'}</span>
+                    </div>
+                    <div class="info-box">
+                        <label>Teléfono</label>
+                        <span class="profile-phone">${not empty usuarioSesion.telefono ? usuarioSesion.telefono : 'Sin registro'}</span>
+                    </div>
+                    <div class="info-box">
+                        <label>Fecha de nacimiento</label>
+                        <span class="profile-birth">${not empty usuarioSesion.fechaNacimiento ? usuarioSesion.fechaNacimiento : 'Sin registro'}</span>
+                    </div>
+                    <div class="info-box">
+                        <label>Estado de Cuenta</label>
+                        <span class="profile-member">${not empty usuarioSesion.estadoVeto ? usuarioSesion.estadoVeto : 'Activo'}</span>
+                    </div>
+                </div>
+
+                <div class="profile-summary">
+                    <div>
+                        <strong>Próxima cita</strong>
+                        <p id="profileNextAppointment">Sin citas próximas</p>
+                    </div>
+                    <div class="mini-pill"><i class="fa-regular fa-calendar-check"></i> Estado activo</div>
+                </div>
+            </div>
+
+            <div class="side-card">
+                <h3>Resumen de tu experiencia</h3>
+                <div class="stat-card" id="cancelledSummaryCard">
+                    <span>Cancelaciones acumuladas</span>
+                    <strong id="profileCancelledCount">0</strong>
+                </div>
+                <div class="stat-card">
+                    <span>Próxima reserva</span>
+                    <strong id="profileNextAppointmentCompact">Sin reservas</strong>
+                </div>
+                <div class="stat-card">
+                    <span>Promoción activa</span>
+                    <div id="activePromotionBox" style="margin-top: 8px;"></div>
+                </div>
+                <button id="restoreAccessBtn" type="button" style="margin-top: 12px; width: 100%; border: none; border-radius: 999px; padding: 10px 12px; background: #526B4A; color: #fff; font-weight: 700; cursor: pointer;">Quitar cancelaciones y recuperar acceso</button>
+            </div>
+        </section>
+
+        <section class="profile-hero" style="margin-top: 24px;">
+            <div class="hero-card">
+                <h3 style="margin-bottom: 14px;">Historial de citas</h3>
+                <div id="historyList"></div>
+            </div>
+            <div class="side-card">
+                <h3>Pagos y promociones</h3>
+                <div id="paymentsList" style="margin-bottom: 18px;"></div>
+                <div id="promotionsList"></div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- Modulos JS Script -->
+<script>
+    (function () {
+        const input = document.getElementById('profileAvatarInput');
+        const img = document.getElementById('profileAvatarImg');
+        const sidebarImg = document.getElementById('sidebarProfileAvatar');
+
+        function updateImgs(url) {
+            if (img) img.src = url;
+            if (sidebarImg) sidebarImg.src = url;
+        }
+
+        if (input) {
+            input.addEventListener('change', function () {
+                const file = input.files && input.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const dataUrl = e.target.result;
+                    updateImgs(dataUrl);
+                    if (window.appointmentsSystem && typeof window.appointmentsSystem.setProfileAvatar === 'function') {
+                        window.appointmentsSystem.setProfileAvatar(dataUrl);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Escuchar actualizaciones externas de estado
+        window.addEventListener('sgc-state-updated', function () {
+            try {
+                const state = window.appointmentsSystem && window.appointmentsSystem.readState ? window.appointmentsSystem.readState() : null;
+                if (state && state.profile && state.profile.avatar) {
+                    updateImgs(state.profile.avatar);
+                }
+            } catch (e) { /* capturar de forma silenciosa */ }
+        });
+    })();
+</script>
+</body>
+</html>

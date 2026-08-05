@@ -1,0 +1,671 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="com.proyecto.sgccosmetproject.model.Usuario" %>
+<%
+    // Validar la sesión directamente al renderizar la vista
+    Usuario usuarioActivo = (Usuario) session.getAttribute("usuarioSesion");
+    if (usuarioActivo == null) {
+        response.sendRedirect(request.getContextPath() + "/login");
+        return;
+    }
+%>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGC COSMETIC - Gestión de Citas</title>
+
+    <!-- Fuentes y CDN -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Script de lógica de citas -->
+    <script src="${pageContext.request.contextPath}/js/appointments-system.js"></script>
+
+    <style>
+        :root {
+            --primary-dark: #1A2A1A;
+            --primary-green: #526B4A;
+            --primary-hover: #3E5237;
+            --accent-green: #B2D296;
+            --bg-light: #F4F7F2;
+            --card-bg: #FFFFFF;
+            --text-main: #2C3527;
+            --text-muted: #666666;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.12);
+            --shadow-card: 0 6px 20px rgba(0, 0, 0, 0.06);
+            --transition-smooth: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            --danger: #c95c5c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            background-color: var(--primary-dark);
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .main-wrapper {
+            position: relative;
+            min-height: 100vh;
+            width: 100%;
+            background-image: url('${pageContext.request.contextPath}/assets/img/ImagenFondoDashboard.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            overflow-x: hidden;
+        }
+
+        .bg-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(26, 42, 26, 0.72) 0%, rgba(10, 15, 10, 0.84) 100%);
+            z-index: 1;
+        }
+
+        header {
+            position: relative;
+            width: 100%;
+            padding: 24px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 22px;
+            color: #FFFFFF;
+            cursor: pointer;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+            transition: var(--transition-smooth);
+        }
+
+        .menu-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.05);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-notification {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            font-size: 18px;
+            color: var(--text-main);
+            cursor: pointer;
+            position: relative;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .btn-notification:hover {
+            transform: translateY(-2px);
+            background: #ffffff;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        .notification-panel {
+            position: absolute;
+            top: 58px;
+            right: 0;
+            width: 320px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
+            padding: 12px;
+            display: none;
+            z-index: 130;
+        }
+
+        .notification-panel.active { display: block; }
+        .notification-item { padding: 12px; border-radius: 12px; background: #f8fbf7; margin-bottom: 8px; }
+        .notification-item.unread { border-left: 4px solid var(--primary-green); }
+        .notification-title { font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+        .notification-message { font-size: 0.9rem; color: #5f6757; margin-bottom: 6px; }
+        .notification-meta { font-size: 0.75rem; color: #8a957e; }
+        .empty-state { padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.95rem; }
+
+        .notification-badge {
+            position: absolute;
+            top: 11px; right: 12px;
+            background-color: #D97777;
+            width: 9px; height: 9px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 8px 18px 8px 10px;
+            border-radius: 35px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            transition: var(--transition-smooth);
+        }
+
+        .user-profile:hover {
+            background-color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .user-avatar {
+            font-size: 2.1rem;
+            color: var(--primary-green);
+            line-height: 1;
+        }
+
+        .user-text {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .user-role {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .user-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .menu-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px);
+            z-index: 99; opacity: 0; visibility: hidden; transition: var(--transition-smooth);
+        }
+        .menu-overlay.active { opacity: 1; visibility: visible; }
+
+        .sidebar-menu {
+            position: fixed; top: 0; left: -320px; width: 300px; height: 100vh;
+            background-color: var(--bg-light); color: var(--text-main); z-index: 100;
+            display: flex; flex-direction: column; padding: 30px 25px;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.25); transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .sidebar-menu.active { left: 0; }
+
+        .sidebar-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 20px;
+        }
+        .sidebar-header h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 700; color: var(--text-main); letter-spacing: 0.5px; }
+
+        .close-btn {
+            background: rgba(0,0,0,0.05); border: none; color: var(--text-main);
+            width: 32px; height: 32px; border-radius: 50%;
+            font-size: 1rem; cursor: pointer; transition: var(--transition-smooth);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .close-btn:hover { background: rgba(0,0,0,0.1); transform: scale(1.1); }
+
+        .sidebar-profile {
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            padding: 25px 0 20px 0; border-bottom: 1px solid var(--border-color); margin-bottom: 20px;
+        }
+        .sidebar-profile img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent-green); margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .sidebar-profile h4 { font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+        .sidebar-profile p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; }
+
+        .sidebar-nav { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
+        .sidebar-nav a {
+            display: flex; align-items: center; gap: 15px; color: #3A4E32; text-decoration: none;
+            font-size: 0.95rem; font-weight: 600; padding: 12px 16px; border-radius: 10px; transition: var(--transition-smooth);
+        }
+        .sidebar-nav a i { font-size: 1.1rem; width: 22px; text-align: center; color: var(--primary-green); }
+        .sidebar-nav a:hover, .sidebar-nav a.active { background-color: #E2ECE0; color: var(--primary-dark); transform: translateX(6px); }
+
+        .sidebar-footer { border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: auto; }
+        .btn-logout-green {
+            background-color: var(--primary-green); color: #FFFFFF; border: none;
+            box-shadow: 0 4px 12px rgba(82, 107, 74, 0.3); display: flex; align-items: center;
+            justify-content: center; gap: 10px; padding: 13px; border-radius: 10px;
+            cursor: pointer; width: 100%; font-weight: 600; font-size: 0.9rem; font-family: 'Inter';
+            transition: var(--transition-smooth); text-decoration: none;
+        }
+        .btn-logout-green:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
+
+        .catalog-container {
+            position: relative;
+            z-index: 2;
+            padding: 0 40px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .catalog-header {
+            padding: 24px 0 16px;
+        }
+
+        .hero-texts {
+            max-width: 760px;
+            background: rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.16);
+            border-radius: 24px;
+            padding: 24px 28px;
+            box-shadow: 0 14px 40px rgba(0,0,0,0.16);
+        }
+
+        .text-hello {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.88);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .text-catalog {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.2rem;
+            color: #ffffff;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .text-desc {
+            color: rgba(255,255,255,0.84);
+            font-size: 1rem;
+            line-height: 1.65;
+            max-width: 680px;
+        }
+
+        .catalog-content {
+            display: grid;
+            gap: 24px;
+            padding-top: 8px;
+        }
+
+        .appointments-panel {
+            background: rgba(255,255,255,0.94);
+            border-radius: 28px;
+            padding: 28px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f7fbf4 0%, #eef6e9 100%);
+            border-radius: 18px;
+            padding: 16px;
+            border: 1px solid rgba(82,107,74,0.12);
+        }
+
+        .stat-card span {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .stat-card strong {
+            display: block;
+            font-size: 1.3rem;
+            color: var(--primary-green);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 999px;
+            background: #f2f6ee;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-main);
+            transition: var(--transition-smooth);
+        }
+
+        .tab-btn.active {
+            background: var(--primary-green);
+            color: #ffffff;
+        }
+
+        .panel-layout {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 16px;
+        }
+
+        .list-panel, .detail-panel {
+            background: #f8fbf7;
+            border-radius: 18px;
+            padding: 16px;
+            min-height: 340px;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .appointment-item {
+            width: 100%;
+            text-align: left;
+            background: #ffffff;
+            border: 1px solid #e8efe2;
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .appointment-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+        }
+
+        .appointment-item-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        .appointment-badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #edf5e6;
+            color: var(--primary-green);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .appointment-item-meta, .appointment-item-price {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .detail-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid #e8efe2;
+        }
+
+        .detail-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .detail-card h3 {
+            font-size: 1.1rem;
+            color: var(--text-main);
+        }
+
+        .detail-grid {
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .detail-grid div {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #edf2e8;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+
+        .btn-cancel {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 10px;
+            background: var(--danger);
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-secondary {
+            background: #f2f6ee;
+            color: var(--text-main);
+            border: none;
+            padding: 10px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: var(--primary-green);
+            color: #ffffff;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 140;
+            padding: 20px;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .modal-card h3 {
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 900px) {
+            .panel-layout { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .catalog-container { padding: 0 18px 24px; }
+            header { padding: 20px; }
+            .appointments-panel { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+<div class="menu-overlay" id="menuOverlay" onclick="cerrarMenu()"></div>
+
+<!-- Sidebar / Menú Lateral -->
+<aside class="sidebar-menu" id="sidebarMenu">
+    <div class="sidebar-header">
+        <h3>SGC COSMETIC</h3>
+        <button class="close-btn" id="closeMenuBtn" onclick="cerrarMenu()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="sidebar-profile">
+        <img src="https://i.pravatar.cc/150?img=47" alt="Foto de perfil">
+        <h4>${not empty usuarioSesion.nombreCompleto ? usuarioSesion.nombreCompleto : 'Cliente SGC'}</h4>
+        <p>${usuarioSesion.idRol == 1 ? 'Cliente VIP' : 'Cliente'}</p>
+    </div>
+
+    <nav class="sidebar-nav">
+        <a href="${pageContext.request.contextPath}/DashboardServlet"><i class="fa-solid fa-house"></i> Inicio</a>
+        <a href="${pageContext.request.contextPath}/CatalogoServlet"><i class="fa-solid fa-border-all"></i> Catálogo</a>
+        <a href="${pageContext.request.contextPath}/CitasServlet" class="active"><i class="fa-regular fa-calendar-check"></i> Citas</a>
+        <a href="${pageContext.request.contextPath}/PerfilServlet"><i class="fa-regular fa-user"></i> Perfil</a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <a href="${pageContext.request.contextPath}/LogoutServlet" class="btn-logout-green">
+            <i class="fa-solid fa-right-from-bracket"></i> CERRAR SESIÓN
+        </a>
+    </div>
+</aside>
+
+<div class="main-wrapper">
+    <div class="bg-overlay"></div>
+
+    <!-- Header -->
+    <header>
+        <button class="menu-btn" id="menuBtn" onclick="abrirMenu()" title="Abrir menú">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <div class="header-actions">
+            <div style="position:relative;">
+                <button class="btn-notification" type="button" data-notification-toggle title="Notificaciones">
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="notification-badge" hidden></span>
+                </button>
+                <div class="notification-panel" id="notificationPanel">
+                    <div id="notificationList"></div>
+                </div>
+            </div>
+            <div class="user-profile" onclick="window.location.href='${pageContext.request.contextPath}/PerfilServlet'" title="Ver perfil">
+                <i class="fa-solid fa-circle-user user-avatar"></i>
+                <div class="user-text">
+                    <span class="user-role">${usuarioSesion.idRol == 1 ? 'Cliente VIP' : 'Cliente'}</span>
+                    <span class="user-name">${not empty usuarioSesion.nombreCompleto ? usuarioSesion.nombreCompleto : 'Cliente SGC'}</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="catalog-container">
+        <div class="catalog-header">
+            <div class="hero-texts">
+                <div class="text-hello">Bienvenida de nuevo, ${not empty usuarioSesion.nombreCompleto ? usuarioSesion.nombreCompleto : 'Cliente'}</div>
+                <div class="text-catalog">Gestión de citas</div>
+                <div class="text-desc">Consulta tus reservas, revisa el historial y mantén el control de tus próximas citas con un estilo consistente con el catálogo.</div>
+            </div>
+        </div>
+
+        <div class="catalog-content">
+            <section class="appointments-panel">
+                <div class="stats-grid">
+                    <div class="stat-card"><span>Pendientes</span><strong id="pendingCount">0</strong></div>
+                    <div class="stat-card"><span>Anteriores</span><strong id="previousCount">0</strong></div>
+                    <div class="stat-card"><span>Canceladas</span><strong id="cancelledSummaryCount">0</strong></div>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab-btn active" data-status-tab="pending">Pendientes</button>
+                    <button class="tab-btn" data-status-tab="previous">Anteriores</button>
+                    <button class="tab-btn" data-status-tab="cancelled">Canceladas</button>
+                </div>
+
+                <div class="panel-layout">
+                    <div class="list-panel">
+                        <div id="appointmentsList"></div>
+                    </div>
+                    <div class="detail-panel">
+                        <div id="appointmentDetail">Selecciona una cita para ver su información.</div>
+                    </div>
+                </div>
+
+                <div class="stat-card" id="cancelledSummaryCard" style="margin-top:16px;"><span>Cancelaciones acumuladas</span><strong id="cancelledCount">0</strong></div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<!-- Modal Cancelar Cita -->
+<div class="modal-backdrop" id="cancelAppointmentModal">
+    <div class="modal-card">
+        <h3>Cancelar cita</h3>
+        <p>¿Deseas cancelar esta cita? Esta acción contará como una falta y aparecerá en tu historial.</p>
+        <div class="modal-actions">
+            <button class="btn-secondary cancel-cancel-btn">No, mantener</button>
+            <button class="btn-primary cancel-confirm-btn">Sí, cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirMenu() {
+        document.getElementById('sidebarMenu').classList.add('active');
+        document.getElementById('menuOverlay').classList.add('active');
+    }
+    function cerrarMenu() {
+        document.getElementById('sidebarMenu').classList.remove('active');
+        document.getElementById('menuOverlay').classList.remove('active');
+    }
+    window.addEventListener('DOMContentLoaded', () => {
+        if (window.appointmentsSystem) {
+            window.appointmentsSystem.init();
+        }
+    });
+</script>
+</body>
+</html>

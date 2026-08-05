@@ -1,10 +1,9 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="com.proyecto.sgccosmetproject.model.Usuario" %>
 <%
-    // CONTROL DE ACCESO IMPENETRABLE DENTRO DE WEB-INF
     Usuario usuarioActivo = (Usuario) session.getAttribute("usuarioSesion");
     if (usuarioActivo == null) {
-        response.sendRedirect(request.getContextPath() + "/WEB-INF/login.jsp");
+        response.sendRedirect(request.getContextPath() + "/login");
         return;
     }
 %>
@@ -15,54 +14,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SGC COSMETIC - Panel Principal</title>
 
-    <!-- Tipografías de Google Fonts -->
+    <!-- Google Fonts & FontAwesome -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-
-    <!-- FontAwesome para los íconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <script src="appointments-system.js"></script>
-
     <style>
-        /* === ESTILOS BASE === */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* === BASE & LAYOUT === */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { width: 100%; height: 100%; font-family: 'Inter', sans-serif; overflow-x: hidden; background-color: #1a2a1a; }
 
-        body, html {
-            width: 100%;
-            height: 100%;
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-            background-color: #1a2a1a;
-        }
-
-        /* === CONTENEDOR PRINCIPAL Y FONDO === */
         .main-wrapper {
             position: relative;
             min-height: 100vh;
             width: 100%;
-            background-image: url('${pageContext.request.contextPath}/assets/img/ImagenFondoDashboard.jpeg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
+            background: url('${pageContext.request.contextPath}/assets/img/ImagenFondoDashboard.jpeg') center/cover no-repeat;
         }
 
         .bg-curve-mask {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             z-index: 1;
             pointer-events: none;
         }
 
-        /* === ENCABEZADO (HEADER) === */
+        /* === HEADER & ACTIONS === */
         header {
             position: absolute;
             top: 0;
@@ -83,35 +60,36 @@
             cursor: pointer;
             transition: transform 0.2s;
         }
+        .menu-btn:hover, .btn-notification:hover { transform: scale(1.1); }
 
-        .menu-btn:hover {
-            transform: scale(1.1);
-        }
+        .header-actions { display: flex; align-items: center; gap: 20px; }
 
-        /* Contenedor derecho del header (Notificaciones + Perfil) */
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        /* 🌟 BOTÓN DE NOTIFICACIONES 🌟 */
         .btn-notification {
-            background: none;
+            background: rgba(255, 255, 255, 0.6);
             border: none;
             font-size: 22px;
             color: #2C3527;
             cursor: pointer;
             position: relative;
-            transition: transform 0.2s;
+            transition: transform 0.2s, background-color 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.6);
             backdrop-filter: blur(5px);
+        }
+        .btn-notification:hover { background-color: rgba(255, 255, 255, 0.9); }
+
+        .notification-badge {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            background-color: #C85A5A;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
         }
 
         .notification-panel {
@@ -126,30 +104,12 @@
             display: none;
             z-index: 120;
         }
-
         .notification-panel.active { display: block; }
-
         .notification-item { padding: 12px; border-radius: 12px; background: #f8fbf7; margin-bottom: 8px; }
         .notification-item.unread { border-left: 4px solid #526B4A; }
         .notification-title { font-weight: 700; color: #2c3527; margin-bottom: 4px; }
         .notification-message { font-size: 0.9rem; color: #5f6757; margin-bottom: 6px; }
         .notification-meta { font-size: 0.75rem; color: #8a957e; }
-        .empty-state { padding: 16px; text-align: center; color: #6b715f; font-size: 0.95rem; }
-
-        .btn-notification:hover {
-            transform: scale(1.1);
-            background-color: rgba(255, 255, 255, 0.9);
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: 8px;
-            right: 10px;
-            background-color: #C85A5A;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
 
         .user-profile {
             display: flex;
@@ -163,25 +123,16 @@
             transition: all 0.3s ease;
             backdrop-filter: blur(5px);
         }
-
         .user-profile:hover {
             background-color: #ffffff;
             transform: translateY(-2px);
             box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
         }
+        .user-avatar { font-size: 1.6rem; color: #526B4A; }
+        .user-name { font-size: 0.9rem; font-weight: 600; color: #2C3527; }
 
-        .user-avatar {
-            font-size: 1.6rem;
-            color: #526B4A;
-        }
-
-        .user-name {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #2C3527;
-        }
-
-        .btn {
+        /* === BOTONES & SIDEBAR === */
+        .btn-logout-green {
             font-family: 'Inter', sans-serif;
             font-weight: 600;
             font-size: 14px;
@@ -189,10 +140,6 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
-        }
-
-        /* 🌟 BOTÓN CERRAR SESIÓN VERDE 🌟 */
-        .btn-logout-green {
             background-color: #526B4A;
             color: #FFFFFF;
             border: none;
@@ -201,19 +148,13 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            width: 100%;
         }
+        .btn-logout-green:hover { background-color: #3e5237; }
 
-        .btn-logout-green:hover {
-            background-color: #3e5237;
-        }
-
-        /* === ESTILOS MENÚ LATERAL === */
         .menu-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
+            inset: 0;
             background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(3px);
             z-index: 99;
@@ -221,11 +162,7 @@
             visibility: hidden;
             transition: all 0.3s ease;
         }
-
-        .menu-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
+        .menu-overlay.active { opacity: 1; visibility: visible; }
 
         .sidebar-menu {
             position: fixed;
@@ -242,10 +179,7 @@
             box-shadow: 5px 0 25px rgba(0,0,0,0.15);
             transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        .sidebar-menu.active {
-            left: 0;
-        }
+        .sidebar-menu.active { left: 0; }
 
         .sidebar-header {
             display: flex;
@@ -254,13 +188,7 @@
             border-bottom: 1px solid rgba(0, 0, 0, 0.08);
             padding-bottom: 20px;
         }
-
-        .sidebar-header h3 {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.4rem;
-            color: #2C3527;
-            letter-spacing: 1px;
-        }
+        .sidebar-header h3 { font-family: 'Playfair Display', serif; font-size: 1.4rem; letter-spacing: 1px; }
 
         .close-btn {
             background: none;
@@ -270,13 +198,8 @@
             cursor: pointer;
             transition: transform 0.2s, color 0.2s;
         }
+        .close-btn:hover { color: #526B4A; transform: scale(1.1); }
 
-        .close-btn:hover {
-            color: #526B4A;
-            transform: scale(1.1);
-        }
-
-        /* 🌟 SECCIÓN DE PERFIL DENTRO DEL MENÚ 🌟 */
         .sidebar-profile {
             display: flex;
             flex-direction: column;
@@ -286,7 +209,6 @@
             border-bottom: 1px solid rgba(0, 0, 0, 0.08);
             margin-bottom: 20px;
         }
-
         .sidebar-profile img {
             width: 75px;
             height: 75px;
@@ -295,28 +217,10 @@
             border: 3px solid #B2D296;
             margin-bottom: 12px;
         }
+        .sidebar-profile h4 { font-size: 1.1rem; font-weight: 700; color: #2C3527; margin-bottom: 4px; }
+        .sidebar-profile p { font-size: 0.85rem; color: #666; line-height: 1.4; }
 
-        .sidebar-profile h4 {
-            font-family: 'Inter', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #2C3527;
-            margin-bottom: 4px;
-        }
-
-        .sidebar-profile p {
-            font-size: 0.85rem;
-            color: #666;
-            line-height: 1.4;
-        }
-
-        .sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            flex-grow: 1;
-        }
-
+        .sidebar-nav { display: flex; flex-direction: column; gap: 10px; flex-grow: 1; }
         .sidebar-nav a {
             display: flex;
             align-items: center;
@@ -329,31 +233,12 @@
             border-radius: 8px;
             transition: all 0.2s ease;
         }
+        .sidebar-nav a i { font-size: 1.1rem; width: 20px; text-align: center; color: #526B4A; }
+        .sidebar-nav a:hover, .sidebar-nav a.active { background-color: #E2ECE0; color: #1A2A1A; transform: translateX(5px); }
 
-        .sidebar-nav a i {
-            font-size: 1.1rem;
-            width: 20px;
-            text-align: center;
-            color: #526B4A;
-        }
+        .sidebar-footer { border-top: 1px solid rgba(0, 0, 0, 0.08); padding-top: 20px; margin-top: auto; }
 
-        .sidebar-nav a:hover, .sidebar-nav a.active {
-            background-color: #E2ECE0;
-            color: #1A2A1A;
-            transform: translateX(5px);
-        }
-
-        .sidebar-footer {
-            border-top: 1px solid rgba(0, 0, 0, 0.08);
-            padding-top: 20px;
-            margin-top: auto;
-        }
-
-        .w-100 {
-            width: 100%;
-        }
-
-        /* === CONTENIDO IZQUIERDO === */
+        /* === CONTENIDO PRINCIPAL === */
         .content {
             position: relative;
             z-index: 2;
@@ -373,43 +258,12 @@
             letter-spacing: 2px;
         }
 
-        .title-divider {
-            width: 50px;
-            height: 4px;
-            background-color: #6C8C56;
-            margin-bottom: 25px;
-        }
+        .title-divider { width: 50px; height: 4px; background-color: #6C8C56; margin-bottom: 25px; }
+        .hero-subtitle { font-size: 1.4rem; color: #3A4E32; font-weight: 700; margin-bottom: 15px; line-height: 1.3; }
+        .hero-desc { font-size: 0.95rem; color: #555; line-height: 1.5; margin-bottom: 50px; max-width: 85%; }
 
-        .hero-subtitle {
-            font-size: 1.4rem;
-            color: #3A4E32;
-            font-weight: 700;
-            margin-bottom: 15px;
-            line-height: 1.3;
-        }
-
-        .hero-desc {
-            font-size: 0.95rem;
-            color: #555;
-            line-height: 1.5;
-            margin-bottom: 50px;
-            max-width: 85%;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 35px 20px;
-            margin-bottom: 50px;
-            max-width: 95%;
-        }
-
-        .feature-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
+        .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 35px 20px; margin-bottom: 50px; max-width: 95%; }
+        .feature-item { display: flex; align-items: center; gap: 15px; }
         .feature-icon {
             width: 55px;
             height: 55px;
@@ -423,18 +277,8 @@
             flex-shrink: 0;
             box-shadow: 0 4px 10px rgba(0,0,0,0.06);
         }
-
-        .feature-text h4 {
-            font-size: 0.95rem;
-            color: #2C3527;
-            margin-bottom: 4px;
-        }
-
-        .feature-text p {
-            font-size: 0.8rem;
-            color: #666;
-            line-height: 1.3;
-        }
+        .feature-text h4 { font-size: 0.95rem; color: #2C3527; margin-bottom: 4px; }
+        .feature-text p { font-size: 0.8rem; color: #666; line-height: 1.3; }
 
         .trust-banner {
             background: linear-gradient(to right, #BFE19D, #ADD485);
@@ -447,36 +291,11 @@
             margin-bottom: 40px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
-
-        .trust-item {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 0 10px;
-            border-right: 1px solid rgba(0,0,0,0.1);
-        }
-
-        .trust-item:last-child {
-            border-right: none;
-        }
-
-        .trust-item i {
-            font-size: 1.3rem;
-            color: #2C3527;
-        }
-
-        .trust-item h5 {
-            font-size: 0.75rem;
-            color: #1A1A1A;
-            margin-bottom: 2px;
-        }
-
-        .trust-item p {
-            font-size: 0.65rem;
-            color: #333;
-            line-height: 1.2;
-        }
+        .trust-item { flex: 1; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-right: 1px solid rgba(0,0,0,0.1); }
+        .trust-item:last-child { border-right: none; }
+        .trust-item i { font-size: 1.3rem; color: #2C3527; }
+        .trust-item h5 { font-size: 0.75rem; color: #1A1A1A; margin-bottom: 2px; }
+        .trust-item p { font-size: 0.65rem; color: #333; line-height: 1.2; }
 
         footer {
             margin-top: auto;
@@ -488,63 +307,43 @@
             max-width: 95%;
             flex-wrap: wrap;
         }
-
-        .footer-logo {
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            object-fit: cover;
-            mix-blend-mode: multiply;
-        }
-
-        .separator {
-            color: #999;
-        }
-
-        footer i {
-            font-size: 1.1rem;
-            color: #333;
-            cursor: pointer;
-        }
+        .footer-logo { width: 25px; height: 25px; border-radius: 50%; object-fit: cover; mix-blend-mode: multiply; }
+        .separator { color: #999; }
+        footer i { font-size: 1.1rem; color: #333; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<!-- CAPA DE FONDO -->
+<!-- OVERLAY & SIDEBAR -->
 <div class="menu-overlay" id="menuOverlay" onclick="cerrarMenu()"></div>
 
-<!-- MENÚ LATERAL -->
 <aside class="sidebar-menu" id="sidebarMenu">
     <div class="sidebar-header">
         <h3>SGC COSMETIC</h3>
-        <button class="close-btn" onclick="cerrarMenu()">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
+        <button class="close-btn" onclick="cerrarMenu()"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
-    <!-- 🌟 DINÁMICO: APARTADO DE PERFIL DEL USUARIO CONECTADO 🌟 -->
     <div class="sidebar-profile">
         <img src="https://i.pravatar.cc/150?img=47" alt="Foto de perfil">
         <h4><%= usuarioActivo.getNombreCompleto() %></h4>
         <p>Rol ID: <%= usuarioActivo.getIdRol() %><br>Estado: <%= usuarioActivo.getEstadoVeto() %></p>
     </div>
 
-    <!-- Opciones filtradas -->
     <nav class="sidebar-nav">
         <a href="#" class="active" onclick="cerrarMenu()"><i class="fa-solid fa-house"></i> Inicio</a>
-        <a href="catalogo.html" onclick="window.location.href='catalogo.html'"><i class="fa-solid fa-border-all"></i> Catálogo</a>
-        <a href="citas.html"><i class="fa-regular fa-calendar-check"></i> Citas</a>
-        <a href="perfil.html"><i class="fa-regular fa-user"></i> Perfil</a>
+        <a href="${pageContext.request.contextPath}/catalogo"><i class="fa-solid fa-border-all"></i> Catálogo</a>
+        <a href="${pageContext.request.contextPath}/CitasServlet"><i class="fa-regular fa-calendar-check"></i> Citas</a>
+        <a href="${pageContext.request.contextPath}/PerfilServlet"><i class="fa-regular fa-user"></i> Perfil</a>
     </nav>
 
     <div class="sidebar-footer">
-        <!-- Apuntamos a tu controlador de Logout para romper la sesión limpiamente -->
-        <button class="btn btn-logout-green w-100" onclick="window.location.href='${pageContext.request.contextPath}/logout'">
+        <button class="btn-logout-green" onclick="window.location.href='${pageContext.request.contextPath}/logout'">
             <i class="fa-solid fa-right-from-bracket"></i> CERRAR SESIÓN
         </button>
     </div>
 </aside>
 
+<!-- MAIN WRAPPER -->
 <div class="main-wrapper">
     <div class="bg-curve-mask">
         <svg preserveAspectRatio="none" viewBox="0 0 100 100" style="width: 100%; height: 100%;">
@@ -553,13 +352,11 @@
     </div>
 
     <header>
-        <button class="menu-btn" onclick="abrirMenu()">
-            <i class="fa-solid fa-bars"></i>
-        </button>
+        <button class="menu-btn" onclick="abrirMenu()"><i class="fa-solid fa-bars"></i></button>
 
         <div class="header-actions">
             <div style="position:relative;">
-                <button class="btn-notification" type="button" data-notification-toggle onclick="mostrarNotificaciones()">
+                <button class="btn-notification" type="button" onclick="mostrarNotificaciones()">
                     <i class="fa-regular fa-bell"></i>
                     <span class="notification-badge" hidden></span>
                 </button>
@@ -568,58 +365,47 @@
                 </div>
             </div>
 
-            <!-- 🌟 DINÁMICO: Barra superior con nombre real del usuario 🌟 -->
-            <div class="user-profile" onclick="window.location.href='perfil.html'">
+            <div class="user-profile" onclick="window.location.href='${pageContext.request.contextPath}/PerfilServlet'">
                 <i class="fa-solid fa-circle-user user-avatar"></i>
                 <span class="user-name"><%= usuarioActivo.getNombreCompleto() %></span>
             </div>
         </div>
     </header>
 
-    <!-- Contenido principal -->
+    <!-- MAIN CONTENT -->
     <div class="content">
-
-        <div class="hero-title">
-            SGC<br>COSMETIC
-        </div>
-
+        <div class="hero-title">SGC<br>COSMETIC</div>
         <div class="title-divider"></div>
-
-        <div class="hero-subtitle">
-            Sistema de gestion de<br>servicios cosmetologicos
-        </div>
-
-        <div class="hero-desc">
-            Una plataforma integral para administrar, organizar y<br>hacer crecer tu negocio.
-        </div>
+        <div class="hero-subtitle">Sistema de gestion de<br>servicios cosmetologicos</div>
+        <div class="hero-desc">Una plataforma integral para administrar, organizar y<br>hacer crecer tu negocio.</div>
 
         <div class="features-grid">
             <div class="feature-item">
                 <div class="feature-icon"><i class="fa-regular fa-calendar-check"></i></div>
                 <div class="feature-text">
                     <h4>Agenda inteligente</h4>
-                    <p>Gestiona citas, recordatorios y<br>disponibilidad en tiempo real</p>
+                    <p>Gestiona citas, recordatorios y disponibilidad en tiempo real</p>
                 </div>
             </div>
             <div class="feature-item">
                 <div class="feature-icon"><i class="fa-solid fa-user-group"></i></div>
                 <div class="feature-text">
                     <h4>Control de Clientes</h4>
-                    <p>Historiales clínicos y seguimiento<br>personalizado al instante.</p>
+                    <p>Historiales clínicos y seguimiento personalizado al instante.</p>
                 </div>
             </div>
             <div class="feature-item">
                 <div class="feature-icon"><i class="fa-solid fa-cart-shopping"></i></div>
                 <div class="feature-text">
                     <h4>Inventario y Ventas</h4>
-                    <p>Control exacto de tus productos<br>y tratamientos cosméticos.</p>
+                    <p>Control exacto de tus productos y tratamientos cosméticos.</p>
                 </div>
             </div>
             <div class="feature-item">
                 <div class="feature-icon"><i class="fa-solid fa-chart-column"></i></div>
                 <div class="feature-text">
                     <h4>Reportes Financieros</h4>
-                    <p>Visualiza tus ganancias y métricas<br>de crecimiento con claridad.</p>
+                    <p>Visualiza tus ganancias y métricas de crecimiento con claridad.</p>
                 </div>
             </div>
         </div>
@@ -629,28 +415,28 @@
                 <i class="fa-solid fa-shield-halved"></i>
                 <div>
                     <h5>Seguro y confiable</h5>
-                    <p>Protegemos la info de tu<br>negocio y clientes.</p>
+                    <p>Protegemos la info de tu negocio y clientes.</p>
                 </div>
             </div>
             <div class="trust-item">
                 <i class="fa-solid fa-cloud"></i>
                 <div>
                     <h5>Desde cualquier lugar</h5>
-                    <p>Ingresa desde cualquier<br>dispositivo.</p>
+                    <p>Ingresa desde cualquier dispositivo.</p>
                 </div>
             </div>
             <div class="trust-item">
                 <i class="fa-solid fa-lock"></i>
                 <div>
                     <h5>Respaldo Automático</h5>
-                    <p>Tu información siempre<br>guardada y respaldada en la nube.</p>
+                    <p>Tu información siempre guardada y respaldada en la nube.</p>
                 </div>
             </div>
             <div class="trust-item">
                 <i class="fa-solid fa-headset"></i>
                 <div>
                     <h5>Soporte técnico</h5>
-                    <p>Estamos aquí para ayudarte<br>siempre que lo necesites.</p>
+                    <p>Estamos aquí para ayudarte siempre que lo necesites.</p>
                 </div>
             </div>
         </div>
@@ -665,11 +451,11 @@
             <img src="${pageContext.request.contextPath}/assets/img/ImagenLogotipo.png" alt="SGC Logo" class="footer-logo">
             <span>@sgccosmetic</span>
         </footer>
-
     </div>
 </div>
 
-<!-- JAVASCRIPT -->
+<!-- SCRIPTS -->
+<script src="appointments-system.js"></script>
 <script>
     function abrirMenu() {
         document.getElementById('sidebarMenu').classList.add('active');
@@ -685,9 +471,7 @@
         const panel = document.getElementById('notificationPanel');
         if (panel) panel.classList.toggle('active');
     }
-</script>
-<script src="appointments-system.js"></script>
-<script>
+
     window.addEventListener('DOMContentLoaded', () => {
         if (window.appointmentsSystem) {
             window.appointmentsSystem.init();
