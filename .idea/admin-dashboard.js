@@ -88,24 +88,44 @@ document.addEventListener('DOMContentLoaded', function () {
   function buildPendingAppointments() {
     if (!pendingAppointmentsList) return;
     const appointments = (state.appointments || []).filter((appt) => appt.status === 'pending').slice(0, 3);
-    pendingAppointmentsList.innerHTML = appointments.length
-      ? appointments.map((appt) => `
-          <div class="item">
-            <div>
-              <strong>${appt.client || appt.createdBy?.name || 'Cliente'}</strong>
-              <small>${appt.serviceName || 'Servicio pendiente'}</small>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-              <div style="text-align:right"><small>${appt.date || ''}</small> · <strong>${appt.time || ''}</strong></div>
-              <div style="display:flex;gap:8px;margin-top:6px">
-                <button class="text-button" onclick="(function(id){ if(window.appointmentsSystem && typeof window.appointmentsSystem.adminConfirmAppointment==='function'){ window.appointmentsSystem.adminConfirmAppointment(id); } })('${appt.id}')">Confirmar</button>
-                <button class="text-button" onclick="(function(id){ if(window.appointmentsSystem && typeof window.appointmentsSystem.removeAppointment==='function'){ window.appointmentsSystem.removeAppointment(id); window.dispatchEvent(new Event('sgc-state-updated')); } })('${appt.id}')">Eliminar</button>
-                <button class="text-button" onclick="window.location.href='citas.html'">Ver</button>
+        pendingAppointmentsList.innerHTML = appointments.length
+          ? appointments.map((appt) => `
+              <div class="item">
+                <div>
+                  <strong>${appt.client || appt.createdBy?.name || 'Cliente'}</strong>
+                  <small>${appt.serviceName || 'Servicio pendiente'}</small>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                  <div style="text-align:right"><small>${appt.date || ''}</small> · <strong>${appt.time || ''}</strong></div>
+                  <div style="display:flex;gap:8px;margin-top:6px">
+                    <button class="text-button" data-action="confirm" data-id="${appt.id}">Confirmar</button>
+                    <button class="text-button" data-action="delete" data-id="${appt.id}">Eliminar</button>
+                    <button class="text-button" data-action="view">Ver</button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        `).join('')
-      : '<div class="item"><strong>No hay citas pendientes</strong></div>';
+            `).join('')
+          : '<div class="item"><strong>No hay citas pendientes</strong></div>';
+
+        // Delegated handlers for pending appointments actions
+        pendingAppointmentsList.addEventListener('click', (e) => {
+          const btn = e.target.closest('button[data-action]');
+          if (!btn) return;
+          const action = btn.dataset.action;
+          const id = btn.dataset.id;
+          if (action === 'confirm' && id) {
+            if (window.appointmentsSystem && typeof window.appointmentsSystem.adminConfirmAppointment === 'function') {
+              window.appointmentsSystem.adminConfirmAppointment(id);
+            }
+          } else if (action === 'delete' && id) {
+            if (window.appointmentsSystem && typeof window.appointmentsSystem.removeAppointment === 'function') {
+              window.appointmentsSystem.removeAppointment(id);
+              window.dispatchEvent(new Event('sgc-state-updated'));
+            }
+          } else if (action === 'view') {
+            window.location.href = 'citas.html';
+          }
+        });
   }
 
   function buildTopServices() {
@@ -203,21 +223,41 @@ document.addEventListener('DOMContentLoaded', function () {
   function buildPromotions() {
     if (!promotionsList) return;
     const promos = (window.appointmentsSystem && typeof window.appointmentsSystem.getPromotions === 'function') ? window.appointmentsSystem.getPromotions() : (state.promotions || []);
-    promotionsList.innerHTML = promos.length
-      ? promos.map((p) => `
-        <div class="promo-item">
-          <div>
-            <strong>${p.title}</strong>
-            <small>${p.description || ''}</small>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <small>${p.validUntil || ''}</small>
-            <button class="text-button" onclick="(function(id){ if(window.appointmentsSystem && typeof window.appointmentsSystem.updatePromotion==='function'){ const newTitle = prompt('Editar título', ''); if(newTitle!=null){ window.appointmentsSystem.updatePromotion(id,{ title:newTitle }); } } })('${p.id}')">Editar</button>
-            <button class="text-button" onclick="(function(id){ if(window.appointmentsSystem && typeof window.appointmentsSystem.deletePromotion==='function'){ if(confirm('Eliminar promoción?')){ window.appointmentsSystem.deletePromotion(id); } } })('${p.id}')">Eliminar</button>
-          </div>
-        </div>
-      `).join('')
-      : '<div class="item"><strong>No hay promociones</strong></div>';
+        promotionsList.innerHTML = promos.length
+          ? promos.map((p) => `
+            <div class="promo-item">
+              <div>
+                <strong>${p.title}</strong>
+                <small>${p.description || ''}</small>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <small>${p.validUntil || ''}</small>
+                <button class="text-button" data-action="edit-promo" data-id="${p.id}">Editar</button>
+                <button class="text-button" data-action="delete-promo" data-id="${p.id}">Eliminar</button>
+              </div>
+            </div>
+          `).join('')
+          : '<div class="item"><strong>No hay promociones</strong></div>';
+
+        // Delegated handlers for promotions
+        promotionsList.addEventListener('click', (e) => {
+          const btn = e.target.closest('button[data-action]');
+          if (!btn) return;
+          const action = btn.dataset.action;
+          const id = btn.dataset.id;
+          if (action === 'edit-promo' && id) {
+            const newTitle = prompt('Editar título', '');
+            if (newTitle != null && window.appointmentsSystem && typeof window.appointmentsSystem.updatePromotion === 'function') {
+              window.appointmentsSystem.updatePromotion(id, { title: newTitle });
+            }
+          } else if (action === 'delete-promo' && id) {
+            if (window.appointmentsSystem && typeof window.appointmentsSystem.deletePromotion === 'function') {
+              if (confirm('Eliminar promoción?')) {
+                window.appointmentsSystem.deletePromotion(id);
+              }
+            }
+          }
+        });
   }
 
   if (createPromotionBtn) {
@@ -238,7 +278,17 @@ document.addEventListener('DOMContentLoaded', function () {
       const todayCount = (state.appointments || []).filter((appointment) => String(appointment.date || '').toLowerCase().includes('hoy') || String(appointment.date || '').includes(today)).length;
       statAppointmentsToday.textContent = `${todayCount}`;
     }
-    if (statNewClients) statNewClients.textContent = `${users.filter((user) => user.role === 'client').length}`;
+    if (statNewClients) {
+      const clientEmails = new Set(
+        (users || []).filter((user) => user.role === 'client' && user.email).map((user) => user.email.toLowerCase())
+      );
+      const appointmentClients = new Set(
+        (state.appointments || [])
+          .map((appointment) => (appointment.createdBy && appointment.createdBy.email ? appointment.createdBy.email.toLowerCase() : null))
+          .filter(Boolean)
+      );
+      statNewClients.textContent = `${Math.max(clientEmails.size, appointmentClients.size)}`;
+    }
     if (statSpecialistsActive) statSpecialistsActive.textContent = `${specialistUsers.length}`;
     if (statSalesMonth) {
         const paymentsTotal = (state.payments || []).reduce((total, payment) => total + parseCurrency(payment.amount), 0);
@@ -268,18 +318,24 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  function handleSignOut() {
+    if (window.appointmentsSystem && typeof window.appointmentsSystem.signOut === 'function') {
+      window.appointmentsSystem.signOut();
+      return;
+    }
+    if (window.appointmentsSystem && typeof window.appointmentsSystem.clearSession === 'function') {
+      window.appointmentsSystem.clearSession();
+    }
+    const basePath = window.location.pathname.replace(/[^/]*$/, '');
+    window.location.href = window.location.pathname.includes('/.idea/') ? 'Loggin.html' : basePath + '.idea/Loggin.html';
+  }
+
   if (signOutBtn) {
-    signOutBtn.addEventListener('click', () => {
-      if (window.appointmentsSystem && typeof window.appointmentsSystem.signOut === 'function') {
-        window.appointmentsSystem.signOut();
-        return;
-      }
-      if (window.appointmentsSystem && typeof window.appointmentsSystem.clearSession === 'function') {
-        window.appointmentsSystem.clearSession();
-      }
-      const basePath = window.location.pathname.replace(/[^/]*$/, '');
-      window.location.href = window.location.pathname.includes('/.idea/') ? 'Loggin.html' : basePath + '.idea/Loggin.html';
-    });
+    signOutBtn.addEventListener('click', handleSignOut);
+  }
+  const sidebarSignOut = document.getElementById('sidebarSignOut');
+  if (sidebarSignOut) {
+    sidebarSignOut.addEventListener('click', handleSignOut);
   }
 
   init();

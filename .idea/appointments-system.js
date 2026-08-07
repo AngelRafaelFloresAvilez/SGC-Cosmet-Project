@@ -110,6 +110,71 @@
       : [];
   }
 
+  function getSessionUser(state = readState()) {
+    const session = getSession() || {};
+    if (!session.email) return null;
+    const users = readUsers();
+    return users.find((item) => item.email && item.email.toLowerCase() === session.email.toLowerCase()) || null;
+  }
+
+  function getCurrentUserAppointments(state = readState()) {
+    const session = getSession() || {};
+    if (!session.email) return [];
+    if (session.role === 'admin' || session.role === 'specialist') {
+      return Array.isArray(state.appointments) ? state.appointments : [];
+    }
+    const userAppointments = (state.appointments || []).filter((appointment) =>
+      appointment.createdBy && appointment.createdBy.email && appointment.createdBy.email.toLowerCase() === session.email.toLowerCase()
+    );
+    if (userAppointments.length) {
+      return userAppointments;
+    }
+    return (state.appointments || []).filter((appointment) => !appointment.createdBy || !appointment.createdBy.email);
+  }
+
+  function createProfileFromUser(user, stateProfile = {}) {
+    const profile = {
+      ...defaults.profile,
+      ...(user && stateProfile.email && stateProfile.email.toLowerCase() === user.email.toLowerCase() ? stateProfile : {}),
+    };
+    if (!user) return profile;
+
+    return {
+      ...profile,
+      name: `${user.name} ${user.lastName || ''}`.trim(),
+      email: user.email,
+      phone: user.phone || defaults.profile.phone,
+      birthDate: user.birthDate || defaults.profile.birthDate,
+      avatar: user.avatar || defaults.profile.avatar,
+      role: user.role === 'client'
+        ? 'Cliente VIP'
+        : user.role === 'specialist'
+          ? 'Especialista'
+          : user.role === 'admin'
+            ? 'Administrador'
+            : user.role,
+      memberSince: user.memberSince || defaults.profile.memberSince || String(new Date().getFullYear()),
+      status: stateProfile && stateProfile.email && user.email && stateProfile.email.toLowerCase() === user.email.toLowerCase() ? stateProfile.status : defaults.profile.status,
+      statusMessage: stateProfile && stateProfile.email && user.email && stateProfile.email.toLowerCase() === user.email.toLowerCase() ? stateProfile.statusMessage : defaults.profile.statusMessage,
+      notes: stateProfile && stateProfile.email && user.email && stateProfile.email.toLowerCase() === user.email.toLowerCase() ? stateProfile.notes : defaults.profile.notes
+    };
+  }
+
+  function getProfileForCurrentSession(state = readState()) {
+    const sessionUser = getSessionUser(state);
+    return createProfileFromUser(sessionUser, state.profile || {});
+  }
+
+  function setProfileForCurrentSession(profileValues) {
+    try {
+      const state = readState();
+      state.profile = createProfileFromUser(getSessionUser(state), { ...(state.profile || {}), ...profileValues });
+      saveState(state);
+    } catch (e) {
+      // ignore
+    }
+  }
+
   function readState() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -157,7 +222,7 @@
   }
 
   function getCancelledCount(state = readState()) {
-    return state.appointments.filter((item) => item.status === 'cancelled').length;
+    return getCurrentUserAppointments(state).filter((item) => item.status === 'cancelled').length;
   }
 
   function canBookNewAppointment(state = readState()) {
@@ -400,7 +465,7 @@
 
     const services = getServices(readState());
     grid.innerHTML = services.map((service) => `
-      <article class="service-card" onclick="abrirModal('${service.title}', '${service.category}', '${service.description}', '${service.includes}', '${service.duration}', '${service.price}', '${service.image}')">
+      <article class="service-card" data-title="${String(service.title).replace(/"/g,'&quot;')}" data-category="${String(service.category).replace(/"/g,'&quot;')}" data-desc="${String(service.description).replace(/"/g,'&quot;')}" data-includes="${String(service.includes).replace(/"/g,'&quot;')}" data-duration="${String(service.duration).replace(/"/g,'&quot;')}" data-price="${String(service.price).replace(/"/g,'&quot;')}" data-image="${String(service.image).replace(/"/g,'&quot;')}">
         <div class="service-img-container">
           <img src="${service.image}" alt="${service.title}" class="service-img">
         </div>
@@ -410,7 +475,7 @@
           <p class="service-desc">${service.description}</p>
           <div class="service-footer">
             <span class="service-price">${service.price}</span>
-            <button class="btn-book" onclick="event.stopPropagation(); abrirModal('${service.title}', '${service.category}', '${service.description}', '${service.includes}', '${service.duration}', '${service.price}', '${service.image}')">Ver Detalles</button>
+            <button class="btn-book">Ver Detalles</button>
           </div>
         </div>
       </article>
@@ -446,6 +511,50 @@
     }
   }
 
+  // Global delegated handlers for common UI actions (navigation, menu, logout)
+  document.addEventListener('click', (e) => {
+    const target = e.target;
+
+    // data-href navigation
+    const nav = target.closest('[data-href]');
+    if (nav) {
+      const href = nav.dataset.href;
+      if (href) window.location.href = href;
+      return;
+    }
+
+    // Open menu
+    if (target.closest('.menu-btn')) {
+      openSidebar();
+      return;
+    }
+
+    // Close menu via close button or overlay
+    if (target.closest('.close-btn') || target.closest('#menuOverlay')) {
+      closeSidebar();
+      return;
+    }
+
+    // User profile click
+    if (target.closest('.user-profile')) {
+      window.location.href = 'perfil.html';
+      return;
+    }
+
+    // Logout
+    if (target.closest('.btn-logout-green') || target.closest('.btn.secondary') || target.closest('.btn.btn-logout-green')) {
+      if (window.appointmentsSystem && typeof window.appointmentsSystem.signOut === 'function') {
+        window.appointmentsSystem.signOut();
+      } else if (window.appointmentsSystem && typeof window.appointmentsSystem.clearSession === 'function') {
+        window.appointmentsSystem.clearSession();
+        window.location.href = 'Loggin.html';
+      } else {
+        window.location.href = 'Loggin.html';
+      }
+      return;
+    }
+  });
+
   function updateBookingBlocker() {
     const blocker = document.getElementById('bookingBlocker');
     if (!blocker) return;
@@ -476,7 +585,8 @@
       return;
     }
 
-    panel.innerHTML = state.notifications
+    const notifications = state.notifications.slice(0, 4);
+    panel.innerHTML = notifications
       .map((item) => `
         <div class="notification-item ${item.unread ? 'unread' : ''}">
           <div class="notification-title">${item.title}</div>
@@ -489,7 +599,7 @@
 
   function syncProfileUI() {
     const state = readState();
-    const profile = state.profile || defaults.profile;
+    const profile = getProfileForCurrentSession(state);
     const firstName = profile.name.split(' ')[0] || 'Ana';
 
     document.querySelectorAll('.user-name').forEach((element) => {
@@ -539,6 +649,14 @@
           el.alt = profile.name;
         }
       } catch (e) { /* ignore */ }
+    });
+
+    document.querySelectorAll('.sidebar-profile h4').forEach((element) => {
+      element.textContent = profile.name;
+    });
+
+    document.querySelectorAll('.sidebar-profile p').forEach((element) => {
+      element.innerHTML = `${profile.role}<br>Activo desde ${profile.memberSince}`;
     });
 
     // update admin/specialist avatar placeholders
@@ -594,7 +712,7 @@
 
   function renderProfilePage() {
     const state = readState();
-    const profile = state.profile || defaults.profile;
+    const profile = getProfileForCurrentSession(state);
     const cancelledCount = getCancelledCount(state);
     const status = cancelledCount >= 3 ? 'Vetado temporal' : 'Normal';
     const activePromotion = state.promotions.find((promo) => promo.id === state.activePromotionId) || state.promotions[0];
@@ -622,15 +740,16 @@
     }
     if (profileCancelledEl) profileCancelledEl.textContent = cancelledCount;
     if (profileNextAppointmentEl || profileNextAppointmentCompactEl) {
-      const nextAppointment = state.appointments.find((item) => item.status === 'pending');
+      const nextAppointment = getCurrentUserAppointments(state).find((item) => item.status === 'pending');
       const nextText = nextAppointment ? `${nextAppointment.date} · ${nextAppointment.time}` : 'Sin citas próximas';
       if (profileNextAppointmentEl) profileNextAppointmentEl.textContent = nextText;
       if (profileNextAppointmentCompactEl) profileNextAppointmentCompactEl.textContent = nextText;
     }
 
     if (historyListEl) {
-      const historyMarkup = state.appointments.length
-        ? state.appointments.map((appointment) => `
+      const appointments = getCurrentUserAppointments(state);
+      const historyMarkup = appointments.length
+        ? appointments.map((appointment) => `
             <div class="history-item">
               <div>
                 <strong>${appointment.serviceName}</strong>
@@ -702,9 +821,9 @@
       previous: document.getElementById('previousCount'),
       cancelled: document.getElementById('cancelledSummaryCount')
     };
-    const tabs = document.querySelectorAll('[data-status-tab]');
+    const userAppointments = getCurrentUserAppointments(state);
 
-    if (cancelledCount) cancelledCount.textContent = getCancelledCount(state);
+    if (cancelledCount) cancelledCount.textContent = userAppointments.filter((item) => item.status === 'cancelled').length;
 
     const cancelledCard = document.getElementById('cancelledSummaryCard');
     if (cancelledCard) {
@@ -715,22 +834,25 @@
 
     Object.entries(summaryCards).forEach(([status, el]) => {
       if (el) {
-        el.textContent = state.appointments.filter((item) => item.status === status).length;
+        el.textContent = userAppointments.filter((item) => item.status === status).length;
       }
     });
 
     if (!list || !detail) return;
 
+    const tabs = document.querySelectorAll('.tab-btn');
     const activeStatus = localStorage.getItem('sgc_active_tab') || 'pending';
-    const filtered = state.appointments.filter((item) => item.status === activeStatus).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const filtered = userAppointments.filter((item) => item.status === activeStatus).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    tabs.forEach((btn) => {
-      btn.classList.toggle('active', btn.dataset.statusTab === activeStatus);
-      btn.onclick = () => {
-        localStorage.setItem('sgc_active_tab', btn.dataset.statusTab);
-        renderAppointmentsPage();
-      };
-    });
+    if (tabs && tabs.length) {
+      tabs.forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.statusTab === activeStatus);
+        btn.onclick = () => {
+          localStorage.setItem('sgc_active_tab', btn.dataset.statusTab);
+          renderAppointmentsPage();
+        };
+      });
+    }
 
     if (!filtered.length) {
       list.innerHTML = '<div class="empty-state">No hay citas en esta sección.</div>';
@@ -905,39 +1027,6 @@
     }
     if (document.getElementById('historyList')) {
       renderProfilePage();
-    }
-
-    const bookingButton = document.querySelector('.btn-pay');
-    if (bookingButton) {
-      bookingButton.onclick = function () {
-        const selectedDate = document.querySelector('.date-btn.active .num');
-        const selectedDay = document.querySelector('.date-btn.active .day');
-        const selectedTime = document.querySelector('.time-btn.active');
-        const serviceTitle = document.getElementById('bookingServiceName')?.textContent || 'Servicio';
-        const price = document.getElementById('bookingPrice')?.textContent || '$0 MXN';
-        const dateLabel = selectedDay && selectedDate ? `${selectedDay.textContent} ${selectedDate.textContent}` : 'Sin definir';
-        const timeLabel = selectedTime ? selectedTime.textContent.replace(/\s+/g, ' ').trim() : 'Sin definir';
-        const result = createAppointment(serviceTitle, price, dateLabel, timeLabel, 'Cita agendada desde el catálogo.');
-        if (!result.allowed) {
-          if (result.reason === 'limit_reached') {
-            alert('Ya acumulaste 3 cancelaciones. No puedes agendar otra cita hasta que se revise tu historial.');
-          } else if (result.reason === 'slot_taken') {
-            alert('El horario seleccionado ya está ocupado. Elige otra fecha u hora disponible.');
-          } else if (result.reason === 'missing_datetime') {
-            alert('Selecciona una fecha y una hora válidas antes de confirmar la cita.');
-          } else {
-            alert('No fue posible agendar la cita. Revisa los datos e intenta nuevamente.');
-          }
-          return;
-        }
-        document.getElementById('bookingModal').classList.remove('active');
-        document.getElementById('confirmationModal').classList.add('active');
-        renderNotifications();
-        if (document.getElementById('appointmentsList')) {
-          renderAppointmentsPage();
-        }
-        updateBookingBlocker();
-      };
     }
 
     updateBookingBlocker();
@@ -1152,7 +1241,11 @@
     const users = readUsers();
     const existing = users.find((item) => item.email.toLowerCase() === user.email.toLowerCase());
     if (existing) return { ok: false, error: 'email_exists' };
-    const newUser = { avatar: 'https://i.pravatar.cc/150?img=47', ...user };
+    const newUser = {
+      avatar: 'https://i.pravatar.cc/150?img=47',
+      memberSince: String(new Date().getFullYear()),
+      ...user
+    };
     users.push(newUser);
     saveUsers(users);
     return { ok: true, user: newUser };
@@ -1191,16 +1284,8 @@
     const user = users.find((item) => item.email.toLowerCase() === email.toLowerCase() && item.password === password);
     if (!user) return { ok: false, error: 'invalid_credentials' };
     setSession({ role: user.role, email: user.email, name: `${user.name} ${user.lastName || ''}`.trim() });
-    // If client, sync profile to appointments state so UI shows correct user info
-    if (user.role === 'client') {
-      try {
-        const state = readState();
-        state.profile = { ...state.profile, name: `${user.name} ${user.lastName || ''}`.trim(), email: user.email, phone: user.phone || state.profile.phone };
-        saveState(state);
-        syncProfileUI();
-      } catch (e) {
-        // ignore
-      }
+    if (window.appointmentsSystem && typeof window.appointmentsSystem.syncProfileUI === 'function') {
+      window.appointmentsSystem.syncProfileUI();
     }
     return { ok: true, user };
   }
@@ -1249,28 +1334,45 @@
           password: passwordValue,
           role: 'client'
         };
-        if (!payload.email || !passwordValue || !confirmPasswordValue || !birthDateValue || !payload.name || !payload.lastName) {
+
+        if (!payload.name || !payload.lastName || !payload.email || !payload.phone || !birthDateValue || !passwordValue || !confirmPasswordValue) {
           alert('Completa todos los campos requeridos para crear tu cuenta.');
           return;
         }
 
-        const nameFormatValid = /^[^\d\s][^\d]*[^\d\s]$/u.test(payload.name);
-        const lastNameFormatValid = /^[^\d\s][^\d]*[^\d\s]$/u.test(payload.lastName);
-        if (!nameFormatValid || !lastNameFormatValid) {
-          alert('El nombre y apellido deben ser válidos y no pueden ser solo espacios ni contener números.');
+        const namePattern = /^[A-Za-z]+$/;
+        if (!namePattern.test(payload.name) || !namePattern.test(payload.lastName)) {
+          alert('El nombre y apellido solo pueden contener letras sin espacios ni símbolos.');
+          return;
+        }
+
+        const emailPattern = /^[A-Za-z0-9]+@[A-Za-z0-9]+\.com$/;
+        if (!emailPattern.test(payload.email)) {
+          alert('El correo debe contener @ y finalizar en .com, usando solo letras y números.');
+          return;
+        }
+
+        const phonePattern = /^\d{8,14}$/;
+        if (!phonePattern.test(payload.phone)) {
+          alert('El teléfono debe tener entre 8 y 14 dígitos y no puede contener espacios ni símbolos.');
+          return;
+        }
+
+        const passwordPattern = /^[A-Za-z0-9]{4,16}$/;
+        if (!passwordPattern.test(passwordValue)) {
+          alert('La contraseña debe tener entre 4 y 16 caracteres y solo puede contener letras y números.');
+          return;
+        }
+
+        if (passwordValue !== confirmPasswordValue) {
+          alert('Las contraseñas no coinciden.');
           return;
         }
 
         const birthDate = new Date(birthDateValue);
-        const minBirthDate = new Date('1900-01-01');
         const today = new Date();
         if (Number.isNaN(birthDate.getTime())) {
           alert('La fecha de nacimiento no es válida. Usa el selector de fecha.');
-          return;
-        }
-
-        if (birthDate < minBirthDate) {
-          alert('La fecha de nacimiento es demasiado antigua. Debe ser posterior a 1900.');
           return;
         }
 
@@ -1279,48 +1381,20 @@
           return;
         }
 
-        const age = today.getFullYear() - birthDate.getFullYear() - ((today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) ? 1 : 0);
-        if (age < 13) {
-          alert('Debes tener al menos 13 años para registrarte.');
+        const age = today.getFullYear() - birthDate.getFullYear() -
+          ((today.getMonth() < birthDate.getMonth() ||
+            (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) ? 1 : 0);
+        if (age < 16 || age > 100) {
+          alert('Debes tener entre 16 y 100 años para registrarte.');
           return;
         }
 
-        if (!/^[A-Za-z]{8}$/.test(passwordValue)) {
-          alert('La contraseña debe tener exactamente 8 letras y no puede contener espacios ni símbolos.');
-          return;
-        }
-
-        const nameAlphaOnly = /^[\p{L}]+$/u.test(payload.name);
-        const lastNameAlphaOnly = /^[\p{L}]+$/u.test(payload.lastName);
-        if (!nameAlphaOnly || !lastNameAlphaOnly) {
-          alert('El nombre y apellido solo pueden contener letras, sin números ni símbolos.');
-          return;
-        }
-
-        const emailValid = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/u.test(payload.email);
-        if (!emailValid) {
-          alert('Ingresa un correo electrónico válido sin caracteres raros.');
-          return;
-        }
-
-        const phoneValid = /^\d{10}$/.test(payload.phone || '');
-        if (!phoneValid) {
-          alert('El número de teléfono debe tener exactamente 10 dígitos y no puede contener espacios ni símbolos.');
-          return;
-        }
         const result = createUser(payload);
         if (!result.ok) {
           alert('Ese correo ya está registrado.');
           return;
         }
-        // Sync profile to appointments state so the UI reflects the newly created user
-        try {
-          const state = readState();
-          state.profile = { ...state.profile, name: `${payload.name} ${payload.lastName || ''}`.trim(), email: payload.email, phone: payload.phone || state.profile.phone };
-          saveState(state);
-        } catch (e) {
-          // ignore
-        }
+
         alert('Cuenta creada correctamente.');
         window.location.href = resolveRelative('Loggin.html');
       });

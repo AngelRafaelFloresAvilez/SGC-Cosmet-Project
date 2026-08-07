@@ -8,15 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-  <script>
-    // If this page is being served from project root, make relative links point to /.idea/
-    if (!window.location.pathname.includes('/.idea/')) {
-      const b = document.createElement('base');
-      b.href = './.idea/';
-      document.head.appendChild(b);
-    }
-  </script>
+  <link rel="stylesheet" href="StylesLoggin.css">
+  <script src="Loggin.js"></script>
 </head>
 <body>
   <div class="screen">
@@ -59,16 +52,7 @@
     </div>
   </div>
 
-  <script>
-    const passwordInput = document.getElementById('loginPassword');
-    const showPasswordCheckbox = document.getElementById('showPassword');
-
-    if (passwordInput && showPasswordCheckbox) {
-      showPasswordCheckbox.addEventListener('change', function () {
-        passwordInput.type = this.checked ? 'text' : 'password';
-      });
-    }
-  </script>
   <script src="appointments-system.js"></script>
+  <script src="Loggin.js"></script>
 </body>
 </html>

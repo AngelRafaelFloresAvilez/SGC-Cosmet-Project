@@ -7,29 +7,48 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="admin-dashboard.css">
 </head>
 <body>
   <div class="admin-shell">
-    <header class="admin-header">
-      <div class="admin-hero">
-        <span class="admin-tag">Panel administrativo</span>
-        <h1>Bienvenido de nuevo, <span id="adminName">Administrador</span></h1>
-        <p class="admin-description">Supervisa citas, servicios, especialistas y actividad desde una sola vista.</p>
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand">
+        <span>SGC</span> Cosmetic
       </div>
-      <div class="admin-actions">
-        <div class="admin-user-card">
-          <div class="admin-user-avatar">A</div>
-          <div>
-            <p class="admin-user-title">Administrador</p>
-            <p class="admin-user-meta">Panel general</p>
-          </div>
-        </div>
-        <button id="signOutBtn" class="btn btn-secondary">Cerrar sesión</button>
+      <div class="sidebar-description">Control de agendas, clientes y servicios desde un solo lugar.</div>
+      <nav class="sidebar-nav">
+        <a href="#" class="active"><i class="fa-solid fa-chart-line"></i> Inicio</a>
+        <a href="citas.html"><i class="fa-regular fa-calendar-check"></i> Citas</a>
+        <a href="#specialists"><i class="fa-solid fa-user-doctor"></i> Especialistas</a>
+        <a href="#services"><i class="fa-solid fa-star"></i> Servicios</a>
+        <a href="#activity"><i class="fa-solid fa-bell"></i> Actividad</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="sidebarSignOut" class="btn btn-secondary w-100">Cerrar sesión</button>
       </div>
-    </header>
+    </aside>
 
-    <section class="admin-stats-grid">
+    <div class="admin-main-content">
+      <header class="admin-header">
+        <div class="admin-hero">
+          <span class="admin-tag">Panel administrativo</span>
+          <h1>Bienvenido de nuevo, <span id="adminName">Administrador</span></h1>
+          <p class="admin-description">Supervisa citas, servicios, especialistas y actividad desde una sola vista.</p>
+        </div>
+        <div class="admin-actions">
+          <div class="admin-user-card">
+            <div class="admin-user-avatar">A</div>
+            <div>
+              <p class="admin-user-title">Administrador</p>
+              <p class="admin-user-meta">Panel general</p>
+            </div>
+          </div>
+          <button id="signOutBtn" class="btn btn-secondary">Cerrar sesión</button>
+        </div>
+      </header>
+
+      <section class="admin-stats-grid">
       <article class="stat-card">
         <p class="stat-label">Citas realizadas hoy</p>
         <h2 id="statAppointmentsToday">0</h2>
