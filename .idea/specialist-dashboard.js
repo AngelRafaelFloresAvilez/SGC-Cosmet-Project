@@ -1,10 +1,8 @@
 const specialistState = {
   appointments: [
-    { id: 'apt-1', client: 'Ana López', service: 'Limpieza facial profunda', date: 'Hoy', time: '09:30', duration: '45 min', phone: '+52 55 1234 5678', history: ['Tratamiento previo', 'Seguimiento mensual'] },
-    { id: 'apt-2', client: 'Mónica Ruiz', service: 'Microdermoabrasión', date: 'Hoy', time: '12:00', duration: '30 min', phone: '+52 55 4444 2222', history: ['Cita confirmada'] },
-    { id: 'apt-3', client: 'Valeria Soto', service: 'Masaje relajante', date: 'Mañana', time: '16:00', duration: '60 min', phone: '+52 55 6666 7777', history: ['Cliente recurrente'] }
-  ]
-};
+      { id: 'apt-1', client: 'Ana López', service: 'Limpieza facial profunda', date: 'Hoy', time: '09:30', duration: '45 min', phone: '+52 55 1234 5678', history: ['Tratamiento previo', 'Seguimiento mensual'], status: 'pending' },
+      { id: 'apt-2', client: 'Mónica Ruiz', service: 'Microdermoabrasión', date: 'Hoy', time: '12:00', duration: '30 min', phone: '+52 55 4444 2222', history: ['Cita confirmada'], status: 'previous' },
+      { id: 'apt-3', client: 'Valeria Soto', service: 'Masaje relajante', date: 'Mañana', time: '16:00', duration: '60 min', phone: '+52 55 6666 7777', history: ['Cliente recurrente'], status: 'pending' }
 
 let selectedAppointmentId = null;
 
@@ -76,7 +74,20 @@ function renderSpecialistDashboard() {
             <div><span>Estado</span><strong>${selected.summary}</strong></div>
           </div>
           <div style="margin-top:12px"><strong>Resumen</strong><p class="meta" style="margin-top:6px;">${selected.summary || 'Cita pendiente de atención.'}</p></div>
+        ${selected.status === 'pending' || !selected.status ? `<button class="btn primary" id="completeAppointmentBtn" data-appointment-id="${selected.id}" style="margin-top:18px;width:100%;max-width:280px;">Marcar como terminada</button>` : ''}
         `;
+
+    const completeBtn = detail.querySelector('#completeAppointmentBtn');
+    if (completeBtn) {
+      completeBtn.addEventListener('click', () => {
+        if (window.appointmentsSystem && typeof window.appointmentsSystem.specialistConfirmAppointment === 'function') {
+          const result = window.appointmentsSystem.specialistConfirmAppointment(completeBtn.dataset.appointmentId);
+          if (result.allowed) {
+            renderSpecialistDashboard();
+          }
+        }
+      });
+    }
   }
 
   try {
@@ -153,7 +164,7 @@ function initSpecialistDashboard() {
       if (window.appointmentsSystem && typeof window.appointmentsSystem.signOut === 'function') {
         window.appointmentsSystem.signOut();
       } else {
-        window.location.href = 'Loggin.html';
+        window.location.href = 'index.html';
       }
     });
   }

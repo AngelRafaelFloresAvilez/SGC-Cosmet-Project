@@ -148,7 +148,7 @@ document.addEventListener('click', (e) => {
     if (window.appointmentsSystem && typeof window.appointmentsSystem.signOut === 'function') {
       window.appointmentsSystem.signOut();
     } else {
-      window.location.href = 'Loggin.html';
+      window.location.href = 'index.html';
     }
     return;
   }

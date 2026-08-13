@@ -341,7 +341,7 @@ button {
 }
 
 .legend-dot-primary {
-  background: #7a674f;
+  background: var(--accent);
 }
 
 .legend-dot-secondary {
@@ -376,7 +376,7 @@ button {
 }
 
 .chart-bar-primary {
-  background: linear-gradient(180deg, #7a674f 0%, #473a2f 100%);
+  background: linear-gradient(180deg, var(--accent) 0%, #3f7f5a 100%);
 }
 
 .chart-bar-secondary {

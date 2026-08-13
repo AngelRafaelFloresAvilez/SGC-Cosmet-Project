@@ -190,6 +190,13 @@
     .history-item, .payment-item, .promo-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
     .history-item:last-child, .payment-item:last-child, .promo-item:last-child { border-bottom: 0; }
     .history-badge, .payment-status { font-size: 0.78rem; padding: 6px 10px; border-radius: 999px; background: #eef5e7; color: var(--primary-green); font-weight: 700; }
+    #historyList {
+      max-height: 320px;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+    #historyList::-webkit-scrollbar { width: 8px; }
+    #historyList::-webkit-scrollbar-thumb { background: rgba(82, 107, 74, 0.35); border-radius: 999px; }
     .promo-btn { border: none; border-radius: 999px; padding: 8px 12px; background: var(--primary-green); color: #fff; font-weight: 700; cursor: pointer; }
     .promo-btn:hover { background: var(--primary-hover); }
     .active-promo-card { border-radius: 16px; padding: 14px; background: linear-gradient(135deg, #f4f7f2 0%, #eef3eb 100%); }

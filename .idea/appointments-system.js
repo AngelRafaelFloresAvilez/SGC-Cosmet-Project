@@ -349,11 +349,11 @@
     return state;
   }
 
-  function adminConfirmAppointment(id) {
+  function specialistConfirmAppointment(id) {
     const state = readState();
     const session = getSession() || {};
-    if (!session || (session.role !== 'admin' && session.role !== 'specialist')) {
-      alert('No tienes permiso para confirmar citas.');
+    if (!session || session.role !== 'specialist') {
+      alert('Solo un especialista puede confirmar y completar citas.');
       return { allowed: false };
     }
     const target = state.appointments.find(a => a.id === id);
@@ -1097,8 +1097,7 @@
       if (typeof sessionStorage !== 'undefined' && sessionStorage.removeItem) {
         sessionStorage.removeItem('sgc_active_session_v1');
       }
-      const basePath = window.location.pathname.replace(/[^/]*$/, '');
-      window.location.href = window.location.pathname.includes('/.idea/') ? 'Loggin.html' : basePath + '.idea/Loggin.html';
+      window.location.href = resolveRelative('index.html');
     },
     applyPromotion: function (promoId) {
       const state = readState();
@@ -1123,7 +1122,8 @@
 
   // expose admin confirm
   if (window.appointmentsSystem) {
-    window.appointmentsSystem.adminConfirmAppointment = adminConfirmAppointment;
+    window.appointmentsSystem.specialistConfirmAppointment = specialistConfirmAppointment;
+    window.appointmentsSystem.adminConfirmAppointment = specialistConfirmAppointment;
   }
 
   if (document.readyState === 'loading') {

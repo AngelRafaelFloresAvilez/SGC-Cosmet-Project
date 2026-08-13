@@ -98,9 +98,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
                   <div style="text-align:right"><small>${appt.date || ''}</small> · <strong>${appt.time || ''}</strong></div>
                   <div style="display:flex;gap:8px;margin-top:6px">
-                    <button class="text-button" data-action="confirm" data-id="${appt.id}">Confirmar</button>
-                    <button class="text-button" data-action="delete" data-id="${appt.id}">Eliminar</button>
                     <button class="text-button" data-action="view">Ver</button>
+                    <button class="text-button" data-action="delete" data-id="${appt.id}">Eliminar</button>
                   </div>
                 </div>
               </div>
@@ -113,11 +112,7 @@ document.addEventListener('DOMContentLoaded', function () {
           if (!btn) return;
           const action = btn.dataset.action;
           const id = btn.dataset.id;
-          if (action === 'confirm' && id) {
-            if (window.appointmentsSystem && typeof window.appointmentsSystem.adminConfirmAppointment === 'function') {
-              window.appointmentsSystem.adminConfirmAppointment(id);
-            }
-          } else if (action === 'delete' && id) {
+          if (action === 'delete' && id) {
             if (window.appointmentsSystem && typeof window.appointmentsSystem.removeAppointment === 'function') {
               window.appointmentsSystem.removeAppointment(id);
               window.dispatchEvent(new Event('sgc-state-updated'));
