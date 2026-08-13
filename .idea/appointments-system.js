@@ -8,7 +8,7 @@
       email: 'ana.lopez@sgc.com',
       phone: '+52 55 1234 5678',
       birthDate: '14/08/1997',
-      avatar: 'https://i.pravatar.cc/150?img=47',
+      avatar: 'https://www.gravatar.com/avatar/?d=mp&s=150',
       role: 'Cliente VIP',
       memberSince: '2024',
       status: 'Normal',
@@ -217,6 +217,31 @@
     return state.appointments.some((appointment) => appointment.status !== 'cancelled' && appointment.date === date && appointment.time === time);
   }
 
+  // Simple site alert/toast helper — appended to body and auto-dismissed
+  function showSiteAlert(message, type = 'info', timeout = 4200) {
+    try {
+      const containerId = 'sgc-alert-container';
+      let container = document.getElementById(containerId);
+      if (!container) {
+        container = document.createElement('div');
+        container.id = containerId;
+        container.className = 'sgc-alert-container';
+        document.body.appendChild(container);
+      }
+      const el = document.createElement('div');
+      el.className = 'sgc-alert ' + (type || 'info');
+      el.textContent = message || '';
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.transition = 'all 260ms ease';
+        el.style.opacity = '0';
+        setTimeout(() => { try { el.remove(); } catch (e) { } }, 300);
+      }, timeout);
+      return el;
+    } catch (e) { /* ignore */ }
+    return null;
+  }
+
   function getUnreadCount(state = readState()) {
     return state.notifications.filter((item) => item.unread).length;
   }
@@ -331,7 +356,7 @@
     const session = getSession() || {};
     // Only specialists may permanently remove appointments
     if (session.role !== 'specialist') {
-      alert('Solo un especialista puede eliminar una cita permanentemente.');
+      showSiteAlert('Solo un especialista puede eliminar una cita permanentemente.', 'warning');
       return state;
     }
     const before = state.appointments.length;
@@ -353,7 +378,7 @@
     const state = readState();
     const session = getSession() || {};
     if (!session || session.role !== 'specialist') {
-      alert('Solo un especialista puede confirmar y completar citas.');
+      showSiteAlert('Solo un especialista puede confirmar y completar citas.', 'warning');
       return { allowed: false };
     }
     const target = state.appointments.find(a => a.id === id);
@@ -908,7 +933,7 @@
           deleteButton.addEventListener('click', () => {
                 const session = getSession() || {};
                 if (session.role !== 'specialist') {
-                  alert('Solo un especialista puede eliminar citas. Si necesitas cancelar, usa la opción de cancelar.');
+                  showSiteAlert('Solo un especialista puede eliminar citas. Si necesitas cancelar, usa la opción de cancelar.', 'warning');
                   return;
                 }
                 if (confirm('¿Seguro que deseas eliminar esta cita? Esta acción no se puede deshacer.')) {
@@ -1126,6 +1151,11 @@
     window.appointmentsSystem.adminConfirmAppointment = specialistConfirmAppointment;
   }
 
+  // expose profile setter so UI scripts can update current session profile
+  if (window.appointmentsSystem) {
+    window.appointmentsSystem.setProfile = setProfileForCurrentSession;
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initialize);
   } else {
@@ -1242,7 +1272,7 @@
     const existing = users.find((item) => item.email.toLowerCase() === user.email.toLowerCase());
     if (existing) return { ok: false, error: 'email_exists' };
     const newUser = {
-      avatar: 'https://i.pravatar.cc/150?img=47',
+      avatar: 'https://www.gravatar.com/avatar/?d=mp&s=150',
       memberSince: String(new Date().getFullYear()),
       ...user
     };
@@ -1281,6 +1311,9 @@
 
   function loginUser(email, password) {
     const users = readUsers();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(email || ''))) {
+      return { ok: false, error: 'invalid_email' };
+    }
     const user = users.find((item) => item.email.toLowerCase() === email.toLowerCase() && item.password === password);
     if (!user) return { ok: false, error: 'invalid_credentials' };
     setSession({ role: user.role, email: user.email, name: `${user.name} ${user.lastName || ''}`.trim() });
@@ -1336,48 +1369,48 @@
         };
 
         if (!payload.name || !payload.lastName || !payload.email || !payload.phone || !birthDateValue || !passwordValue || !confirmPasswordValue) {
-          alert('Completa todos los campos requeridos para crear tu cuenta.');
+          showSiteAlert('Completa todos los campos requeridos para crear tu cuenta.', 'info');
           return;
         }
 
         const namePattern = /^[A-Za-z]+$/;
         if (!namePattern.test(payload.name) || !namePattern.test(payload.lastName)) {
-          alert('El nombre y apellido solo pueden contener letras sin espacios ni símbolos.');
+          showSiteAlert('El nombre y apellido solo pueden contener letras sin espacios ni símbolos.', 'warning');
           return;
         }
 
         const emailPattern = /^[A-Za-z0-9]+@[A-Za-z0-9]+\.com$/;
         if (!emailPattern.test(payload.email)) {
-          alert('El correo debe contener @ y finalizar en .com, usando solo letras y números.');
+          showSiteAlert('El correo debe contener @ y finalizar en .com, usando solo letras y números.', 'error');
           return;
         }
 
         const phonePattern = /^\d{8,14}$/;
         if (!phonePattern.test(payload.phone)) {
-          alert('El teléfono debe tener entre 8 y 14 dígitos y no puede contener espacios ni símbolos.');
+          showSiteAlert('El teléfono debe tener entre 8 y 14 dígitos y no puede contener espacios ni símbolos.', 'warning');
           return;
         }
 
         const passwordPattern = /^[A-Za-z0-9]{4,16}$/;
         if (!passwordPattern.test(passwordValue)) {
-          alert('La contraseña debe tener entre 4 y 16 caracteres y solo puede contener letras y números.');
+          showSiteAlert('La contraseña debe tener entre 4 y 16 caracteres y solo puede contener letras y números.', 'warning');
           return;
         }
 
         if (passwordValue !== confirmPasswordValue) {
-          alert('Las contraseñas no coinciden.');
+          showSiteAlert('Las contraseñas no coinciden.', 'error');
           return;
         }
 
         const birthDate = new Date(birthDateValue);
         const today = new Date();
         if (Number.isNaN(birthDate.getTime())) {
-          alert('La fecha de nacimiento no es válida. Usa el selector de fecha.');
+          showSiteAlert('La fecha de nacimiento no es válida. Usa el selector de fecha.', 'error');
           return;
         }
 
         if (birthDate > today) {
-          alert('La fecha de nacimiento no puede ser en el futuro.');
+          showSiteAlert('La fecha de nacimiento no puede ser en el futuro.', 'error');
           return;
         }
 
@@ -1385,17 +1418,17 @@
           ((today.getMonth() < birthDate.getMonth() ||
             (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) ? 1 : 0);
         if (age < 16 || age > 100) {
-          alert('Debes tener entre 16 y 100 años para registrarte.');
+          showSiteAlert('Debes tener entre 16 y 100 años para registrarte.', 'warning');
           return;
         }
 
         const result = createUser(payload);
         if (!result.ok) {
-          alert('Ese correo ya está registrado.');
+          showSiteAlert('Ese correo ya está registrado.', 'warning');
           return;
         }
 
-        alert('Cuenta creada correctamente.');
+        showSiteAlert('Cuenta creada correctamente.', 'info');
         window.location.href = resolveRelative('Loggin.html');
       });
     }
@@ -1432,12 +1465,12 @@
         const email = document.getElementById('specialistEmail')?.value?.trim() || '';
         const password = document.getElementById('specialistPassword')?.value || '';
         if (!email || !password) {
-          alert('Ingresa tu correo y contraseña para iniciar sesión como especialista.');
+          showSiteAlert('Ingresa tu correo y contraseña para iniciar sesión como especialista.', 'info');
           return;
         }
         const result = loginUser(email, password);
         if (!result.ok || result.user.role !== 'specialist') {
-          alert('No se encontró un especialista con esas credenciales.');
+          showSiteAlert('No se encontró un especialista con esas credenciales.', 'error');
           return;
         }
         navigateByRole(result.user.role);

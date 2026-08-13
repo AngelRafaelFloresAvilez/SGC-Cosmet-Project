@@ -3,8 +3,10 @@ const specialistState = {
       { id: 'apt-1', client: 'Ana López', service: 'Limpieza facial profunda', date: 'Hoy', time: '09:30', duration: '45 min', phone: '+52 55 1234 5678', history: ['Tratamiento previo', 'Seguimiento mensual'], status: 'pending' },
       { id: 'apt-2', client: 'Mónica Ruiz', service: 'Microdermoabrasión', date: 'Hoy', time: '12:00', duration: '30 min', phone: '+52 55 4444 2222', history: ['Cita confirmada'], status: 'previous' },
       { id: 'apt-3', client: 'Valeria Soto', service: 'Masaje relajante', date: 'Mañana', time: '16:00', duration: '60 min', phone: '+52 55 6666 7777', history: ['Cliente recurrente'], status: 'pending' }
+      ]
+    };
 
-let selectedAppointmentId = null;
+    let selectedAppointmentId = null;
 
 function getSharedServices() {
   const system = window.appointmentsSystem;
@@ -114,15 +116,24 @@ function renderSpecialistDashboard() {
   } catch (e) { /* ignore */ }
 
   const servicesList = document.getElementById('servicesList');
-  servicesList.innerHTML = services.map((service) => `
-        <div class="service-item">
+  servicesList.innerHTML = services.map((service) => {
+    const hasImg = service.image && service.image.length;
+    const thumb = hasImg
+      ? `<img src="${service.image}" alt="${service.title || service.name}" style="width:64px;height:48px;object-fit:cover;border-radius:8px;margin-right:10px">`
+      : `<div class="service-thumb placeholder" style="width:64px;height:48px;border-radius:8px;margin-right:10px;display:flex;align-items:center;justify-content:center;background:rgba(178,210,150,0.12);color:var(--primary-green);font-weight:700;font-size:0.8rem">No imagen</div>`;
+    return `
+      <div class="service-item">
+        <div style="display:flex;align-items:center">
+          ${thumb}
           <div>
             <strong>${service.title || service.name}</strong>
-            <div class="meta">Duración: ${service.duration} · ${service.price}</div>
+            <div class="meta">Duración: ${service.duration || '-'} · ${service.price || '-'}</div>
           </div>
-          <button class="danger" data-service-id="${service.id}">Eliminar</button>
         </div>
-      `).join('');
+        <button class="danger" data-service-id="${service.id}">Eliminar</button>
+      </div>
+    `;
+  }).join('');
 
   // Delegated handler for remove buttons
   servicesList.addEventListener('click', (e) => {
@@ -166,6 +177,75 @@ function initSpecialistDashboard() {
       } else {
         window.location.href = 'index.html';
       }
+    });
+  }
+
+  // Edit profile modal handling
+  const editBtn = document.getElementById('editProfileBtn');
+  const editModal = document.getElementById('editProfileModal');
+  const profileNameInput = document.getElementById('profileNameInput');
+  const profileEmailInput = document.getElementById('profileEmailInput');
+  const profilePhoneInput = document.getElementById('profilePhoneInput');
+  const profileAvatarInput = document.getElementById('profileAvatarInput');
+  const avatarFileName = document.getElementById('avatarFileName');
+  let avatarDataUrl = null;
+
+  function openEditProfile() {
+    if (!editModal) return;
+    const state = window.appointmentsSystem && typeof window.appointmentsSystem.readState === 'function' ? window.appointmentsSystem.readState() : {};
+    const profile = state.profile || {};
+    profileNameInput.value = profile.name || '';
+    profileEmailInput.value = profile.email || '';
+    profilePhoneInput.value = profile.phone || '';
+    avatarFileName.textContent = 'Ningún archivo seleccionado';
+    avatarDataUrl = null;
+    editModal.style.display = 'flex';
+  }
+
+  function closeEditProfile() {
+    if (!editModal) return;
+    editModal.style.display = 'none';
+  }
+
+  if (editBtn) editBtn.addEventListener('click', openEditProfile);
+  const cancelEdit = document.getElementById('cancelEditProfile');
+  const saveEdit = document.getElementById('saveEditProfile');
+  if (cancelEdit) cancelEdit.addEventListener('click', closeEditProfile);
+
+  if (profileAvatarInput) {
+    profileAvatarInput.addEventListener('change', (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      avatarFileName.textContent = f.name || 'Archivo seleccionado';
+      const reader = new FileReader();
+      reader.onload = function (evt) {
+        avatarDataUrl = evt.target.result;
+      };
+      reader.readAsDataURL(f);
+    });
+  }
+
+  if (saveEdit) {
+    saveEdit.addEventListener('click', () => {
+      const values = {
+        name: profileNameInput.value || undefined,
+        email: profileEmailInput.value || undefined,
+        phone: profilePhoneInput.value || undefined
+      };
+      if (window.appointmentsSystem && typeof window.appointmentsSystem.setProfile === 'function') {
+        window.appointmentsSystem.setProfile(values);
+      } else {
+        try {
+          const state = window.appointmentsSystem.readState();
+          state.profile = { ...(state.profile || {}), ...values };
+          localStorage.setItem('sgc_appointments_state_v1', JSON.stringify(state));
+        } catch (e) { /* ignore */ }
+      }
+      if (avatarDataUrl && window.appointmentsSystem && typeof window.appointmentsSystem.setProfileAvatar === 'function') {
+        window.appointmentsSystem.setProfileAvatar(avatarDataUrl);
+      }
+      window.dispatchEvent(new Event('sgc-state-updated'));
+      closeEditProfile();
     });
   }
 

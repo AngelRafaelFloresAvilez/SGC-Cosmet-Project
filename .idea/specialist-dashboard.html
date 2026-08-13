@@ -25,6 +25,10 @@
         <p id="specialistName">Dra. Sofía Reyes</p>
         <p id="specialistRole">Especialista en estética facial</p>
         <p id="specialistContact" class="meta">sofia@sgc.com · +52 55 1234 5678</p>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button class="btn secondary" id="editProfileBtn">Editar perfil</button>
+          <button class="btn" id="addServiceBtn">Agregar servicio</button>
+        </div>
       </div>
     </div>
 
@@ -60,6 +64,27 @@
     <div class="card">
       <div class="section-title">Servicios activos</div>
       <div class="service-list" id="servicesList"></div>
+    </div>
+
+    <!-- Edit profile modal -->
+    <div class="modal-backdrop" id="editProfileModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center">
+      <div class="modal-box" style="background:#fff;padding:20px;border-radius:12px;max-width:420px;width:100%">
+        <h3>Editar perfil</h3>
+        <div style="display:grid;gap:8px;margin-top:10px">
+          <input id="profileNameInput" placeholder="Nombre completo" style="padding:10px;border:1px solid var(--border-color);border-radius:8px">
+          <input id="profileEmailInput" placeholder="Correo" style="padding:10px;border:1px solid var(--border-color);border-radius:8px">
+          <input id="profilePhoneInput" placeholder="Teléfono" style="padding:10px;border:1px solid var(--border-color);border-radius:8px">
+          <div style="display:flex;gap:8px;align-items:center">
+            <label for="profileAvatarInput" class="btn secondary" style="margin:0;cursor:pointer">Subir foto</label>
+            <input id="profileAvatarInput" type="file" accept="image/*" style="display:none">
+            <small id="avatarFileName" class="meta">Ningún archivo seleccionado</small>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">
+            <button id="cancelEditProfile" class="btn secondary">Cancelar</button>
+            <button id="saveEditProfile" class="btn">Guardar</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

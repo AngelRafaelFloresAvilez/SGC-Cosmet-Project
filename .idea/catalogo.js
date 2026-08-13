@@ -230,13 +230,13 @@ document.addEventListener('click', (e) => {
 
       if (!result.allowed) {
         if (result.reason === 'slot_taken') {
-          alert('Este horario ya está reservado. Por favor elige otra fecha u hora.');
+          showSiteAlert('Este horario ya está reservado. Por favor elige otra fecha u hora.', 'warning');
         } else if (result.reason === 'missing_datetime') {
-          alert('Selecciona una fecha y una hora antes de confirmar la cita.');
+          showSiteAlert('Selecciona una fecha y una hora antes de confirmar la cita.', 'info');
         } else if (result.reason === 'limit_reached') {
-          alert('Has alcanzado el límite de citas permitidas. Intenta de nuevo más tarde.');
+          showSiteAlert('Has alcanzado el límite de citas permitidas. Intenta de nuevo más tarde.', 'warning');
         } else {
-          alert('No se pudo registrar la cita. Intenta de nuevo.');
+          showSiteAlert('No se pudo registrar la cita. Intenta de nuevo.', 'error');
         }
         return;
       }

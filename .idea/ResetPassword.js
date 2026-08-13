@@ -34,18 +34,18 @@
   sendBtn.addEventListener('click', function () {
     const emailEl = document.getElementById('email');
     const email = (emailEl?.value || '').trim().toLowerCase();
-    if (!email) { alert('Ingresa tu correo electrónico.'); return; }
+    if (!email) { showSiteAlert('Ingresa tu correo electrónico.', 'info'); return; }
 
     // Basic validation: must contain @ and .
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      alert('Ingresa un correo válido.');
+      showSiteAlert('Ingresa un correo válido.', 'error');
       return;
     }
 
     const users = getUsers();
     const user = users.find(u => u.email && u.email.toLowerCase() === email);
     if (!user) {
-      alert('No existe una cuenta asociada a ese correo.');
+      showSiteAlert('No existe una cuenta asociada a ese correo.', 'warning');
       return;
     }
 
@@ -54,37 +54,14 @@
 
     const link = buildResetLink(token, email);
 
-    // Compose a Gmail draft (user must send it). Also show confirmation.
     const subject = 'Restablece tu contraseña';
-    // Prefer absolute URL when served over HTTP(S); otherwise provide relative link
     const displayLink = (window.location.protocol && window.location.protocol.indexOf('http') === 0)
       ? (window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/') + link)
       : link;
     const body = 'Hola,\n\nHaz clic en el siguiente enlace para restablecer tu contraseña (válido 30 minutos):\n\n' + displayLink + '\n\nSi no pediste este enlace, ignora este correo.';
 
-    // Send via server API if available, otherwise fallback to Gmail compose
-    const API = window.SGC_EMAIL_API || 'http://localhost:4000/send-reset';
-    const absoluteLink = (window.location.protocol && window.location.protocol.indexOf('http') === 0)
-      ? (window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/') + link)
-      : link;
-
-    fetch(API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: email, link: absoluteLink })
-    }).then((res) => res.json()).then((json) => {
-      if (json && json.ok) {
-        showSentConfirmation();
-      } else {
-        // fallback to opening compose if server failed
-        try { openGmailCompose(email, subject, body); } catch (e) { window.open('mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body), '_blank'); }
-        showSentConfirmation();
-      }
-    }).catch((err) => {
-      // network error — fallback to compose
-      try { openGmailCompose(email, subject, body); } catch (e) { window.open('mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body), '_blank'); }
-      showSentConfirmation();
-    });
+    try { openGmailCompose(email, subject, body); } catch (e) { window.open('mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body), '_blank'); }
+    showSentConfirmation();
   });
 })();
 

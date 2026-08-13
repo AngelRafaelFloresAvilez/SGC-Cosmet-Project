@@ -203,6 +203,18 @@ html {
   border: 1px solid var(--border-color);
 }
 
+.service-thumb {
+  width: 64px;
+  height: 48px;
+  border-radius: 8px;
+  background: rgba(178,210,150,0.12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-green);
+  font-weight: 700;
+}
+
 .service-item button {
   border: none;
   background: var(--primary-green);
