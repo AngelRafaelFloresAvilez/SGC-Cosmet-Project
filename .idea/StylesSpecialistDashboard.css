@@ -20,15 +20,37 @@
 body,
 html {
   font-family: 'Inter', sans-serif;
-  background: var(--bg-light);
-  color: var(--text-main);
   min-height: 100%;
+  background-color: #1a2a1a; /* match client dark background */
+  color: var(--text-main);
 }
 
-.shell {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f4f7f2 0%, #eef3eb 100%);
-  padding: 28px;
+.main-wrapper {
+  position: fixed;
+top: 0;
+left: 0;
+height: 100vh;
+width: 100vw;
+background-image: url('../out/production/SGC/ImagenFondoDashboard.jpeg');
+background-size: cover;
+background-position: center;
+background-repeat: no-repeat;
+display: flex;
+flex-direction: column;
+overflow: hidden;
+}
+
+/* make topbar behave like the client header */
+.topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 20px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
 }
 
 .topbar {
@@ -41,13 +63,25 @@ html {
 .brand {
   font-family: 'Cormorant Garamond', serif;
   font-size: 1.6rem;
-  color: var(--primary-dark);
+  color: #ffffff;
 }
 
 .topbar-actions {
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+.topbar .btn {
+  box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+}
+
+.profile-card {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 16px;
+  margin-top: 90px; /* offset for absolute header */
 }
 
 .pill {
