@@ -23,6 +23,15 @@
             background-position: center;
             background-repeat: no-repeat;
         }
+        .main-wrapperr {
+            position: relative;
+            min-height: 100vh;
+            width: 100%;
+            background-image: url('../out/production/SGC/ImagenFondoDashboardPrincipal.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
 
         /* Curva blanca en SVG */
         .bg-curve-mask {
@@ -77,8 +86,8 @@
         }
 
         .btn-login {
-            background-color: #B2D296; /* Accent green used across the app */
-            color: #2C3527; /* dark text for contrast on light green */
+            background-color: #4B613F; /* Accent green used across the app */
+            color: #FFFFFF; /* dark text for contrast on light green */
             border: none;
             box-shadow: 0 4px 6px rgba(0,0,0,0.06);
         }
@@ -89,7 +98,7 @@
 
         .btn-register {
             background-color: #FFFFFF;
-            color: #526B4A;
+            color: #87775F;
             border: none;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
@@ -269,7 +278,14 @@
 
         .hero-subtitle {
             font-size: 1.4rem;
-            color: #3A4E32;
+            color: #2E3430;
+            font-weight: 700;
+            margin-bottom: 15px;
+            line-height: 1.3;
+        }
+        .hero-subtitlee {
+            font-size: 1.4rem;
+            color: #4B613F;
             font-weight: 700;
             margin-bottom: 15px;
             line-height: 1.3;
