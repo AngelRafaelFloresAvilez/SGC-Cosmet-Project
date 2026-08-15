@@ -13,13 +13,12 @@
 <body>
   <div class="screen">
     <div class="form-card">
-      <div class="form-side-image" aria-hidden="true"></div>
-
       <div class="form-content">
         <div class="form-header">
           <h1>Crear tu cuenta</h1>
-          <p>Regístrate para administrar tus clientes, citas y servicios desde una sola plataforma.</p>
+          <p>Unete a sgc-cosmetics y disfruta de una experiencia personalizada.</p>
         </div>
+        
 
         <form id="registerForm" class="form-grid">
           <div class="input-row">
@@ -65,9 +64,23 @@
 
           <div class="footer-link">
             <span>¿Ya tienes una cuenta?</span>
-            <a href="Loggin.html">Inicia sesión</a>
+            <p><a href="Loggin.html">Inicia sesión</a></p>
           </div>
         </form>
+      </div>
+      <!-- wave separator between form and image -->
+      <svg class="wave-separator" viewBox="0 0 240 600" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 0 C60 120, 60 240, 0 360 C-60 480, 60 540, 0 600 L240 600 L240 0 Z" fill="#ffffff" />
+      </svg>
+      <div class="form-side-image" aria-hidden="true">
+        <svg class="side-image-svg" viewBox="0 0 480 600" preserveAspectRatio="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <clipPath id="clipRight">
+              <path d="M120 0 C80 120,80 240,120 360 C160 480,80 540,120 600 L480 600 L480 0 Z" />
+            </clipPath>
+          </defs>
+          <image href="../out/production/SGC/ImagenFondoLogin.png" width="480" height="600" clip-path="url(#clipRight)" preserveAspectRatio="xMidYMid slice" />
+        </svg>
       </div>
     </div>
   </div>
