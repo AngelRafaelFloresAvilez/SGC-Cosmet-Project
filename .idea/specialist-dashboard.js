@@ -38,32 +38,44 @@ function renderSpecialistDashboard() {
   document.getElementById('servicesCount').textContent = services.length;
 
   const list = document.getElementById('appointmentList');
+  // determine session role to render inline action buttons per item
+  const system = window.appointmentsSystem;
+  const session = system && typeof system.getSession === 'function' ? system.getSession() : null;
+  const isSpecialist = session && session.role === 'specialist';
+
   list.innerHTML = activeAppointments.map((appointment) => `
-        <button class="appointment-item ${appointment.id === selectedAppointmentId ? 'active' : ''}" data-id="${appointment.id}">
-          <div>
+        <div class="appointment-item ${appointment.id === selectedAppointmentId ? 'active' : ''}" data-id="${appointment.id}">
+          <div style="flex:1;text-align:left">
             <strong>${appointment.serviceName || appointment.service}</strong>
             <div class="meta">${appointment.date} · ${appointment.time}</div>
           </div>
-          <span class="pill">${appointment.price || appointment.duration}</span>
-        </button>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${isSpecialist && appointment.status !== 'previous' && appointment.status !== 'cancelled' ? `<button class="btn btn-appoint-confirm primary" data-confirm-id="${appointment.id}" title="Confirmar">Confirmar</button><button class="btn btn-appoint-noshow secondary" data-noshow-id="${appointment.id}" title="No asistió">No asistió</button>` : ''}
+            <span class="pill">${appointment.price || appointment.duration}</span>
+          </div>
+        </div>
       `).join('');
 
-  list.querySelectorAll('.appointment-item').forEach((button) => {
-    button.addEventListener('click', () => {
-      selectedAppointmentId = button.dataset.id;
+  // clicking whole item selects it; delegated handlers manage confirm/noshow buttons
+  list.querySelectorAll('.appointment-item').forEach((el) => {
+    el.addEventListener('click', () => {
+      selectedAppointmentId = el.dataset.id;
       renderSpecialistDashboard();
     });
   });
+
+  
 
   const detail = document.getElementById('appointmentDetail');
   const selected = activeAppointments.find((item) => item.id === selectedAppointmentId) || activeAppointments[0];
   if (selected) {
     const cb = selected.createdBy || {};
+    // reuse previously-determined `isSpecialist` from top of renderSpecialistDashboard
     detail.innerHTML = `
           <h4>${selected.serviceName || selected.service}</h4>
           <p class="meta">${selected.date} · ${selected.time}</p>
           <div style="display:flex;gap:12px;align-items:center;margin-top:10px">
-            <img src="${cb.avatar || 'https://i.pravatar.cc/150?img=47'}" alt="${cb.name || 'Cliente'}" class="avatar">
+            <img src="${cb.avatar || 'https://www.gravatar.com/avatar/?d=mp&s=150'}" alt="${cb.name || 'Cliente'}" class="avatar">
             <div>
               <div><strong>${cb.name || selected.client || 'Cliente SGC'}</strong></div>
               <div class="meta">${cb.email || ''} ${cb.phone ? '· ' + cb.phone : ''}</div>
@@ -76,7 +88,21 @@ function renderSpecialistDashboard() {
             <div><span>Estado</span><strong>${selected.summary}</strong></div>
           </div>
           <div style="margin-top:12px"><strong>Resumen</strong><p class="meta" style="margin-top:6px;">${selected.summary || 'Cita pendiente de atención.'}</p></div>
-        ${selected.status === 'pending' || !selected.status ? `<button class="btn primary" id="completeAppointmentBtn" data-appointment-id="${selected.id}" style="margin-top:18px;width:100%;max-width:280px;">Marcar como terminada</button>` : ''}
+        ${(() => {
+          // show specialist actions when session is specialist and appointment is not completed/cancelled
+          if (isSpecialist && selected.status !== 'previous' && selected.status !== 'cancelled') {
+            return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+                <button class="btn primary" id="confirmAppointmentBtn" data-appointment-id="${selected.id}" style="flex:1;">Confirmar</button>
+                <button class="btn primary" id="completeAppointmentBtn" data-appointment-id="${selected.id}" style="flex:1;">Marcar como terminada</button>
+                <button class="btn secondary" id="noshowAppointmentBtn" data-appointment-id="${selected.id}" style="flex:1;border:1px solid var(--danger);color:var(--danger);">No asistió</button>
+              </div>`;
+          }
+          // for non-specialists or already finished appointments, show a compact completed button if applicable
+          if (selected.status !== 'previous' && selected.status !== 'cancelled') {
+            return `<button class="btn primary" id="completeAppointmentBtn" data-appointment-id="${selected.id}" style="margin-top:18px;width:100%;max-width:280px;">Marcar como terminada</button>`;
+          }
+          return '';
+        })()}
         `;
 
     const completeBtn = detail.querySelector('#completeAppointmentBtn');
@@ -87,6 +113,24 @@ function renderSpecialistDashboard() {
           if (result.allowed) {
             renderSpecialistDashboard();
           }
+        }
+      });
+    }
+    const confirmBtn = detail.querySelector('#confirmAppointmentBtn');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', () => {
+        if (window.appointmentsSystem && typeof window.appointmentsSystem.specialistMarkConfirmed === 'function') {
+          const res = window.appointmentsSystem.specialistMarkConfirmed(confirmBtn.dataset.appointmentId);
+          if (res.allowed) renderSpecialistDashboard();
+        }
+      });
+    }
+    const noshowBtn = detail.querySelector('#noshowAppointmentBtn');
+    if (noshowBtn) {
+      noshowBtn.addEventListener('click', () => {
+        if (window.appointmentsSystem && typeof window.appointmentsSystem.specialistMarkNoShow === 'function') {
+          const res = window.appointmentsSystem.specialistMarkNoShow(noshowBtn.dataset.appointmentId);
+          if (res.allowed) renderSpecialistDashboard();
         }
       });
     }
@@ -165,9 +209,61 @@ function initSpecialistDashboard() {
   if (addServiceBtn) {
     addServiceBtn.addEventListener('click', () => {
       const modal = document.getElementById('addServiceModal');
-      if (modal) modal.classList.add('active');
+      if (modal) modal.style.display = 'flex';
     });
   }
+
+  // delegated click handlers for inline appointment actions (single attachment)
+  const appointmentListEl = document.getElementById('appointmentList');
+  if (appointmentListEl) {
+    appointmentListEl.addEventListener('click', (e) => {
+      const confirmBtn = e.target.closest('.btn-appoint-confirm');
+      if (confirmBtn) {
+        e.stopPropagation();
+        const id = confirmBtn.dataset.confirmId;
+        if (window.appointmentsSystem && typeof window.appointmentsSystem.specialistMarkConfirmed === 'function') {
+          const res = window.appointmentsSystem.specialistMarkConfirmed(id);
+          if (res.allowed) renderSpecialistDashboard();
+        }
+        return;
+      }
+      const noshowBtn = e.target.closest('.btn-appoint-noshow');
+      if (noshowBtn) {
+        e.stopPropagation();
+        const id = noshowBtn.dataset.noshowId;
+        if (window.appointmentsSystem && typeof window.appointmentsSystem.specialistMarkNoShow === 'function') {
+          const res = window.appointmentsSystem.specialistMarkNoShow(id);
+          if (res.allowed) renderSpecialistDashboard();
+        }
+        return;
+      }
+    });
+  }
+
+  // Add service modal actions
+  const cancelAdd = document.getElementById('cancelAddService');
+  const saveAdd = document.getElementById('saveAddService');
+  const serviceTitleInput = document.getElementById('serviceTitleInput');
+  const serviceDurationInput = document.getElementById('serviceDurationInput');
+  const servicePriceInput = document.getElementById('servicePriceInput');
+  const serviceDescInput = document.getElementById('serviceDescInput');
+  const addServiceModalEl = document.getElementById('addServiceModal');
+  if (cancelAdd) cancelAdd.addEventListener('click', (e) => { e && e.preventDefault && e.preventDefault(); if (addServiceModalEl) addServiceModalEl.style.display = 'none'; });
+  if (saveAdd) saveAdd.addEventListener('click', (e) => {
+    e && e.preventDefault && e.preventDefault();
+    const payload = {
+      title: (serviceTitleInput && serviceTitleInput.value) || 'Servicio',
+      duration: (serviceDurationInput && serviceDurationInput.value) || '45 minutos',
+      price: (servicePriceInput && servicePriceInput.value) || '$0 MXN',
+      description: (serviceDescInput && serviceDescInput.value) || ''
+    };
+    if (window.appointmentsSystem && typeof window.appointmentsSystem.createService === 'function') {
+      window.appointmentsSystem.createService(payload);
+      window.showSiteAlert('Servicio agregado', 'success');
+    }
+    if (addServiceModalEl) addServiceModalEl.style.display = 'none';
+    renderSpecialistDashboard();
+  });
 
   const signOutBtn = document.getElementById('specialistSignOut');
   if (signOutBtn) {
@@ -206,11 +302,10 @@ function initSpecialistDashboard() {
     if (!editModal) return;
     editModal.style.display = 'none';
   }
-
-  if (editBtn) editBtn.addEventListener('click', openEditProfile);
+  if (editBtn) editBtn.addEventListener('click', (e) => { e.preventDefault && e.preventDefault(); e.stopPropagation && e.stopPropagation(); openEditProfile(); });
   const cancelEdit = document.getElementById('cancelEditProfile');
   const saveEdit = document.getElementById('saveEditProfile');
-  if (cancelEdit) cancelEdit.addEventListener('click', closeEditProfile);
+  if (cancelEdit) cancelEdit.addEventListener('click', (e) => { e && e.preventDefault && e.preventDefault(); closeEditProfile(); });
 
   if (profileAvatarInput) {
     profileAvatarInput.addEventListener('change', (e) => {
@@ -226,7 +321,8 @@ function initSpecialistDashboard() {
   }
 
   if (saveEdit) {
-    saveEdit.addEventListener('click', () => {
+    saveEdit.addEventListener('click', (e) => {
+      e && e.preventDefault && e.preventDefault();
       const values = {
         name: profileNameInput.value || undefined,
         email: profileEmailInput.value || undefined,

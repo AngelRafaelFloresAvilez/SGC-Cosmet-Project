@@ -26,18 +26,14 @@ html {
 }
 
 .main-wrapper {
-  position: fixed;
-top: 0;
-left: 0;
-height: 100vh;
-width: 100vw;
-background-image: url('../out/production/SGC/ImagenFondoDashboard.jpeg');
-background-size: cover;
-background-position: center;
-background-repeat: no-repeat;
-display: flex;
-flex-direction: column;
-overflow: hidden;
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  padding: 28px 40px 60px 40px;
+  background-image: url('../out/production/SGC/ImagenFondoDashboard.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 /* make topbar behave like the client header */
@@ -82,6 +78,11 @@ overflow: hidden;
   align-items: center;
   margin-bottom: 16px;
   margin-top: 90px; /* offset for absolute header */
+  background: rgba(255,255,255,0.95);
+  padding: 14px 18px;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+  color: var(--text-main);
 }
 
 .pill {
@@ -116,6 +117,9 @@ overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: 420px; /* show ~5 items, then scroll */
+  overflow-y: auto;
+  padding-right: 6px;
 }
 
 .appointment-item {
@@ -123,10 +127,11 @@ overflow: hidden;
   justify-content: space-between;
   align-items: center;
   border: 1px solid var(--border-color);
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-radius: 14px;
   cursor: pointer;
   background: #fbfdfb;
+  min-height: 64px;
 }
 
 .appointment-item.active {
@@ -146,6 +151,47 @@ overflow: hidden;
   background: #fcfdfb;
   border: 1px solid var(--border-color);
 }
+
+/* small action buttons next to appointment items */
+.btn-appoint-confirm,
+.btn-appoint-noshow {
+  border: none;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.btn-appoint-confirm.primary {
+  background: var(--primary-green);
+  color: #fff;
+  border: 1px solid rgba(82,107,74,0.12);
+}
+.btn-appoint-noshow.secondary {
+  background: #fff;
+  color: var(--danger);
+  border: 1px solid rgba(201,92,92,0.12);
+}
+
+/* buttons in detail area */
+.btn {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+.btn.primary {
+  background: var(--primary-green);
+  color: #fff;
+}
+.btn.secondary {
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+
+/* ensure cards don't collapse when list is long */
+.card { display:flex; flex-direction:column; }
 
 .detail-grid {
   display: grid;
@@ -221,20 +267,43 @@ overflow: hidden;
   object-fit: cover;
 }
 
+.profile-card p {
+  margin: 2px 0;
+}
+
+.profile-card #specialistName {
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--text-main);
+}
+
+.profile-card #specialistRole, .profile-card #specialistContact {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
 .service-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   margin-top: 10px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.services-card {
+  margin-top: 22px;
 }
 
 .service-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
+  padding: 14px 16px;
   border-radius: 12px;
   border: 1px solid var(--border-color);
+  min-height: 72px;
 }
 
 .service-thumb {
@@ -256,6 +325,12 @@ overflow: hidden;
   padding: 8px 10px;
   border-radius: 999px;
   cursor: pointer;
+}
+
+.services-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
 }
 
 .service-item button.danger {

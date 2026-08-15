@@ -112,6 +112,21 @@ input:focus {
   background: #ffffff;
 }
 
+/* Inline field error styles */
+.sgc-field-invalid {
+  border-color: #c95c5c !important;
+  box-shadow: 0 0 0 3px rgba(201, 92, 92, 0.08) !important;
+}
+.sgc-inline-error {
+  margin-top: 6px;
+  color: #7d2727;
+  background: rgba(201,92,92,0.06);
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .full-width {
   width: 100%;
 }

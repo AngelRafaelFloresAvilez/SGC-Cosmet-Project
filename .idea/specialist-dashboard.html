@@ -20,14 +20,13 @@
     </header>
 
     <div class="profile-card">
-      <img class="avatar" id="specialistAvatar" src="https://i.pravatar.cc/150?img=47" alt="Especialista">
+      <img class="avatar" id="specialistAvatar" src="https://www.gravatar.com/avatar/?d=mp&s=150" alt="Especialista">
       <div>
         <p id="specialistName">Dra. Sofía Reyes</p>
         <p id="specialistRole">Especialista en estética facial</p>
         <p id="specialistContact" class="meta">sofia@sgc.com · +52 55 1234 5678</p>
         <div style="margin-top:10px;display:flex;gap:8px">
           <button class="btn secondary" id="editProfileBtn">Editar perfil</button>
-          <button class="btn" id="addServiceBtn">Agregar servicio</button>
         </div>
       </div>
     </div>
@@ -61,8 +60,11 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card services-card">
       <div class="section-title">Servicios activos</div>
+      <div style="margin-bottom:12px; display:flex; justify-content:flex-end;">
+        <button id="addServiceBtn" type="button" class="btn" style="padding:8px 12px; border-radius:12px;">Agregar servicio</button>
+      </div>
       <div class="service-list" id="servicesList"></div>
     </div>
 
@@ -80,8 +82,25 @@
             <small id="avatarFileName" class="meta">Ningún archivo seleccionado</small>
           </div>
           <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">
-            <button id="cancelEditProfile" class="btn secondary">Cancelar</button>
-            <button id="saveEditProfile" class="btn">Guardar</button>
+            <button id="cancelEditProfile" type="button" class="btn secondary">Cancelar</button>
+            <button id="saveEditProfile" type="button" class="btn">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add service modal (simple) -->
+    <div class="modal-backdrop" id="addServiceModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center">
+      <div class="modal-box" style="background:#fff;padding:20px;border-radius:12px;max-width:520px;width:100%">
+        <h3>Agregar servicio</h3>
+        <div style="display:grid;gap:8px;margin-top:10px">
+          <input id="serviceTitleInput" placeholder="Título del servicio" style="padding:10px;border:1px solid var(--border-color);border-radius:8px">
+          <input id="serviceDurationInput" placeholder="Duración (ej. 60 minutos)" style="padding:10px;border:1px solid var(--border-color);border-radius:8px">
+          <input id="servicePriceInput" placeholder="Precio (ej. $450 MXN)" style="padding:10px;border:1px solid var(--border-color);border-radius:8px">
+          <textarea id="serviceDescInput" placeholder="Descripción" style="padding:10px;border:1px solid var(--border-color);border-radius:8px"></textarea>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">
+            <button id="cancelAddService" type="button" class="btn secondary">Cancelar</button>
+            <button id="saveAddService" type="button" class="btn">Agregar</button>
           </div>
         </div>
       </div>

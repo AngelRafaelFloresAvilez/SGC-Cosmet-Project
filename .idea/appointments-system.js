@@ -9,7 +9,7 @@
       phone: '+52 55 1234 5678',
       birthDate: '14/08/1997',
       avatar: 'https://www.gravatar.com/avatar/?d=mp&s=150',
-      role: 'Cliente VIP',
+      role: 'Cliente',
       memberSince: '2024',
       status: 'Normal',
       statusMessage: 'Tienes acceso completo a tratamientos y promociones exclusivas.',
@@ -147,7 +147,7 @@
       birthDate: user.birthDate || defaults.profile.birthDate,
       avatar: user.avatar || defaults.profile.avatar,
       role: user.role === 'client'
-        ? 'Cliente VIP'
+        ? 'Cliente'
         : user.role === 'specialist'
           ? 'Especialista'
           : user.role === 'admin'
@@ -212,9 +212,51 @@
     return `${date || ''}`.trim() + ' ' + `${time || ''}`.trim();
   }
 
+  function parseDisplayedDateTime(dateStr, timeStr) {
+    if (!dateStr || !timeStr) return null;
+    // dateStr expected like 'Lun 12' or '12'
+    const num = (String(dateStr).match(/(\d{1,2})/) || [])[1];
+    const timeMatches = String(timeStr).match(/(\d{1,2}:\d{2}\s*(AM|PM)?)/i);
+    if (!num || !timeMatches) return null;
+    const day = Number(num);
+    const now = new Date();
+    // Try current month/year first
+    let candidate = new Date(now.getFullYear(), now.getMonth(), day);
+    // If candidate is before today, assume next month
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (candidate < today) {
+      // move to next month
+      candidate = new Date(now.getFullYear(), now.getMonth() + 1, day);
+    }
+    // parse time (e.g. 11:30 AM)
+    const timeText = timeMatches[1];
+    const parsed = new Date(candidate.getFullYear(), candidate.getMonth(), candidate.getDate());
+    const t = timeText.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (!t) return null;
+    let hh = Number(t[1]);
+    const mm = Number(t[2]);
+    const ampm = (t[3] || '').toUpperCase();
+    if (ampm === 'PM' && hh < 12) hh += 12;
+    if (ampm === 'AM' && hh === 12) hh = 0;
+    parsed.setHours(hh, mm, 0, 0);
+    return parsed;
+  }
+
   function isTimeSlotTaken(date, time, state = readState()) {
     if (!date || !time) return false;
-    return state.appointments.some((appointment) => appointment.status !== 'cancelled' && appointment.date === date && appointment.time === time);
+    const attempted = parseDisplayedDateTime(date, time);
+    return state.appointments.some((appointment) => {
+      if (appointment.status === 'cancelled') return false;
+      // match by ISO if available
+      if (appointment.iso && attempted) {
+        try {
+          const aptDate = new Date(appointment.iso);
+          return aptDate.getTime() === attempted.getTime();
+        } catch (e) { /* ignore parse errors */ }
+      }
+      // fallback to string match
+      return appointment.date === date && appointment.time === time;
+    });
   }
 
   // Simple site alert/toast helper — appended to body and auto-dismissed
@@ -269,6 +311,17 @@
     return state.notifications[0];
   }
 
+  function removeNotification(id) {
+    if (!id) return null;
+    const state = readState();
+    const before = state.notifications.length;
+    state.notifications = state.notifications.filter((n) => n.id !== id);
+    saveState(state);
+    renderNotifications();
+    syncProfileUI();
+    return { removed: before - state.notifications.length };
+  }
+
   function createAppointment(serviceName, price, date, time, notes = '') {
     const state = readState();
     if (!canBookNewAppointment(state)) {
@@ -278,6 +331,18 @@
     const invalidDateTime = !date || !time || date === 'Sin definir' || time === 'Sin definir';
     if (invalidDateTime) {
       return { allowed: false, reason: 'missing_datetime' };
+    }
+
+    // enforce real date/time constraints (no past, min 1 day ahead)
+    const appointmentDateObj = parseDisplayedDateTime(date, time);
+    if (!appointmentDateObj) {
+      return { allowed: false, reason: 'missing_datetime' };
+    }
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const minAllowed = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000); // tomorrow
+    if (appointmentDateObj < minAllowed) {
+      return { allowed: false, reason: 'too_soon' };
     }
 
     if (isTimeSlotTaken(date, time, state)) {
@@ -315,6 +380,7 @@
       price: discountedPrice || price,
       date,
       time,
+      iso: appointmentDateObj ? appointmentDateObj.toISOString() : null,
       notes,
       status: 'pending',
       createdAt: new Date().toISOString(),
@@ -393,6 +459,46 @@
     }
     syncProfileUI();
     return { allowed: true, appointment: target };
+  }
+
+  // allow marking appointment as confirmed (distinct from completed)
+  function specialistMarkConfirmed(id) {
+    const state = readState();
+    const session = getSession() || {};
+    if (!session || session.role !== 'specialist') {
+      showSiteAlert('Solo un especialista puede confirmar y completar citas.', 'warning');
+      return { allowed: false };
+    }
+    const target = state.appointments.find(a => a.id === id);
+    if (!target) return { allowed: false };
+    target.status = 'confirmed';
+    target.summary = 'Cita confirmada por el especialista.';
+    saveState(state);
+    addNotification('Cita confirmada', `La cita de ${target.serviceName} fue confirmada.`, 'appointment');
+    if (document.getElementById('appointmentsList')) renderAppointmentsPage();
+    try { window.dispatchEvent(new Event('sgc-state-updated')); } catch (e) {}
+    syncProfileUI();
+    return { allowed: true };
+  }
+
+  // mark as no-show
+  function specialistMarkNoShow(id) {
+    const state = readState();
+    const session = getSession() || {};
+    if (!session || session.role !== 'specialist') {
+      showSiteAlert('Solo un especialista puede cambiar el estado de la cita.', 'warning');
+      return { allowed: false };
+    }
+    const target = state.appointments.find(a => a.id === id);
+    if (!target) return { allowed: false };
+    target.status = 'no_show';
+    target.summary = 'El cliente no asistió a la cita.';
+    saveState(state);
+    addNotification('Cita marcada como no asistida', `La cita de ${target.serviceName} fue marcada como no asistida.`, 'appointment');
+    if (document.getElementById('appointmentsList')) renderAppointmentsPage();
+    try { window.dispatchEvent(new Event('sgc-state-updated')); } catch (e) {}
+    syncProfileUI();
+    return { allowed: true };
   }
 
   function restoreAccess() {
@@ -613,14 +719,26 @@
     const notifications = state.notifications.slice(0, 4);
     panel.innerHTML = notifications
       .map((item) => `
-        <div class="notification-item ${item.unread ? 'unread' : ''}">
+        <div class="notification-item ${item.unread ? 'unread' : ''}" data-notif-id="${item.id}">
           <div class="notification-title">${item.title}</div>
           <div class="notification-message">${item.message}</div>
           <div class="notification-meta">${new Date(item.createdAt).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</div>
+          <button class="notif-delete" data-notif-id="${item.id}" aria-label="Eliminar notificación">&times;</button>
         </div>
       `)
       .join('');
   }
+
+  // allow deleting notifications via delegated button (single global listener)
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('.notif-delete');
+    if (btn) {
+      const id = btn.dataset && btn.dataset.notifId;
+      if (id && typeof removeNotification === 'function') {
+        removeNotification(id);
+      }
+    }
+  });
 
   function syncProfileUI() {
     const state = readState();
@@ -706,6 +824,29 @@
       element.textContent = `Bienvenida de nuevo, ${firstName}`;
     });
 
+    // update header user-profile avatar (replace icon with image when available)
+    document.querySelectorAll('.user-profile').forEach((container) => {
+      try {
+        const imgHtml = `<img src="${profile.avatar}" alt="${profile.name}" style="width:36px;height:36px;border-radius:50%;object-fit:cover">`;
+        const nameHtml = `<div class="user-text"><span class="user-role">${profile.role}</span><span class="user-name">${profile.name}</span></div>`;
+        // if container already contains an IMG element, update src
+        const existingImg = container.querySelector('img');
+        if (existingImg) {
+          existingImg.src = profile.avatar;
+          existingImg.alt = profile.name;
+        } else {
+          // replace icon with image
+          const avatarEl = container.querySelector('.user-avatar');
+          if (avatarEl) {
+            avatarEl.innerHTML = imgHtml;
+          }
+        }
+        // update name/role
+        const userText = container.querySelector('.user-text');
+        if (userText) userText.innerHTML = `<span class="user-role">${profile.role}</span><span class="user-name">${profile.name}</span>`;
+      } catch (e) { /* ignore */ }
+    });
+
     const cancelledCount = getCancelledCount(state);
     const status = cancelledCount >= 3 ? 'Vetado temporal' : 'Normal';
     const statusMessage = cancelledCount >= 3
@@ -719,6 +860,8 @@
     document.querySelectorAll('.profile-status-pill').forEach((element) => {
       element.classList.toggle('alert', cancelledCount >= 3);
     });
+
+  
 
     document.querySelectorAll('.profile-status-message').forEach((element) => {
       element.textContent = statusMessage;
@@ -889,7 +1032,7 @@
       <button class="appointment-item" data-appointment-id="${appointment.id}">
         <div class="appointment-item-head">
           <strong>${appointment.serviceName}</strong>
-          <span class="appointment-badge">${appointment.status === 'pending' ? 'Pendiente' : appointment.status === 'cancelled' ? 'Cancelada' : 'Completada'}</span>
+          <span class="appointment-badge">${appointment.status === 'pending' ? 'Pendiente' : appointment.status === 'confirmed' ? 'Confirmada' : appointment.status === 'cancelled' ? 'Cancelada' : 'Completada'}</span>
         </div>
         <div class="appointment-item-meta">${appointment.date} · ${appointment.time}</div>
         <div class="appointment-item-price">${appointment.price}</div>
@@ -904,10 +1047,10 @@
           <div class="detail-card">
             <div class="detail-card-head">
               <h3>${current.serviceName}</h3>
-              <span class="appointment-badge">${current.status === 'pending' ? 'Pendiente' : current.status === 'cancelled' ? 'Cancelada' : 'Completada'}</span>
+              <span class="appointment-badge">${current.status === 'pending' ? 'Pendiente' : current.status === 'confirmed' ? 'Confirmada' : current.status === 'cancelled' ? 'Cancelada' : 'Completada'}</span>
             </div>
             <div class="client-info" style="display:flex;gap:12px;align-items:center;margin-top:10px">
-              <img src="${(current.createdBy && current.createdBy.avatar) || 'https://i.pravatar.cc/80?img=47'}" alt="${(current.createdBy && current.createdBy.name) || 'Cliente'}" style="width:56px;height:56px;border-radius:50%;object-fit:cover">
+              <img src="${(current.createdBy && current.createdBy.avatar) || 'https://www.gravatar.com/avatar/?d=mp&s=80'}" alt="${(current.createdBy && current.createdBy.name) || 'Cliente'}" style="width:56px;height:56px;border-radius:50%;object-fit:cover">
               <div>
                 <div><strong>${(current.createdBy && current.createdBy.name) || 'Cliente SGC'}</strong></div>
                 <div class="meta">${(current.createdBy && current.createdBy.email) || ''} ${current.createdBy && current.createdBy.phone ? '· ' + current.createdBy.phone : ''}</div>
@@ -919,7 +1062,7 @@
               <div><span>Precio</span><strong>${current.price}</strong></div>
               <div><span>Estado</span><strong>${current.summary}</strong></div>
             </div>
-            ${current.status === 'pending' ? `<button class="btn-cancel" data-cancel-id="${current.id}">Cancelar cita</button>` : (getSession() && getSession().role === 'specialist' ? `<button class="btn-delete" data-delete-id="${current.id}">Eliminar cita</button>` : '')}
+            ${current.status === 'pending' ? `<div style="display:flex;gap:8px;flex-wrap:wrap">` + (getSession() && getSession().role === 'specialist' ? `<button class="btn-confirm" data-confirm-id="${current.id}">Confirmar</button>` : '') + `<button class="btn-cancel" data-cancel-id="${current.id}">Cancelar cita</button></div>` : (getSession() && getSession().role === 'specialist' ? `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-complete" data-complete-id="${current.id}">Marcar como atendida</button><button class="btn-delete" data-delete-id="${current.id}">Eliminar cita</button></div>` : '')}
           </div>
         `;
             const cancelButton = detail.querySelector('.btn-cancel');
@@ -943,6 +1086,28 @@
                 }
           });
         }
+          const confirmButton = detail.querySelector('.btn-confirm');
+          if (confirmButton) {
+            confirmButton.addEventListener('click', () => {
+              const session = getSession() || {};
+              if (session.role !== 'specialist') {
+                showSiteAlert('Solo un especialista puede confirmar citas.', 'warning');
+                return;
+              }
+              specialistMarkConfirmed(confirmButton.dataset.confirmId);
+            });
+          }
+          const completeButton = detail.querySelector('.btn-complete');
+          if (completeButton) {
+            completeButton.addEventListener('click', () => {
+              const session = getSession() || {};
+              if (session.role !== 'specialist') {
+                showSiteAlert('Solo un especialista puede marcar una cita como atendida.', 'warning');
+                return;
+              }
+              specialistConfirmAppointment(completeButton.dataset.completeId);
+            });
+          }
       });
     });
 
@@ -1136,6 +1301,11 @@
       return state.activePromotionId;
     }
   };
+
+  // expose notification removal
+  if (window.appointmentsSystem) {
+    window.appointmentsSystem.removeNotification = removeNotification;
+  }
 
   // expose promotions API
   if (window.appointmentsSystem) {
@@ -1336,6 +1506,30 @@
   }
 
   function bindAuthForms() {
+    // helper: clear previous inline field errors in a form
+    function clearFieldErrors(form) {
+      try {
+        if (!form) return;
+        form.querySelectorAll('.sgc-inline-error').forEach((el) => el.remove());
+        form.querySelectorAll('.sgc-field-invalid').forEach((el) => el.classList.remove('sgc-field-invalid'));
+      } catch (e) { /* ignore */ }
+    }
+
+    // helper: show inline error for a given input element or selector
+    function showFieldError(elOrSelector, message) {
+      try {
+        const el = typeof elOrSelector === 'string' ? document.getElementById(elOrSelector) : elOrSelector;
+        if (!el) return;
+        el.classList.add('sgc-field-invalid');
+        // remove existing inline error for this field
+        const next = el.nextElementSibling;
+        if (next && next.classList && next.classList.contains('sgc-inline-error')) next.remove();
+        const msg = document.createElement('div');
+        msg.className = 'sgc-inline-error';
+        msg.textContent = message || '';
+        el.parentNode && el.parentNode.insertBefore(msg, el.nextSibling);
+      } catch (e) { /* ignore */ }
+    }
     function isLoginPage() {
       const page = window.location.pathname.split('/').pop();
       return ['Loggin.html', 'specialist-login.html'].includes(page);
@@ -1353,51 +1547,71 @@
     }
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
-      registerForm.addEventListener('submit', (event) => {
-        event.preventDefault();
+      const handleRegisterSubmit = (event) => {
+        console.log('[sgc] handleRegisterSubmit fired', !!event, event && event.type);
+        try { /* debug toast removed to avoid noisy message during registration */ } catch(e) {}
+        if (event && event.preventDefault) event.preventDefault();
         const passwordValue = document.getElementById('password')?.value || '';
         const confirmPasswordValue = document.getElementById('confirmPassword')?.value || '';
         const birthDateValue = document.getElementById('fecha')?.value || '';
         const payload = {
           name: document.getElementById('nombre')?.value?.trim() || '',
           lastName: document.getElementById('apellido')?.value?.trim() || '',
-          email: document.getElementById('email')?.value?.trim() || '',
-          phone: document.getElementById('telefono')?.value?.trim() || '',
+          email: (document.getElementById('email')?.value || '').trim().toLowerCase(),
+          phone: (document.getElementById('telefono')?.value || '').trim(),
           birthDate: birthDateValue,
           password: passwordValue,
           role: 'client'
         };
 
-        if (!payload.name || !payload.lastName || !payload.email || !payload.phone || !birthDateValue || !passwordValue || !confirmPasswordValue) {
-          showSiteAlert('Completa todos los campos requeridos para crear tu cuenta.', 'info');
+        console.log('[sgc] register payload', payload, { confirmPasswordValue });
+        clearFieldErrors(registerForm);
+        // identify missing individual fields to help debugging/UX and show inline errors
+        const missing = [];
+        if (!payload.name) { missing.push('Nombre'); showFieldError('nombre', 'Ingresa tu nombre'); }
+        if (!payload.lastName) { missing.push('Apellido'); showFieldError('apellido', 'Ingresa tu apellido'); }
+        if (!payload.email) { missing.push('Correo'); showFieldError('email', 'Ingresa tu correo electrónico'); }
+        if (!payload.phone) { missing.push('Teléfono'); showFieldError('telefono', 'Ingresa tu teléfono'); }
+        if (!birthDateValue) { missing.push('Fecha de nacimiento'); showFieldError('fecha', 'Selecciona tu fecha de nacimiento'); }
+        if (!passwordValue) { missing.push('Contraseña'); showFieldError('password', 'Crea una contraseña'); }
+        if (!confirmPasswordValue) { missing.push('Confirmar contraseña'); showFieldError('confirmPassword', 'Confirma tu contraseña'); }
+        if (missing.length) {
+          showSiteAlert('Completa los campos: ' + missing.join(', '), 'info');
           return;
         }
 
-        const namePattern = /^[A-Za-z]+$/;
+        const namePattern = /^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-]+$/;
         if (!namePattern.test(payload.name) || !namePattern.test(payload.lastName)) {
-          showSiteAlert('El nombre y apellido solo pueden contener letras sin espacios ni símbolos.', 'warning');
+          showFieldError('nombre', 'Nombre inválido');
+          showFieldError('apellido', 'Apellido inválido');
+          showSiteAlert('El nombre y apellido contienen caracteres inválidos.', 'warning');
           return;
         }
 
-        const emailPattern = /^[A-Za-z0-9]+@[A-Za-z0-9]+\.com$/;
+        const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
         if (!emailPattern.test(payload.email)) {
-          showSiteAlert('El correo debe contener @ y finalizar en .com, usando solo letras y números.', 'error');
+          showFieldError('email', 'Correo inválido');
+          showSiteAlert('Ingresa un correo electrónico válido.', 'error');
           return;
         }
 
+        payload.phone = (payload.phone || '').replace(/\D/g, '');
         const phonePattern = /^\d{8,14}$/;
         if (!phonePattern.test(payload.phone)) {
-          showSiteAlert('El teléfono debe tener entre 8 y 14 dígitos y no puede contener espacios ni símbolos.', 'warning');
+          showFieldError('telefono', 'Teléfono inválido');
+          showSiteAlert('El teléfono debe tener entre 8 y 14 dígitos.', 'warning');
           return;
         }
 
         const passwordPattern = /^[A-Za-z0-9]{4,16}$/;
         if (!passwordPattern.test(passwordValue)) {
+          showFieldError('password', 'Contraseña inválida');
           showSiteAlert('La contraseña debe tener entre 4 y 16 caracteres y solo puede contener letras y números.', 'warning');
           return;
         }
 
         if (passwordValue !== confirmPasswordValue) {
+          showFieldError('confirmPassword', 'Las contraseñas no coinciden');
           showSiteAlert('Las contraseñas no coinciden.', 'error');
           return;
         }
@@ -1405,11 +1619,13 @@
         const birthDate = new Date(birthDateValue);
         const today = new Date();
         if (Number.isNaN(birthDate.getTime())) {
+          showFieldError('fecha', 'Fecha inválida');
           showSiteAlert('La fecha de nacimiento no es válida. Usa el selector de fecha.', 'error');
           return;
         }
 
         if (birthDate > today) {
+          showFieldError('fecha', 'Fecha en el futuro');
           showSiteAlert('La fecha de nacimiento no puede ser en el futuro.', 'error');
           return;
         }
@@ -1418,19 +1634,33 @@
           ((today.getMonth() < birthDate.getMonth() ||
             (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) ? 1 : 0);
         if (age < 16 || age > 100) {
+          showFieldError('fecha', 'Edad fuera de rango');
           showSiteAlert('Debes tener entre 16 y 100 años para registrarte.', 'warning');
           return;
         }
 
         const result = createUser(payload);
         if (!result.ok) {
-          showSiteAlert('Ese correo ya está registrado.', 'warning');
+          if (result.error === 'email_exists') {
+            showSiteAlert('Ese correo ya está registrado.', 'warning');
+          } else {
+            showSiteAlert('No se pudo crear la cuenta. Intenta de nuevo.', 'error');
+          }
           return;
         }
 
-        showSiteAlert('Cuenta creada correctamente.', 'info');
-        window.location.href = resolveRelative('Loggin.html');
-      });
+        const created = result.user;
+        setSession({ role: created.role, email: created.email, name: `${created.name} ${created.lastName || ''}`.trim() });
+        if (window.appointmentsSystem && typeof window.appointmentsSystem.syncProfileUI === 'function') {
+          window.appointmentsSystem.syncProfileUI();
+        }
+        showSiteAlert('Cuenta creada e iniciada correctamente.', 'info');
+        navigateByRole(created.role);
+      };
+
+      registerForm.addEventListener('submit', handleRegisterSubmit);
+      const registerBtn = document.getElementById('registerSubmitButton');
+      if (registerBtn) registerBtn.addEventListener('click', handleRegisterSubmit, true);
     }
 
     const loginForm = document.getElementById('loginForm');
@@ -1500,6 +1730,9 @@
       readUsers
     };
 
+  // expose toast helper globally for pages that don't load full system
+  try { if (typeof window !== 'undefined') window.showSiteAlert = showSiteAlert; } catch (e) { /* ignore */ }
+
     if (window.appointmentsSystem) {
       window.appointmentsSystem.readUsers = readUsers;
       window.appointmentsSystem.getSession = getSession;
@@ -1509,5 +1742,28 @@
       window.appointmentsSystem.loginUser = loginUser;
       window.appointmentsSystem.signOut = function () { clearSession(); window.location.href = resolveRelative('Loggin.html'); };
       window.appointmentsSystem.setProfileAvatar = setProfileAvatar;
+      window.appointmentsSystem.setProfile = function (values) {
+        try {
+          const state = readState();
+          state.profile = { ...(state.profile || {}), ...(values || {}) };
+          saveState(state);
+          // if current session user exists, also update user record
+          const session = getSession() || {};
+          if (session.email) {
+            try {
+              const users = readUsers();
+              const idx = users.findIndex(u => u.email && u.email.toLowerCase() === session.email.toLowerCase());
+              if (idx !== -1) {
+                users[idx] = { ...(users[idx] || {}), ...(values || {}) };
+                localStorage.setItem('sgc_auth_users_v1', JSON.stringify(users));
+              }
+            } catch (e) { /* ignore */ }
+          }
+          try { window.dispatchEvent(new Event('sgc-state-updated')); } catch(e) {}
+          return { ok: true };
+        } catch (e) { return { ok: false }; }
+      };
+      window.appointmentsSystem.specialistMarkConfirmed = specialistMarkConfirmed;
+      window.appointmentsSystem.specialistMarkNoShow = specialistMarkNoShow;
     }
   })();

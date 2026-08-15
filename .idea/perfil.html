@@ -28,10 +28,10 @@
           </div>
         </div>
         <div class="user-profile">
-          <div class="user-avatar"><i class="fa-solid fa-circle-user"></i></div>
+          <div class="user-avatar"><img src="https://www.gravatar.com/avatar/?d=mp&s=150" alt="avatar" style="width:36px;height:36px;border-radius:50%"></div>
           <div class="user-text">
             <span class="user-name">Ana López</span>
-            <span class="user-role">Cliente VIP</span>
+            <span class="user-role">Cliente</span>
           </div>
         </div>
       </div>
@@ -44,9 +44,9 @@
         <button class="close-btn" id="closeMenuBtn" aria-label="Cerrar menú"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="sidebar-profile">
-        <img id="sidebarProfileAvatar" src="https://i.pravatar.cc/150?img=47" alt="Ana López" class="profile-avatar">
+        <img id="sidebarProfileAvatar" src="https://www.gravatar.com/avatar/?d=mp&s=150" alt="Ana López" class="profile-avatar">
         <h4 class="profile-name">Ana López</h4>
-        <p class="profile-role">Cliente VIP</p>
+        <p class="profile-role">Cliente</p>
       </div>
       <nav class="sidebar-nav">
         <a href="dashboard.html"><i class="fa-solid fa-house"></i> Inicio</a>
@@ -66,12 +66,12 @@
         <div class="hero-card">
           <div class="profile-top">
             <div style="position:relative">
-            <img id="profileAvatarImg" class="profile-avatar" src="https://i.pravatar.cc/150?img=47" alt="Ana López">
+            <img id="profileAvatarImg" class="profile-avatar" src="https://www.gravatar.com/avatar/?d=mp&s=150" alt="Ana López">
             <input id="profileAvatarInput" type="file" accept="image/*" title="Cambiar foto de perfil" style="position:absolute;right:6px;bottom:6px;opacity:0;width:40px;height:40px;cursor:pointer">
             </div>
             <div class="profile-meta">
               <h2 class="profile-name">Ana López</h2>
-              <p class="profile-role">Cliente VIP</p>
+              <p class="profile-role">Cliente</p>
               <div class="profile-status-pill"><i class="fa-solid fa-circle-check"></i><span class="profile-status">Normal</span></div>
             </div>
           </div>
@@ -100,6 +100,11 @@
               <p id="profileNextAppointment">Sin citas próximas</p>
             </div>
             <div class="mini-pill"><i class="fa-regular fa-calendar-check"></i> Estado activo</div>
+          </div>
+          <div style="margin-top:12px; display:flex; gap:8px;">
+            <button id="editProfileBtn" class="btn-primary" style="width:auto; padding:8px 12px; border-radius:10px;">Editar perfil</button>
+            <button id="saveProfileBtn" class="btn-primary" style="width:auto; padding:8px 12px; border-radius:10px; display:none; background:#6ea57a;">Guardar</button>
+            <button id="cancelProfileBtn" class="btn-register" style="width:auto; padding:8px 12px; border-radius:10px; display:none;">Cancelar</button>
           </div>
         </div>
 

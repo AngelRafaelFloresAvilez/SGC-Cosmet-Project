@@ -1,5 +1,17 @@
 (function () {
   const SEND_STORE_KEY = 'sgc_password_reset_v1';
+  // ensure showSiteAlert exists (fallback when appointments-system.js not loaded)
+  if (typeof showSiteAlert !== 'function') {
+    window.showSiteAlert = function (message, type, timeout) {
+      try {
+        if (window.appointmentsSystem && typeof window.appointmentsSystem.showSiteAlert === 'function') {
+          return window.appointmentsSystem.showSiteAlert(message, type, timeout);
+        }
+      } catch (e) { /* ignore */ }
+      try { alert(message); } catch (e) { /* ignore */ }
+      return null;
+    };
+  }
   function getUsers() {
     try {
       return (window.appointmentsSystem && typeof window.appointmentsSystem.readUsers === 'function')
