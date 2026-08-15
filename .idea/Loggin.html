@@ -17,7 +17,7 @@
       <div class="form-content">
         <div class="form-header">
           <h1>Iniciar Sesion</h1>
-          <p class="hero-copy">¡Bienvenido/a! Hemos preparado este espacio para facilitarte la vida. Comienza a gestionar tus servicios o descubre nuestras promociones exclusivas.</p>
+          <p class="hero-copy">¡Bienvenido/a! Hemos preparado este espacio para ti. Comienza a gestionar tus servicios o accede para conocer todo lo que te ofrecemos.</p>
         </div>
 
         <form id="loginForm" class="form-grid" onsubmit="event.preventDefault();">
@@ -36,19 +36,31 @@
               <input id="showPassword" type="checkbox">
               <span>Mostrar contraseña</span>
             </label>
-            <a href="ResetPassword.html" class="secondary-link">Olvidaste la contraseña?</a>
+            <a href="ResetPassword.html" class="secondary-link">Olvidaste tu contraseña?</a>
           </div>
 
           <button id="loginSubmitButton" type="submit" class="btn-primary">Iniciar Sesion</button>
 
           <div class="footer-link">
             <span>¿No tienes una cuenta de sgc-cosmetic?</span>
-            <a href="login.html">Registrate ahora</a>
+            <p><a href="login.html">Registrate ahora</a></p>
           </div>
         </form>
       </div>
 
-      <div class="form-side-image" aria-hidden="true"></div>
+      <svg class="wave-separator" viewBox="0 0 240 600" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 0 C60 120, 60 240, 0 360 C-60 480, 60 540, 0 600 L240 600 L240 0 Z" fill="#ffffff" />
+      </svg>
+      <div class="form-side-image" aria-hidden="true">
+        <svg class="side-image-svg" viewBox="0 0 480 600" preserveAspectRatio="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <clipPath id="clipRight">
+              <path d="M120 0 C80 120,80 240,120 360 C160 480,80 540,120 600 L480 600 L480 0 Z" />
+            </clipPath>
+          </defs>
+          <image href="../out/production/SGC/ImagenFondoLogin.png" width="480" height="600" clip-path="url(#clipRight)" preserveAspectRatio="xMidYMid slice" />
+        </svg>
+      </div>
     </div>
   </div>
 
