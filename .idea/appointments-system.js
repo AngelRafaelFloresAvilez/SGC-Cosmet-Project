@@ -631,18 +631,26 @@
   function openSidebar() {
     const menu = document.getElementById('sidebarMenu');
     const overlay = document.getElementById('menuOverlay');
+    const menuButton = document.querySelector('.menu-btn');
     if (menu && overlay) {
       menu.classList.add('active');
       overlay.classList.add('active');
+    }
+    if (menuButton) {
+      menuButton.classList.add('active');
     }
   }
 
   function closeSidebar() {
     const menu = document.getElementById('sidebarMenu');
     const overlay = document.getElementById('menuOverlay');
+    const menuButton = document.querySelector('.menu-btn');
     if (menu && overlay) {
       menu.classList.remove('active');
       overlay.classList.remove('active');
+    }
+    if (menuButton) {
+      menuButton.classList.remove('active');
     }
   }
 
@@ -658,9 +666,14 @@
       return;
     }
 
-    // Open menu
+    // Open/close menu
     if (target.closest('.menu-btn')) {
-      openSidebar();
+      const menu = document.getElementById('sidebarMenu');
+      if (menu && menu.classList.contains('active')) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
       return;
     }
 
@@ -832,24 +845,42 @@
     document.querySelectorAll('.user-profile').forEach((container) => {
       try {
         const imgHtml = `<img src="${profile.avatar}" alt="${profile.name}" style="width:36px;height:36px;border-radius:50%;object-fit:cover">`;
-        const nameHtml = `<div class="user-text"><span class="user-role">${profile.role}</span><span class="user-name">${profile.name}</span></div>`;
-        // if container already contains an IMG element, update src
-        const existingImg = container.querySelector('img');
-        if (existingImg) {
-          existingImg.src = profile.avatar;
-          existingImg.alt = profile.name;
-        } else {
-          // replace icon with image
-          const avatarEl = container.querySelector('.user-avatar');
-          if (avatarEl) {
+        const avatarEl = container.querySelector('.user-avatar');
+        if (avatarEl) {
+          const existingImg = avatarEl.querySelector('img');
+          if (existingImg) {
+            existingImg.src = profile.avatar;
+            existingImg.alt = profile.name;
+          } else {
             avatarEl.innerHTML = imgHtml;
           }
         }
-        // update name/role
+
+        const metaEl = container.querySelector('.user-meta');
+        if (metaEl) {
+          metaEl.innerHTML = `<span class="user-name">${profile.name}</span><span class="user-role">${profile.role}</span>`;
+        }
+
         const userText = container.querySelector('.user-text');
         if (userText) userText.innerHTML = `<span class="user-role">${profile.role}</span><span class="user-name">${profile.name}</span>`;
       } catch (e) { /* ignore */ }
     });
+
+    const sidebarAvatar = document.getElementById('sidebarUserAvatar');
+    if (sidebarAvatar) {
+      const sidebarImg = sidebarAvatar.querySelector('img');
+      if (sidebarImg) {
+        sidebarImg.src = profile.avatar;
+        sidebarImg.alt = profile.name;
+      } else {
+        sidebarAvatar.innerHTML = `<img src="${profile.avatar}" alt="${profile.name}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
+      }
+    }
+
+    const sidebarName = document.querySelector('.sidebar-user-name');
+    const sidebarRole = document.querySelector('.sidebar-user-role');
+    if (sidebarName) sidebarName.textContent = profile.name;
+    if (sidebarRole) sidebarRole.textContent = profile.role;
 
     const cancelledCount = getCancelledCount(state);
     const status = cancelledCount >= 3 ? 'Vetado temporal' : 'Normal';
@@ -1507,7 +1538,7 @@
       window.location.href = resolveRelative('admin-dashboard.html');
       return;
     }
-    window.location.href = resolveRelative('catalogo.html');
+    window.location.href = resolveRelative('dashboard.html');
   }
 
   function bindAuthForms() {
@@ -1770,6 +1801,7 @@
       window.appointmentsSystem.showSiteAlert = showSiteAlert;
       window.appointmentsSystem.signOut = function () { clearSession(); window.location.href = resolveRelative('Loggin.html'); };
       window.appointmentsSystem.setProfileAvatar = setProfileAvatar;
+      window.appointmentsSystem.navigateByRole = navigateByRole;
       window.appointmentsSystem.setProfile = function (values) {
         try {
           const state = readState();

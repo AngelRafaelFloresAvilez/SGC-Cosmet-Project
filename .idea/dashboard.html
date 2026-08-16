@@ -23,40 +23,42 @@
 
     <!-- MENÚ LATERAL -->
     <aside class="sidebar-menu" id="sidebarMenu">
+        <div class="sidebar-user-box">
+            <div class="sidebar-user-avatar" id="sidebarUserAvatar">
+                <i class="fa-solid fa-circle-user"></i>
+            </div>
+            <div class="sidebar-user-meta">
+                <span class="sidebar-user-name">Ana López</span>
+                <span class="sidebar-user-role">Cliente</span>
+            </div>
+        </div>
+
         <div class="sidebar-header">
-            <h3>SGC COSMETIC</h3>
-            <button class="close-btn">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+            <hr class="sidebar-divider">
         </div>
 
-        <!-- 🌟 NUEVO: APARTADO DE PERFIL DEL USUARIO 🌟 -->
-        <div class="sidebar-profile">
-            <!-- NOTA: Cambia el enlace de src por la ruta de tu imagen real (ej: '../imagenes/foto-ana.jpg') -->
-            <img src="https://www.gravatar.com/avatar/?d=mp&s=150" alt="Foto de perfil">
-            <h4>Ana López</h4>
-            <p>Cliente<br>Activo desde 2024</p>
-        </div>
+        <div class="sidebar-section-label">General</div>
 
-        <!-- Opciones filtradas -->
         <nav class="sidebar-nav">
             <a href="#" class="active"><i class="fa-solid fa-house"></i> Inicio</a>
             <a href="catalogo.html"><i class="fa-solid fa-border-all"></i> Catálogo</a>
-            <a href="citas.html"><i class="fa-regular fa-calendar-check"></i> Citas</a>
-            <a href="perfil.html"><i class="fa-regular fa-user"></i> Perfil</a>
+            <a href="citas.html"><i class="fa-regular fa-calendar-check"></i> Mis citas</a>
+            <hr class="sidebar-divider">
+            <a href="perfil.html" class="nav-profile-link"><i class="fa-regular fa-user"></i> Mi perfil</a>
         </nav>
 
-        <div class="sidebar-footer">
-            <button class="btn btn-logout-green w-100">
-                <i class="fa-solid fa-right-from-bracket"></i> CERRAR SESIÓN
-            </button>
-        </div>
+        <button class="sidebar-logout" type="button" onclick="window.location.href='../index.html'">
+            <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+        </button>
+
+        <hr class="sidebar-divider">
+        <div class="sidebar-brand">SGC COSMETICS</div>
     </aside>
 
     <div class="main-wrapper">
         <div class="bg-curve-mask">
             <svg preserveAspectRatio="none" viewBox="0 0 100 100" style="width: 100%; height: 100%;">
-                <path d="M0,0 L50,0 C42,40, 52,70, 75,100 L0,100 Z" fill="rgba(249, 251, 248, 0.96)" />
+                <path d="M0,0 L50,0 C42,40, 52,70, 75,100 L0,100 Z" fill="rgba(249, 251, 248, 0.8)" />
             </svg>
         </div>
 
@@ -69,7 +71,7 @@
                 <div style="position:relative;">
                     <button class="btn-notification" type="button" data-notification-toggle>
                         <i class="fa-regular fa-bell"></i>
-                        <span class="notification-badge" hidden></span>
+                        <span class="notification-badge"></span>
                     </button>
                     <div class="notification-panel" id="notificationPanel">
                         <div id="notificationList"></div>
@@ -77,8 +79,13 @@
                 </div>
 
                 <div class="user-profile">
-                    <i class="fa-solid fa-circle-user user-avatar"></i>
-                    <span class="user-name">Ana López</span>
+                    <div class="user-avatar" aria-label="Avatar del cliente">
+                        <i class="fa-solid fa-circle-user"></i>
+                    </div>
+                    <div class="user-meta">
+                        <span class="user-name">Ana López</span>
+                        <span class="user-role">Cliente</span>
+                    </div>
                 </div>
             </div>
         </header>
@@ -87,13 +94,16 @@
         <div class="content">
             
             <div class="hero-title">
-                SGC<br>COSMETIC
+                SGC<br>COSMETICS
             </div>
             
             <div class="title-divider"></div>
 
             <div class="hero-subtitle">
-                Sistema de gestion de<br>servicios cosmetologicos
+                Sistema de gestion de
+                 <p class="hero-subtitlee">
+                servicios cosmetologicos
+            </p>
             </div>
 
             <div class="hero-desc">
@@ -105,28 +115,28 @@
                     <div class="feature-icon"><i class="fa-regular fa-calendar-check"></i></div>
                     <div class="feature-text">
                         <h4>Agenda inteligente</h4>
-                        <p>Gestiona citas, recordatorios y<br>disponibilidad en tiempo real</p>
+                        <p>Gestiona citas, recordatorios y<br>disponibilidad.</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <div class="feature-icon"><i class="fa-solid fa-user-group"></i></div>
                     <div class="feature-text">
-                        <h4>Agenda inteligente</h4>
-                        <p>Gestiona citas, recordatorios y<br>disponibilidad en tiempo real</p>
+                        <h4>Gestion de usuarios</h4>
+                       <p>Gestiona usuarios y <br> administra roles.</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <div class="feature-icon"><i class="fa-solid fa-cart-shopping"></i></div>
                     <div class="feature-text">
-                        <h4>Agenda inteligente</h4>
-                        <p>Gestiona citas, recordatorios y<br>disponibilidad en tiempo real</p>
+                        <h4>Pagos protegidos</h4>
+                       <p>Gestiona los pagos<br>en persona.</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <div class="feature-icon"><i class="fa-solid fa-chart-column"></i></div>
                     <div class="feature-text">
-                        <h4>Agenda inteligente</h4>
-                        <p>Gestiona citas, recordatorios y<br>disponibilidad en tiempo real</p>
+                        <h4>Metricas</h4>
+                        <p>Mostramos metricas <br>sobre datos reales.</p>
                     </div>
                 </div>
             </div>
@@ -136,41 +146,38 @@
                     <i class="fa-solid fa-shield-halved"></i>
                     <div>
                         <h5>Seguro y confiable</h5>
-                        <p>Protegemos la info de tu<br>negocio y clientes.</p>
+                        <p>Protegemos la <br>información de tu negocio y clientes.</p>
                     </div>
                 </div>
                 <div class="trust-item">
                     <i class="fa-solid fa-cloud"></i>
                     <div>
-                        <h5>Desde cualquier lugar</h5>
+                        <h5>Accesible</h5>
                         <p>Ingresa desde cualquier<br>dispositivo.</p>
                     </div>
                 </div>
                 <div class="trust-item">
                     <i class="fa-solid fa-lock"></i>
                     <div>
-                        <h5>Respaldo Automatico</h5>
-                        <p>Tu informacion siempre<br>guardada y respaldada.</p>
+                        <h5>Respaldo</h5>
+                        <p>Tu informacion segura <br>y respaldada.</p>
                     </div>
                 </div>
                 <div class="trust-item">
                     <i class="fa-solid fa-headset"></i>
                     <div>
                         <h5>Soporte tecnico</h5>
-                        <p>Estamos aqui para ayudarte<br>siempre que lo necesites</p>
+                        <p>Estamos aqui para ayudarte siempre<br> que lo necesites</p>
                     </div>
                 </div>
             </div>
 
             <footer>
-                <span>contacto:sgccosmetic@gmail.com</span>
+                <span>sgccosmetics@gmail.com</span>
                 <span class="separator">|</span>
-                <span>+ 52 567 850 4567</span>
+                <span>+ 52 22 9850 2428</span>
                 <span class="separator">|</span>
-                <i class="fa-brands fa-facebook"></i>
-                <i class="fa-brands fa-instagram"></i>
                 <img src="../out/production/SGC/ImagenLogotipo.png" alt="SGC Logo" class="footer-logo">
-                <span>@sgccosmetic</span>
             </footer>
 
         </div>

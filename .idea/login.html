@@ -156,7 +156,39 @@
           return;
         }
 
+        const result = window.appointmentsSystem && typeof window.appointmentsSystem.createUser === 'function'
+          ? window.appointmentsSystem.createUser({
+              name: values.nombre,
+              lastName: values.apellido,
+              email: values.email,
+              phone: values.telefono,
+              birthDate: values.fecha,
+              password: values.password,
+              role: 'client'
+            })
+          : { ok: true, user: { role: 'client', email: values.email, name: values.nombre, lastName: values.apellido } };
+
+        if (!result.ok) {
+          showToast('Este correo ya está registrado.', 'error');
+          return;
+        }
+
+        if (window.appointmentsSystem && typeof window.appointmentsSystem.setSession === 'function') {
+          window.appointmentsSystem.setSession({
+            role: 'client',
+            email: values.email,
+            name: `${values.nombre} ${values.apellido}`.trim()
+          });
+        }
+
         showToast('Cuenta creada correctamente.', 'info');
+        setTimeout(() => {
+          if (window.appointmentsSystem && typeof window.appointmentsSystem.navigateByRole === 'function') {
+            window.appointmentsSystem.navigateByRole('client');
+            return;
+          }
+          window.location.href = 'dashboard.html';
+        }, 500);
       });
     })();
   </script>
