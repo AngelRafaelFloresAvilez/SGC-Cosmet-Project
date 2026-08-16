@@ -12,16 +12,21 @@ document.addEventListener('click', (event) => {
   const target = event.target;
 
   if (target.closest('.menu-btn')) {
-    abrirMenu();
-    return;
-  }
-
-  if (target.closest('.close-btn')) {
-    cerrarMenu();
+    const sidebar = document.getElementById('sidebarMenu');
+    if (sidebar.classList.contains('active')) {
+      cerrarMenu();
+    } else {
+      abrirMenu();
+    }
     return;
   }
 
   if (target.closest('.sidebar-nav a')) {
+    cerrarMenu();
+    return;
+  }
+
+  if (target.closest('.menu-overlay')) {
     cerrarMenu();
     return;
   }
@@ -32,14 +37,5 @@ document.addEventListener('click', (event) => {
     if (href) {
       window.location.href = href;
     }
-  }
-});
-
-document.addEventListener('click', (event) => {
-  const button = event.target.closest('[data-href]');
-  if (!button) return;
-  const href = button.dataset.href;
-  if (href) {
-    window.location.href = href;
   }
 });

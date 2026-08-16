@@ -54,10 +54,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 10;
+            z-index: 110;
         }
 
         .menu-btn {
+            position: relative;
+            z-index: 110;
             background: none;
             border: none;
             font-size: 28px;
@@ -86,8 +88,8 @@
         }
 
         .btn-login {
-            background-color: #4B613F; /* Accent green used across the app */
-            color: #FFFFFF; /* dark text for contrast on light green */
+            background-color: #4B613F;
+            color: #FFFFFF;
             border: none;
             box-shadow: 0 4px 6px rgba(0,0,0,0.06);
         }
@@ -141,7 +143,7 @@
             height: 100vh;
             background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(3px);
-            z-index: 99;
+            z-index: 90;
             opacity: 0;
             visibility: hidden;
             transition: all 0.3s ease;
@@ -155,93 +157,132 @@
         .sidebar-menu {
             position: fixed;
             top: 0;
-            left: -320px;
+            left: -360px;
             width: 300px;
             height: 100vh;
-            background-color: #F4F7F2; /* Tono claro, suave e higiénico */
+            background: rgba(236, 239, 233, 0.97);
             color: #2C3527;
             z-index: 100;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 30px 25px;
-            box-shadow: 5px 0 25px rgba(0,0,0,0.15);
+            padding: 18px 18px 18px 18px;
+            box-shadow: none;
+            border-right: 0;
             transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .sidebar-menu.active {
             left: 0;
+            background: rgba(236, 239, 233, 0.97);
+        }
+
+        .sidebar-menu.active::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 80px;
+            background: rgba(103, 128, 82, 1);
+            z-index: 0;
         }
 
         .sidebar-header {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-            padding-bottom: 20px;
+            min-height: 42px;
+            padding: 12px 0 0;
+            position: relative;
+            z-index: 1;
+            margin-top: 52px;
         }
 
-        .sidebar-header h3 {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.4rem;
-            color: #2C3527;
-            letter-spacing: 1px;
-        }
-
-        .close-btn {
-            background: none;
+        .sidebar-section-label {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            width: auto;
+            color: #39383680;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-align: left;
+            padding-left: 0px;
+            background: transparent;
             border: none;
-            color: #2C3527;
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: transform 0.2s, color 0.2s;
-        }
-
-        .close-btn:hover {
-            color: #526B4A;
-            transform: scale(1.1);
+            border-radius: 0;
+            margin-left: 0;
         }
 
         .sidebar-nav {
             display: flex;
             flex-direction: column;
             gap: 12px;
-            margin-top: 25px;
+            margin-top: 12px;
             flex-grow: 1;
+            position: relative;
+            z-index: 1;
         }
 
         .sidebar-nav a {
             display: flex;
             align-items: center;
-            gap: 15px;
-            color: #3A4E32;
+            gap: 14px;
+            color: #2d312d;
             text-decoration: none;
-            font-size: 0.95rem;
-            font-weight: 600;
-            padding: 12px 16px;
-            border-radius: 8px;
+            font-size: 1.05rem;
+            font-weight: 500;
+            padding: 12px 14px;
+            border-radius: 12px;
             transition: all 0.2s ease;
+            letter-spacing: 0.01em;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(0,0,0,0.04);
         }
 
         .sidebar-nav a i {
-            font-size: 1.1rem;
-            width: 20px;
+            font-size: 1.2rem;
+            width: 22px;
             text-align: center;
-            color: #526B4A;
+            color: #2d312d;
         }
 
-        .sidebar-nav a:hover, .sidebar-nav a.active {
-            background-color: #E2ECE0;
-            color: #1A2A1A;
-            transform: translateX(5px);
+        .sidebar-nav a:hover {
+            background: rgba(255,255,255,0.25);
         }
 
-        .sidebar-footer {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            border-top: 1px solid rgba(0, 0, 0, 0.08);
-            padding-top: 20px;
+        .sidebar-nav a.active {
+            background: #B5D49E80;
+            color: #1f2c20;
+            font-weight: 600;
+            box-shadow: inset 0 0 0 1px rgba(73, 90, 61, 0.08);
+        }
+
+        .nav-profile-link {
+            margin-top: 0;
+            padding-top: 12px !important;
+        }
+
+        .sidebar-divider {
+            width: 90%;
+            height: 2px;
+            background: rgba(38, 40, 38, 0.55);
+            margin: 10px auto 0;
+            border: none;
+            
+        }
+
+        .sidebar-brand {
+            margin-top: auto;
+            padding: 18px 8px 8px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #698659;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            text-align: left;
         }
 
         .w-100 {
