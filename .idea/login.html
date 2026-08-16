@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="StylesLogin.css">
-  <script src="login.js"></script>
 </head>
 <body>
   <div class="screen">
@@ -20,7 +19,7 @@
         </div>
         
 
-        <form id="registerForm" class="form-grid">
+        <form id="registerForm" class="form-grid" novalidate>
           <div class="input-row">
             <label for="nombre">
               <span>Nombre</span>
@@ -40,7 +39,7 @@
           <div class="input-row">
             <label for="telefono">
               <span>Teléfono</span>
-              <input id="telefono" name="telefono" type="tel" placeholder="Tu número" required>
+              <input id="telefono" name="telefono" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="14" placeholder="Tu número" required>
             </label>
             <label for="fecha">
               <span>Fecha de nacimiento</span>
@@ -60,7 +59,7 @@
           </div>
 
 
-          <button id="registerSubmitButton" type="submit" class="btn-primary">Crear cuenta</button>
+          <button id="registerSubmitButton" type="button" class="btn-primary">Crear cuenta</button>
 
           <div class="footer-link">
             <span>¿Ya tienes una cuenta?</span>
@@ -86,4 +85,79 @@
   </div>
   <script src="appointments-system.js"></script>
   <script src="login.js"></script>
+  <script>
+    (function () {
+      function showToast(message, type) {
+        const containerId = 'sgc-alert-container';
+        let container = document.getElementById(containerId);
+        if (!container) {
+          container = document.createElement('div');
+          container.id = containerId;
+          container.className = 'sgc-alert-container';
+          document.body.appendChild(container);
+        }
+        const alertEl = document.createElement('div');
+        alertEl.className = 'sgc-alert ' + (type || 'info');
+        alertEl.textContent = message || '';
+        container.appendChild(alertEl);
+        setTimeout(() => {
+          alertEl.style.transition = 'all 260ms ease';
+          alertEl.style.opacity = '0';
+          setTimeout(() => alertEl.remove(), 300);
+        }, 3000);
+      }
+
+      window.showSiteAlert = window.showSiteAlert || showToast;
+
+      const form = document.getElementById('registerForm');
+      const button = document.getElementById('registerSubmitButton');
+      if (!form || !button) return;
+
+      button.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const values = {
+          nombre: document.getElementById('nombre')?.value?.trim() || '',
+          apellido: document.getElementById('apellido')?.value?.trim() || '',
+          email: (document.getElementById('email')?.value || '').trim(),
+          telefono: (document.getElementById('telefono')?.value || '').trim(),
+          fecha: document.getElementById('fecha')?.value || '',
+          password: document.getElementById('password')?.value || '',
+          confirm: document.getElementById('confirmPassword')?.value || ''
+        };
+
+        const missing = [];
+        if (!values.nombre) missing.push('Nombre');
+        if (!values.apellido) missing.push('Apellido');
+        if (!values.email) missing.push('Correo');
+        if (!values.telefono) missing.push('Teléfono');
+        if (!values.fecha) missing.push('Fecha de nacimiento');
+        if (!values.password) missing.push('Contraseña');
+        if (!values.confirm) missing.push('Confirmar contraseña');
+
+        if (missing.length) {
+          showToast('Completa los campos: ' + missing.join(', '), 'info');
+          return;
+        }
+
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(values.email)) {
+          showToast('Ingresa un correo electrónico válido.', 'error');
+          return;
+        }
+
+        if (values.password.length < 4 || values.password.length > 16 || !/^[A-Za-z0-9]+$/.test(values.password)) {
+          showToast('La contraseña debe tener entre 4 y 16 caracteres alfanuméricos.', 'warning');
+          return;
+        }
+
+        if (values.password !== values.confirm) {
+          showToast('Las contraseñas no coinciden.', 'error');
+          return;
+        }
+
+        showToast('Cuenta creada correctamente.', 'info');
+      });
+    })();
+  </script>
 </html>

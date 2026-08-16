@@ -284,6 +284,10 @@
     return null;
   }
 
+  if (typeof window !== 'undefined') {
+    window.showSiteAlert = window.showSiteAlert || showSiteAlert;
+  }
+
   function getUnreadCount(state = readState()) {
     return state.notifications.filter((item) => item.unread).length;
   }
@@ -1274,6 +1278,7 @@
         ? window.sgcAuth.createUser(user)
         : { ok: false, error: 'auth_not_ready' };
     },
+    showSiteAlert,
     loginUser: function (email, password) {
       return window.sgcAuth && typeof window.sgcAuth.loginUser === 'function'
         ? window.sgcAuth.loginUser(email, password)
@@ -1550,15 +1555,19 @@
       const handleRegisterSubmit = (event) => {
         console.log('[sgc] handleRegisterSubmit fired', !!event, event && event.type);
         try { /* debug toast removed to avoid noisy message during registration */ } catch(e) {}
-        if (event && event.preventDefault) event.preventDefault();
+        if (event && event.preventDefault) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
         const passwordValue = document.getElementById('password')?.value || '';
         const confirmPasswordValue = document.getElementById('confirmPassword')?.value || '';
         const birthDateValue = document.getElementById('fecha')?.value || '';
+        const rawPhoneValue = (document.getElementById('telefono')?.value || '').trim();
         const payload = {
           name: document.getElementById('nombre')?.value?.trim() || '',
           lastName: document.getElementById('apellido')?.value?.trim() || '',
           email: (document.getElementById('email')?.value || '').trim().toLowerCase(),
-          phone: (document.getElementById('telefono')?.value || '').trim(),
+          phone: rawPhoneValue,
           birthDate: birthDateValue,
           password: passwordValue,
           role: 'client'
@@ -1576,7 +1585,7 @@
         if (!passwordValue) { missing.push('Contraseña'); showFieldError('password', 'Crea una contraseña'); }
         if (!confirmPasswordValue) { missing.push('Confirmar contraseña'); showFieldError('confirmPassword', 'Confirma tu contraseña'); }
         if (missing.length) {
-          showSiteAlert('Completa los campos: ' + missing.join(', '), 'info');
+          window.showSiteAlert('Completa los campos: ' + missing.join(', '), 'info');
           return;
         }
 
@@ -1584,14 +1593,14 @@
         if (!namePattern.test(payload.name) || !namePattern.test(payload.lastName)) {
           showFieldError('nombre', 'Nombre inválido');
           showFieldError('apellido', 'Apellido inválido');
-          showSiteAlert('El nombre y apellido contienen caracteres inválidos.', 'warning');
+          window.showSiteAlert('El nombre y apellido contienen caracteres inválidos.', 'warning');
           return;
         }
 
         const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
         if (!emailPattern.test(payload.email)) {
           showFieldError('email', 'Correo inválido');
-          showSiteAlert('Ingresa un correo electrónico válido.', 'error');
+          window.showSiteAlert('Ingresa un correo electrónico válido.', 'error');
           return;
         }
 
@@ -1599,20 +1608,20 @@
         const phonePattern = /^\d{8,14}$/;
         if (!phonePattern.test(payload.phone)) {
           showFieldError('telefono', 'Teléfono inválido');
-          showSiteAlert('El teléfono debe tener entre 8 y 14 dígitos.', 'warning');
+          window.showSiteAlert('El teléfono debe tener entre 8 y 14 dígitos.', 'warning');
           return;
         }
 
         const passwordPattern = /^[A-Za-z0-9]{4,16}$/;
         if (!passwordPattern.test(passwordValue)) {
           showFieldError('password', 'Contraseña inválida');
-          showSiteAlert('La contraseña debe tener entre 4 y 16 caracteres y solo puede contener letras y números.', 'warning');
+          window.showSiteAlert('La contraseña debe tener entre 4 y 16 caracteres y solo puede contener letras y números.', 'warning');
           return;
         }
 
         if (passwordValue !== confirmPasswordValue) {
           showFieldError('confirmPassword', 'Las contraseñas no coinciden');
-          showSiteAlert('Las contraseñas no coinciden.', 'error');
+          window.showSiteAlert('Las contraseñas no coinciden.', 'error');
           return;
         }
 
@@ -1620,13 +1629,13 @@
         const today = new Date();
         if (Number.isNaN(birthDate.getTime())) {
           showFieldError('fecha', 'Fecha inválida');
-          showSiteAlert('La fecha de nacimiento no es válida. Usa el selector de fecha.', 'error');
+          window.showSiteAlert('La fecha de nacimiento no es válida. Usa el selector de fecha.', 'error');
           return;
         }
 
         if (birthDate > today) {
           showFieldError('fecha', 'Fecha en el futuro');
-          showSiteAlert('La fecha de nacimiento no puede ser en el futuro.', 'error');
+          window.showSiteAlert('La fecha de nacimiento no puede ser en el futuro.', 'error');
           return;
         }
 
@@ -1635,16 +1644,16 @@
             (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) ? 1 : 0);
         if (age < 16 || age > 100) {
           showFieldError('fecha', 'Edad fuera de rango');
-          showSiteAlert('Debes tener entre 16 y 100 años para registrarte.', 'warning');
+          window.showSiteAlert('Debes tener entre 16 y 100 años para registrarte.', 'warning');
           return;
         }
 
         const result = createUser(payload);
         if (!result.ok) {
           if (result.error === 'email_exists') {
-            showSiteAlert('Ese correo ya está registrado.', 'warning');
+            window.showSiteAlert('Ese correo ya está registrado.', 'warning');
           } else {
-            showSiteAlert('No se pudo crear la cuenta. Intenta de nuevo.', 'error');
+            window.showSiteAlert('No se pudo crear la cuenta. Intenta de nuevo.', 'error');
           }
           return;
         }
@@ -1654,13 +1663,31 @@
         if (window.appointmentsSystem && typeof window.appointmentsSystem.syncProfileUI === 'function') {
           window.appointmentsSystem.syncProfileUI();
         }
-        showSiteAlert('Cuenta creada e iniciada correctamente.', 'info');
+        window.showSiteAlert('Cuenta creada e iniciada correctamente.', 'info');
         navigateByRole(created.role);
       };
 
       registerForm.addEventListener('submit', handleRegisterSubmit);
+      const phoneInput = document.getElementById('telefono');
+      if (phoneInput) {
+        phoneInput.addEventListener('input', () => {
+          const nextValue = phoneInput.value.replace(/\D/g, '').slice(0, 14);
+          if (phoneInput.value !== nextValue) {
+            phoneInput.value = nextValue;
+          }
+        });
+      }
+
       const registerBtn = document.getElementById('registerSubmitButton');
-      if (registerBtn) registerBtn.addEventListener('click', handleRegisterSubmit, true);
+      if (registerBtn) {
+        registerBtn.addEventListener('click', (event) => {
+          if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+          handleRegisterSubmit(event);
+        }, true);
+      }
     }
 
     const loginForm = document.getElementById('loginForm');
@@ -1740,6 +1767,7 @@
       window.appointmentsSystem.setSession = setSession;
       window.appointmentsSystem.createUser = createUser;
       window.appointmentsSystem.loginUser = loginUser;
+      window.appointmentsSystem.showSiteAlert = showSiteAlert;
       window.appointmentsSystem.signOut = function () { clearSession(); window.location.href = resolveRelative('Loggin.html'); };
       window.appointmentsSystem.setProfileAvatar = setProfileAvatar;
       window.appointmentsSystem.setProfile = function (values) {
@@ -1763,7 +1791,11 @@
           return { ok: true };
         } catch (e) { return { ok: false }; }
       };
-      window.appointmentsSystem.specialistMarkConfirmed = specialistMarkConfirmed;
-      window.appointmentsSystem.specialistMarkNoShow = specialistMarkNoShow;
+      if (typeof specialistMarkConfirmed === 'function') {
+        window.appointmentsSystem.specialistMarkConfirmed = specialistMarkConfirmed;
+      }
+      if (typeof specialistMarkNoShow === 'function') {
+        window.appointmentsSystem.specialistMarkNoShow = specialistMarkNoShow;
+      }
     }
   })();

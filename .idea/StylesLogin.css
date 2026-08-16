@@ -11,6 +11,30 @@ body {
   color: #87775F;
 }
 
+.sgc-alert-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+}
+
+.sgc-alert {
+  padding: 12px 14px;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  opacity: 0.98;
+}
+
+.sgc-alert.info { background: linear-gradient(90deg,#6ea57a,#83c47f); color: #07220a; }
+.sgc-alert.warning { background: linear-gradient(90deg,#f0c36b,#f2b04a); color: #422800; }
+.sgc-alert.error { background: linear-gradient(90deg,#d46b6b,#c95c5c); color: #3b0b0b; }
+
 .screen {
   min-height: 100vh;
   display: grid;
