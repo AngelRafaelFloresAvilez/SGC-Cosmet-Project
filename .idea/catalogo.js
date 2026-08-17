@@ -1,11 +1,15 @@
 function abrirMenu() {
+  const menuBtn = document.querySelector('.menu-btn');
   document.getElementById('sidebarMenu').classList.add('active');
   document.getElementById('menuOverlay').classList.add('active');
+  if (menuBtn) menuBtn.classList.add('active');
 }
 
 function cerrarMenu() {
+  const menuBtn = document.querySelector('.menu-btn');
   document.getElementById('sidebarMenu').classList.remove('active');
   document.getElementById('menuOverlay').classList.remove('active');
+  if (menuBtn) menuBtn.classList.remove('active');
 }
 
 function mostrarNotificaciones() {
@@ -25,6 +29,27 @@ function abrirModal(titulo, categoria, desc, incluye, duracion, precio, img) {
   document.getElementById('modalImg').src = img;
 
   document.getElementById('serviceModal').classList.add('active');
+}
+
+function cambiarCatalogo(direction) {
+  const cards = Array.from(document.querySelectorAll('.service-card'));
+  if (!cards.length) return;
+
+  const pageSize = 6;
+  const total = cards.length;
+  let startIndex = Number(document.body.dataset.catalogStart || 0);
+
+  startIndex = (startIndex + (direction === 'next' ? pageSize : -pageSize) + total) % total;
+  document.body.dataset.catalogStart = String(startIndex);
+
+  const visibleIndexes = new Set();
+  for (let i = 0; i < Math.min(pageSize, total); i += 1) {
+    visibleIndexes.add((startIndex + i) % total);
+  }
+
+  cards.forEach((card, index) => {
+    card.classList.toggle('hidden-card', !visibleIndexes.has(index));
+  });
 }
 
 function cerrarModal() {
@@ -119,6 +144,25 @@ window.addEventListener('DOMContentLoaded', () => {
   if (window.appointmentsSystem && typeof window.appointmentsSystem.init === 'function') {
     window.appointmentsSystem.init();
   }
+
+  const catalogGrid = document.querySelector('.services-grid');
+  if (catalogGrid) {
+    catalogGrid.style.gridTemplateColumns = 'repeat(3, minmax(210px, 1fr))';
+  }
+
+  const cards = document.querySelectorAll('.service-card');
+  if (cards.length) {
+    document.body.dataset.catalogStart = '0';
+    const pageSize = 6;
+    const total = cards.length;
+    const visibleIndexes = new Set();
+    for (let i = 0; i < Math.min(pageSize, total); i += 1) {
+      visibleIndexes.add(i);
+    }
+    cards.forEach((card, index) => {
+      card.classList.toggle('hidden-card', !visibleIndexes.has(index));
+    });
+  }
 });
 
 // Delegated event handlers to replace inline `onclick` attributes
@@ -134,6 +178,12 @@ document.addEventListener('click', (e) => {
   // Open menu
   if (target.closest('.menu-btn')) {
     abrirMenu();
+    return;
+  }
+
+  if (target.closest('.catalog-nav-btn')) {
+    const btn = target.closest('.catalog-nav-btn');
+    cambiarCatalogo(btn.dataset.direction || 'next');
     return;
   }
 

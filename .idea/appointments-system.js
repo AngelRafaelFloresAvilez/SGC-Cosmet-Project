@@ -598,6 +598,26 @@
     const grid = document.querySelector('.services-grid');
     if (!grid) return;
 
+    if (document.body.classList.contains('catalog-page')) {
+      const existingCards = Array.from(grid.querySelectorAll('.service-card'));
+      if (existingCards.length) {
+        const pageSize = 6;
+        const total = existingCards.length;
+        let startIndex = Number(document.body.dataset.catalogStart || 0);
+        if (startIndex < 0 || Number.isNaN(startIndex)) startIndex = 0;
+
+        const visibleIndexes = new Set();
+        for (let i = 0; i < Math.min(pageSize, total); i += 1) {
+          visibleIndexes.add((startIndex + i) % total);
+        }
+
+        existingCards.forEach((card, index) => {
+          card.classList.toggle('hidden-card', !visibleIndexes.has(index));
+        });
+      }
+      return;
+    }
+
     const services = getServices(readState());
     grid.innerHTML = services.map((service) => `
       <article class="service-card" data-title="${String(service.title).replace(/"/g,'&quot;')}" data-category="${String(service.category).replace(/"/g,'&quot;')}" data-desc="${String(service.description).replace(/"/g,'&quot;')}" data-includes="${String(service.includes).replace(/"/g,'&quot;')}" data-duration="${String(service.duration).replace(/"/g,'&quot;')}" data-price="${String(service.price).replace(/"/g,'&quot;')}" data-image="${String(service.image).replace(/"/g,'&quot;')}">

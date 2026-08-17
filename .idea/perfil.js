@@ -1,11 +1,58 @@
+function abrirMenu() {
+  const menu = document.getElementById('sidebarMenu');
+  const overlay = document.getElementById('menuOverlay');
+  const menuBtn = document.querySelector('.menu-btn');
+  if (menu) menu.classList.add('active');
+  if (overlay) overlay.classList.add('active');
+  if (menuBtn) menuBtn.classList.add('active');
+}
+
+function cerrarMenu() {
+  const menu = document.getElementById('sidebarMenu');
+  const overlay = document.getElementById('menuOverlay');
+  const menuBtn = document.querySelector('.menu-btn');
+  if (menu) menu.classList.remove('active');
+  if (overlay) overlay.classList.remove('active');
+  if (menuBtn) menuBtn.classList.remove('active');
+}
+
+function toggleMenu() {
+  const menu = document.getElementById('sidebarMenu');
+  if (menu && menu.classList.contains('active')) {
+    cerrarMenu();
+  } else {
+    abrirMenu();
+  }
+}
+
+function mostrarNotificaciones() {
+  const panel = document.getElementById('notificationPanel');
+  if (panel) panel.classList.toggle('active');
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('profileAvatarInput');
   const img = document.getElementById('profileAvatarImg');
   const sidebarImg = document.getElementById('sidebarProfileAvatar');
+  const menuBtn = document.querySelector('.menu-btn');
+  const overlay = document.getElementById('menuOverlay');
+  const notificationToggle = document.querySelector('[data-notification-toggle]');
 
   function updateImgs(url) {
     if (img) img.src = url;
     if (sidebarImg) sidebarImg.src = url;
+  }
+
+  if (menuBtn) {
+    menuBtn.addEventListener('click', toggleMenu);
+  }
+
+  if (overlay) {
+    overlay.addEventListener('click', cerrarMenu);
+  }
+
+  if (notificationToggle) {
+    notificationToggle.addEventListener('click', mostrarNotificaciones);
   }
 
   if (input) {
@@ -35,7 +82,6 @@ window.addEventListener('DOMContentLoaded', () => {
     } catch (e) { /* ignore */ }
   });
 
-  // Inline edit profile support
   const editBtn = document.getElementById('editProfileBtn');
   const saveBtn = document.getElementById('saveProfileBtn');
   const cancelBtn = document.getElementById('cancelProfileBtn');
@@ -72,7 +118,6 @@ window.addEventListener('DOMContentLoaded', () => {
       emailEl.textContent = newEmail;
       phoneEl.textContent = newPhone;
       birthEl.textContent = newBirth;
-      // persist via appointmentsSystem
       if (window.appointmentsSystem && typeof window.appointmentsSystem.setProfile === 'function') {
         window.appointmentsSystem.setProfile({ email: newEmail, phone: newPhone, birthDate: newBirth });
       }

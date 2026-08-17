@@ -13,62 +13,71 @@
 
 </head>
 <body>
-  <div class="menu-overlay" id="menuOverlay"></div>
-  <aside class="sidebar-menu" id="sidebarMenu">
-    <div class="sidebar-header">
-      <h3>SGC COSMETIC</h3>
-      <button class="close-btn" id="closeMenuBtn"><i class="fa-solid fa-xmark"></i></button>
-    </div>
+     <!-- OVERLAY MENÚ LATERAL -->
+    <div class="menu-overlay" id="menuOverlay"></div>
 
-    <div class="sidebar-profile">
-      <img src="https://www.gravatar.com/avatar/?d=mp&s=150" alt="Foto de perfil de Ana López">
-      <h4>Ana López</h4>
-      <p>Cliente<br>Activo desde 2024</p>
-    </div>
+    <!-- MENÚ LATERAL -->
+    <aside class="sidebar-menu" id="sidebarMenu">
+        <div class="sidebar-user-box">
+            <div class="sidebar-user-avatar" id="sidebarUserAvatar">
+                <i class="fa-solid fa-circle-user"></i>
+            </div>
+            <div class="sidebar-user-meta">
+                <span class="sidebar-user-name">Ana López</span>
+                <span class="sidebar-user-role">Cliente</span>
+            </div>
+        </div>
 
-    <nav class="sidebar-nav">
-      <a href="dashboard.html"><i class="fa-solid fa-house"></i> Inicio</a>
-      <a href="catalogo.html"><i class="fa-solid fa-border-all"></i> Catálogo</a>
-      <a href="citas.html" class="active"><i class="fa-regular fa-calendar-check"></i> Citas</a>
-      <a href="perfil.html"><i class="fa-regular fa-user"></i> Perfil</a>
-    </nav>
+        <div class="sidebar-header">
+            <hr class="sidebar-divider">
+        </div>
 
-    <div class="sidebar-footer">
-      <button class="btn-logout-green">
-        <i class="fa-solid fa-right-from-bracket"></i> CERRAR SESIÓN
-      </button>
-    </div>
-  </aside>
+        <div class="sidebar-section-label">General</div>
 
-  <div class="main-wrapper">
-    <div class="bg-overlay"></div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html"><i class="fa-solid fa-house"></i> Inicio</a>
+            <a href="catalogo.html"><i class="fa-solid fa-border-all"></i> Catálogo</a>
+            <a href="citas.html" class="active"><i class="fa-regular fa-calendar-check"></i> Mis citas</a>
+            <hr class="sidebar-divider">
+            <a href="perfil.html" class="nav-profile-link"><i class="fa-regular fa-user"></i> Mi perfil</a>
+        </nav>
+
+        <button class="sidebar-logout" type="button" onclick="window.location.href='../index.html'">
+            <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+        </button>
+
+        <hr class="sidebar-divider">
+        <div class="sidebar-brand">SGC COSMETICS</div>
+    </aside>
 
     <header>
-      <button class="menu-btn" id="menuBtn" title="Abrir menú">
-        <i class="fa-solid fa-bars"></i>
-      </button>
+            <button class="menu-btn">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            
+            <div class="header-actions">
+                <div style="position:relative;">
+                    <button class="btn-notification" type="button" data-notification-toggle>
+                        <i class="fa-regular fa-bell"></i>
+                        <span class="notification-badge"></span>
+                    </button>
+                    <div class="notification-panel" id="notificationPanel">
+                        <div id="notificationList"></div>
+                    </div>
+                </div>
 
-      <div class="header-actions">
-        <div style="position:relative;">
-          <button class="btn-notification" type="button" data-notification-toggle title="Notificaciones">
-            <i class="fa-regular fa-bell"></i>
-            <span class="notification-badge" hidden></span>
-          </button>
-          <div class="notification-panel" id="notificationPanel">
-            <div id="notificationList"></div>
-          </div>
-        </div>
-        <div class="user-profile" title="Ver perfil">
-          <div class="user-avatar" aria-label="Avatar del cliente">
-            <i class="fa-solid fa-circle-user"></i>
-          </div>
-          <div class="user-text">
-            <span class="user-role">Cliente</span>
-            <span class="user-name">Ana López</span>
-          </div>
-        </div>
-      </div>
-    </header>
+                <div class="user-profile">
+                    <div class="user-avatar" aria-label="Avatar del cliente">
+                        <i class="fa-solid fa-circle-user"></i>
+                    </div>
+                    <div class="user-meta">
+                        <span class="user-name">Ana López</span>
+                        <span class="user-role">Cliente</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
 
     <main class="catalog-container">
       <div class="catalog-header">

@@ -16,96 +16,94 @@
       <link rel="stylesheet" href="StylesCatalogo.css">
 
 </head>
-<body>
-
-    <!-- OVERLAY MENÚ LATERAL -->
-    <div class="menu-overlay" id="menuOverlay"></div>
-
-    <!-- MENÚ LATERAL -->
-    <aside class="sidebar-menu" id="sidebarMenu">
-        <div class="sidebar-header">
-            <h3>SGC COSMETIC</h3>
-            <button class="close-btn"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-
-        <div class="sidebar-profile">
-            <img src="https://www.gravatar.com/avatar/?d=mp&s=150" alt="Foto de perfil de Ana López">
-            <h4>Ana López</h4>
-            <p>Cliente<br>Activo desde 2024</p>
-        </div>
-
-        <nav class="sidebar-nav">
-            <a href="dashboard.html"><i class="fa-solid fa-house"></i> Inicio</a>
-            <a href="catalogo.html" class="active"><i class="fa-solid fa-border-all"></i> Catálogo</a>
-            <a href="citas.html"><i class="fa-regular fa-calendar-check"></i> Citas</a>
-            <a href="perfil.html"><i class="fa-regular fa-user"></i> Perfil</a>
-        </nav>
-
-        <div class="sidebar-footer">
-            <button class="btn-logout-green">
-                <i class="fa-solid fa-right-from-bracket"></i> CERRAR SESIÓN
-            </button>
-        </div>
-        
-    </aside>
-
+<body class="catalog-page">
     <div class="main-wrapper">
         <div class="bg-overlay"></div>
 
-        <!-- HEADER -->
+        <!-- OVERLAY MENÚ LATERAL -->
+        <div class="menu-overlay" id="menuOverlay"></div>
+
+        <!-- MENÚ LATERAL -->
+        <aside class="sidebar-menu" id="sidebarMenu">
+            <div class="sidebar-user-box">
+                <div class="sidebar-user-avatar" id="sidebarUserAvatar">
+                    <i class="fa-solid fa-circle-user"></i>
+                </div>
+                <div class="sidebar-user-meta">
+                    <span class="sidebar-user-name">Ana López</span>
+                    <span class="sidebar-user-role">Cliente</span>
+                </div>
+            </div>
+
+            <div class="sidebar-header">
+                <hr class="sidebar-divider">
+            </div>
+
+            <div class="sidebar-section-label">General</div>
+
+            <nav class="sidebar-nav">
+                <a href="dashboard.html"><i class="fa-solid fa-house"></i> Inicio</a>
+                <a href="catalogo.html" class="active"><i class="fa-solid fa-border-all"></i> Catálogo</a>
+                <a href="citas.html"><i class="fa-regular fa-calendar-check"></i> Mis citas</a>
+                <hr class="sidebar-divider">
+                <a href="perfil.html" class="nav-profile-link"><i class="fa-regular fa-user"></i> Mi perfil</a>
+            </nav>
+
+            <button class="sidebar-logout" type="button" onclick="window.location.href='../index.html'">
+                <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+            </button>
+
+            <hr class="sidebar-divider">
+            <div class="sidebar-brand">SGC COSMETICS</div>
+        </aside>
+
         <header>
-            <button class="menu-btn" title="Abrir menú">
+            <button class="menu-btn">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            
+
             <div class="header-actions">
                 <div style="position:relative;">
-                    <button class="btn-notification" type="button" data-notification-toggle title="Notificaciones">
+                    <button class="btn-notification" type="button" data-notification-toggle>
                         <i class="fa-regular fa-bell"></i>
-                        <span class="notification-badge" hidden></span>
+                        <span class="notification-badge"></span>
                     </button>
                     <div class="notification-panel" id="notificationPanel">
                         <div id="notificationList"></div>
                     </div>
                 </div>
-                <div class="user-profile" title="Ver perfil">
+
+                <div class="user-profile">
                     <div class="user-avatar" aria-label="Avatar del cliente">
                         <i class="fa-solid fa-circle-user"></i>
                     </div>
-                    <div class="user-text">
-                        <span class="user-role">Cliente</span>
+                    <div class="user-meta">
                         <span class="user-name">Ana López</span>
+                        <span class="user-role">Cliente</span>
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- 🌟 CONTENEDOR DEL CATÁLOGO 🌟 -->
         <main class="catalog-container">
             <div class="catalog-header">
                 <div class="hero-texts">
-                    <div class="text-hello">Bienvenida de nuevo, Ana</div>
-                    <div class="text-catalog">Catálogo de Servicios</div>
-                    <div class="text-desc">Explora tratamientos exclusivos diseñados para realzar tu belleza natural con la máxima comodidad.</div>
+                    <h1 class="text-catalog">Catalogo:</h1>
                 </div>
             </div>
 
             <div class="catalog-content">
                 <div class="services-grid">
-                    
-                    <!-- TARJETAS -->
                     <article class="service-card">
                         <div class="service-img-container">
-                            <img src="https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&q=80&w=500" alt="Limpieza Facial Profunda" class="service-img">
+                            <img src="https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&q=80&w=500" alt="Limpieza Facial Profunda" class="service-img">
                         </div>
                         <div class="service-info">
-                            <span class="service-category">Rostro</span>
+                            <span class="service-label">Rostro</span>
                             <h3 class="service-title">Limpieza Facial Profunda</h3>
                             <p class="service-desc">Elimina impurezas, células muertas y puntos negros devolviendo la frescura y oxigenación a tu piel.</p>
-                            <div class="service-footer">
-                                <span class="service-price">$450 MXN</span>
-                                <button class="btn-book">Ver Detalles</button>
-                            </div>
+                            <div class="service-price-row"><span class="service-price">$450 MXN</span></div>
+                            <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
                         </div>
                     </article>
 
@@ -114,28 +112,24 @@
                             <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=500" alt="Masaje Relajante" class="service-img">
                         </div>
                         <div class="service-info">
-                            <span class="service-category">Cuerpo</span>
+                            <span class="service-label">Cuerpo</span>
                             <h3 class="service-title">Masaje Relajante</h3>
-                            <p class="service-desc">Terapia manual diseñada para aliviar tensiones musculares, reducir el estrés y mejorar la circulación.</p>
-                            <div class="service-footer">
-                                <span class="service-price">$600 MXN</span>
-                                <button class="btn-book">Ver Detalles</button>
-                            </div>
+                            <p class="service-desc">Terapia manual diseñada para aliviar tensiones musculares profundas y reducir el estrés.</p>
+                            <div class="service-price-row"><span class="service-price">$600 MXN</span></div>
+                            <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
                         </div>
                     </article>
 
                     <article class="service-card">
                         <div class="service-img-container">
-                            <img src="https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&q=80&w=500" alt="Lifting de Pestañas" class="service-img">
+                            <img src="https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&q=80&w=500" alt="Masaje descontracturante" class="service-img">
                         </div>
                         <div class="service-info">
-                            <span class="service-category">Mirada</span>
-                            <h3 class="service-title">Lifting de Pestañas</h3>
-                            <p class="service-desc">Alarga y eleva tus pestañas naturales desde la raíz, logrando una mirada más abierta y expresiva.</p>
-                            <div class="service-footer">
-                                <span class="service-price">$350 MXN</span>
-                                <button class="btn-book">Ver Detalles</button>
-                            </div>
+                            <span class="service-label">Cuerpo</span>
+                            <h3 class="service-title">Masaje descontracturante</h3>
+                            <p class="service-desc">Relaja la espalda y el cuello con una presión terapéutica que libera contracturas y mejora la postura.</p>
+                            <div class="service-price-row"><span class="service-price">$700 MXN</span></div>
+                            <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
                         </div>
                     </article>
 
@@ -144,46 +138,122 @@
                             <img src="https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&q=80&w=500" alt="Microdermoabrasión" class="service-img">
                         </div>
                         <div class="service-info">
-                            <span class="service-category">Tratamiento Clínico</span>
+                            <span class="service-label">Tratamiento Clínico</span>
                             <h3 class="service-title">Microdermoabrasión</h3>
-                            <p class="service-desc">Renovación celular profunda que minimiza poros dilatados, cicatrices leves de acné y marcas de expresión.</p>
-                            <div class="service-footer">
-                                <span class="service-price">$800 MXN</span>
-                                <button class="btn-book">Ver Detalles</button>
-                            </div>
+                            <p class="service-desc">Renovación celular profunda que minimiza poros dilatados y líneas finas para una piel más uniforme.</p>
+                            <div class="service-price-row"><span class="service-price">$800 MXN</span></div>
+                            <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
                         </div>
                     </article>
 
                     <article class="service-card">
                         <div class="service-img-container">
-                            <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=500" alt="Depilación Láser Diodo" class="service-img">
+                            <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=500" alt="Aromaterapia" class="service-img">
                         </div>
                         <div class="service-info">
-                            <span class="service-category">Depilación</span>
-                            <h3 class="service-title">Depilación Láser Diodo</h3>
-                            <p class="service-desc">Eliminación progresiva del vello corporal con tecnología indolora. Precio aplicable por zona pequeña.</p>
-                            <div class="service-footer">
-                                <span class="service-price">$500 MXN</span>
-                                <button class="btn-book">Ver Detalles</button>
-                            </div>
-                        </div>
-                    </article>
-                    
-                    <article class="service-card">
-                        <div class="service-img-container">
-                            <img src="https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&q=80&w=500" alt="Hidratación Facial" class="service-img">
-                        </div>
-                        <div class="service-info">
-                            <span class="service-category">Rostro</span>
-                            <h3 class="service-title">Hidratación con Ácido Hialurónico</h3>
-                            <p class="service-desc">Tratamiento intensivo para pieles secas o deshidratadas. Devuelve la luminosidad y elasticidad natural.</p>
-                            <div class="service-footer">
-                                <span class="service-price">$550 MXN</span>
-                                <button class="btn-book">Ver Detalles</button>
-                            </div>
+                            <span class="service-label">Aromaterapia</span>
+                            <h3 class="service-title">Aromaterapia</h3>
+                            <p class="service-desc">La combinación perfecta de aceites esenciales y masaje relajante para calmar la mente y el cuerpo.</p>
+                            <div class="service-price-row"><span class="service-price">$250 MXN</span></div>
+                            <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
                         </div>
                     </article>
 
+                    <article class="service-card">
+                        <div class="service-img-container">
+                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=500" alt="Depilación" class="service-img">
+                        </div>
+                        <div class="service-info">
+                            <span class="service-label">Depilación</span>
+                            <h3 class="service-title">Depilación</h3>
+                            <p class="service-desc">Eliminación progresiva del vello con tecnología segura, precisa y de bajo dolor para pieles sensibles.</p>
+                            <div class="service-price-row"><span class="service-price">$400 MXN</span></div>
+                            <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </article>
+
+                    <article class="service-card">
+                        <div class="service-img-container">
+                            <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=500" alt="Lifting de pestañas" class="service-img">
+                        </div>
+                        <div class="service-info">
+                            <span class="service-label">Mirada</span>
+                            <h3 class="service-title">Lifting de pestañas</h3>
+                            <p class="service-desc">Eleva y define la mirada con una técnica que realza tus pestañas sin dañar la estructura natural.</p>
+                            <div class="service-price-row"><span class="service-price">$350 MXN</span></div>
+                            <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </article>
+
+                    <article class="service-card">
+                        <div class="service-img-container">
+                            <img src="https://images.unsplash.com/photo-1521590832167-7e0b4f7d7a3a?auto=format&fit=crop&q=80&w=500" alt="Hidratación profunda" class="service-img">
+                        </div>
+                        <div class="service-info">
+                            <span class="service-label">Rostro</span>
+                            <h3 class="service-title">Hidratación profunda</h3>
+                            <p class="service-desc">Tratamiento intensivo para pieles secas o fatigadas que devuelve brillo, elasticidad y suavidad.</p>
+                            <div class="service-price-row"><span class="service-price">$550 MXN</span></div>
+                            <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </article>
+
+                    <article class="service-card hidden-card">
+                        <div class="service-img-container">
+                            <img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&q=80&w=500" alt="Tratamiento antiacné" class="service-img">
+                        </div>
+                        <div class="service-info">
+                            <span class="service-label">Piel</span>
+                            <h3 class="service-title">Tratamiento antiacné</h3>
+                            <p class="service-desc">Reduce la inflamación, controla la grasa y mejora la textura para una piel más equilibrada.</p>
+                            <div class="service-price-row"><span class="service-price">$620 MXN</span></div>
+                            <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </article>
+
+                    <article class="service-card hidden-card">
+                        <div class="service-img-container">
+                            <img src="https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&q=80&w=500" alt="Masaje reductivo" class="service-img">
+                        </div>
+                        <div class="service-info">
+                            <span class="service-label">Cuerpo</span>
+                            <h3 class="service-title">Masaje reductivo</h3>
+                            <p class="service-desc">Estimula la circulación y ayuda a reducir la retención de líquidos para una sensación más ligera.</p>
+                            <div class="service-price-row"><span class="service-price">$680 MXN</span></div>
+                            <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </article>
+
+                    <article class="service-card hidden-card">
+                        <div class="service-img-container">
+                            <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=500" alt="Botox de pestañas" class="service-img">
+                        </div>
+                        <div class="service-info">
+                            <span class="service-label">Mirada</span>
+                            <h3 class="service-title">Botox de pestañas</h3>
+                            <p class="service-desc">Nutre y fortalece tus pestañas con una sesión de cuidado que mejora su brillo y flexibilidad.</p>
+                            <div class="service-price-row"><span class="service-price">$390 MXN</span></div>
+                            <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </article>
+
+                    <article class="service-card hidden-card">
+                        <div class="service-img-container">
+                            <img src="https://images.unsplash.com/photo-1521590832167-7e0b4f7d7a3a?auto=format&fit=crop&q=80&w=500" alt="Peeling facial" class="service-img">
+                        </div>
+                        <div class="service-info">
+                            <span class="service-label">Rostro</span>
+                            <h3 class="service-title">Peeling facial</h3>
+                            <p class="service-desc">Exfoliación suave que revitaliza la piel, mejora el tono y ayuda a lucir una tez más luminosa.</p>
+                            <div class="service-price-row"><span class="service-price">$520 MXN</span></div>
+                            <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="catalog-controls" aria-label="Cambiar servicios">
+                    <button class="catalog-nav-btn" data-direction="prev" aria-label="Servicios anteriores"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button class="catalog-nav-btn" data-direction="next" aria-label="Siguientes servicios"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
             </div>
         </main>
