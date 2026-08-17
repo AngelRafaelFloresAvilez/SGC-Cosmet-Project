@@ -1,0 +1,17 @@
+# ============================================================
+# Configuracion SMTP para SGC-Cosmetics
+# ============================================================
+# IMPORTANTE: Reemplazar mail.username y mail.password con
+# las credenciales reales antes de desplegar.
+# Para Gmail, usar una "Clave de aplicacion" generada desde:
+# https://myaccount.google.com/apppasswords
+# ============================================================
+
+mail.smtp.host=smtp.gmail.com
+mail.smtp.port=587
+mail.smtp.auth=true
+mail.smtp.starttls.enable=true
+
+mail.from=example
+mail.username=example
+mail.password=example
