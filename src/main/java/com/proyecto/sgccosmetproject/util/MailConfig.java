@@ -9,11 +9,11 @@ import java.util.logging.Logger;
 /**
  * Clase utilitaria para la carga y gestión de las propiedades de configuración
  * del servidor de correo SMTP para el sistema <strong>SGC-Cosmetics</strong>.
- * <p>
+ *
  * Lee el archivo de configuración {@code mail.properties} ubicado en el directorio
  * {@code resources} del classpath y proporciona métodos de acceso tipados
  * para construir sesiones de correo seguras.
- * </p>
+ *
  *
  * @author alearr1ola
  * @version 1.0

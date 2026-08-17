@@ -17,10 +17,10 @@ import java.util.logging.Logger;
 
 /**
  * Servicio centralizado para el despacho de correos electrónicos en <strong>SGC-Cosmetics</strong>.
- * <p>
+ *
  * Implementa el protocolo SMTP mediante Jakarta Mail con autenticación segura y soporte
  * asíncrono en segundo plano para no bloquear las solicitudes HTTP del usuario.
- * </p>
+ *
  *
  * @author alearr1ola
  * @version 1.0

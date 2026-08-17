@@ -16,11 +16,11 @@ import java.util.logging.Logger;
 
 /**
  * Controlador para la verificación del código y actualización de la nueva contraseña
- * en <strong>SGC-Cosmetics</strong>.
- * <p>
+ * en SGC-Cosmetics
+ *
  * Valida el código de 6 dígitos mediante {@link TokenManager}, asegura la coherencia
  * y fortaleza de las contraseñas, actualiza la base de datos e invalida el token utilizado.
- * </p>
+ *
  *
  * @author alearr1ola
  * @version 1.0
@@ -47,14 +47,14 @@ public class ResetPasswordServlet extends HttpServlet {
 
     /**
      * Procesa la verificación del código de 6 dígitos y el cambio de contraseña.
-     * <ol>
-     *   <li>Valida que el código no sea nulo ni vacío.</li>
-     *   <li>Verifica la validez y vigencia del código en {@link TokenManager}.</li>
-     *   <li>Comprueba que la nueva contraseña y su confirmación coincidan y cumplan longitud mínima.</li>
-     *   <li>Ejecuta la actualización en la tabla {@code usuarios} de Oracle DB.</li>
-     *   <li>Invalida el código utilizado para evitar reuso.</li>
-     *   <li>Redirige al login con confirmación de éxito.</li>
-     * </ol>
+     *
+     *   Valida que el código no sea nulo ni vacío.
+     *   Verifica la validez y vigencia del código en {@link TokenManager}.<
+     *   Comprueba que la nueva contraseña y su confirmación coincidan y cumplan longitud mínima.
+     *   Ejecuta la actualización en la tabla {@code usuarios} de Oracle DB.
+     *   Invalida el código utilizado para evitar reuso.
+     *   Redirige al login con confirmación de éxito.
+     *
      *
      * @param request  Petición HTTP con los parámetros {@code codigo}, {@code nuevaPassword} y {@code confirmarPassword}.
      * @param response Respuesta HTTP.

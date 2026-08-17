@@ -9,10 +9,10 @@ import java.util.logging.Logger;
 /**
  * Gestor de tokens y códigos de verificación en memoria para el flujo de
  * recuperación de contraseñas del sistema <strong>SGC-Cosmetics</strong>.
- * <p>
+ *
  * Genera códigos numéricos seguros de 6 dígitos con tiempo de expiración
  * configurable (por defecto 15 minutos) y validación concurrente segura.
- * </p>
+ *
  *
  * @author alearr1ola
  * @version 1.0

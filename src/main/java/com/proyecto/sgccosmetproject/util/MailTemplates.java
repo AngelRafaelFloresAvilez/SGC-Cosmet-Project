@@ -3,10 +3,10 @@ package com.proyecto.sgccosmetproject.util;
 /**
  * Proveedor de plantillas HTML con diseño responsivo y estética de marca
  * para los correos electrónicos emitidos por el sistema <strong>SGC-Cosmetics</strong>.
- * <p>
+ *
  * Incluye plantillas para recuperación de contraseñas y notificaciones
  * de bienvenida por registro de nueva cuenta, optimizadas para clientes de correo.
- * </p>
+ *
  *
  * @author alearr1ola
  * @version 1.0

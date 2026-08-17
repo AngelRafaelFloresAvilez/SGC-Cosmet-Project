@@ -18,11 +18,11 @@ import java.util.logging.Logger;
 
 /**
  * Controlador para la solicitud de recuperación de contraseñas en <strong>SGC-Cosmetics</strong>.
- * <p>
+ *
  * Atiende las peticiones GET para mostrar la vista de ingreso de correo, y las peticiones POST
  * para verificar la existencia del usuario en la base de datos, generar el código temporal
  * de recuperación y despachar el correo electrónico correspondiente.
- * </p>
+ *
  *
  * @author alearr1ola
  * @version 1.0
@@ -49,13 +49,13 @@ public class RecuperarPasswordServlet extends HttpServlet {
 
     /**
      * Procesa el formulario de solicitud de recuperación de contraseña.
-     * <ol>
-     *   <li>Valida el formato del correo electrónico recibido.</li>
-     *   <li>Consulta en Oracle DB si existe una cuenta asociada al correo.</li>
-     *   <li>Genera un código numérico seguro de 6 dígitos con expiración de 15 minutos.</li>
-     *   <li>Envía el correo con plantilla oficial de SGC-Cosmetics.</li>
-     *   <li>Redirige al usuario al formulario de validación de código y cambio de contraseña.</li>
-     * </ol>
+     *
+     *   Valida el formato del correo electrónico recibido.
+     *   Consulta en Oracle DB si existe una cuenta asociada al correo.
+     *   Genera un código numérico seguro de 6 dígitos con expiración de 15 minutos.
+     *   Envía el correo con plantilla oficial de SGC-Cosmetics.
+     *   Redirige al usuario al formulario de validación de código y cambio de contraseña.
+     *
      *
      * @param request  Petición HTTP con el parámetro {@code email}.
      * @param response Respuesta HTTP.
