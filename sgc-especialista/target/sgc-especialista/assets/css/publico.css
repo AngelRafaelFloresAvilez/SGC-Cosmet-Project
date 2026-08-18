@@ -1,0 +1,386 @@
+/* =====================================================
+   SGC Cosmetic - Paginas publicas (landing, login, registro,
+   recuperar/restablecer contrasena). Reutiliza las variables de color
+   definidas en estilos.css.
+   ===================================================== */
+
+.sgc-landing-body {
+    background: var(--sgc-fondo);
+    min-height: 100vh;
+}
+
+/* ---------- Topbar de la landing ---------- */
+.sgc-landing-topbar {
+    background: linear-gradient(180deg, var(--sgc-verde-medio), var(--sgc-verde));
+    padding: .9rem 1.5rem;
+}
+
+.sgc-landing-topbar .btn-icono {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.4rem;
+}
+
+.btn-sgc-oscuro {
+    background: var(--sgc-verde-oscuro);
+    color: #fff;
+    border-radius: 8px;
+    padding: .5rem 1.2rem;
+    font-weight: 600;
+    border: none;
+}
+
+.btn-sgc-oscuro:hover {
+    background: var(--sgc-verde-negro);
+    color: #fff;
+}
+
+.btn-sgc-claro {
+    background: #ffffff;
+    color: var(--sgc-verde-oscuro);
+    border-radius: 8px;
+    padding: .5rem 1.2rem;
+    font-weight: 600;
+}
+
+.btn-sgc-claro:hover {
+    background: var(--sgc-verde-clarisimo);
+    color: var(--sgc-verde-oscuro);
+}
+
+/* ---------- Hero ---------- */
+.sgc-hero {
+    display: flex;
+    flex-wrap: wrap;
+    min-height: 640px;
+}
+
+.sgc-hero-texto {
+    flex: 1 1 480px;
+    padding: 3.5rem 4rem;
+}
+
+.sgc-hero-titulo {
+    font-size: 3.2rem;
+    line-height: 1.05;
+    margin-bottom: 1rem;
+}
+
+.sgc-hero-linea {
+    width: 70px;
+    height: 3px;
+    background: var(--sgc-verde-suave);
+    margin-bottom: 1.25rem;
+}
+
+.sgc-hero-subtitulo {
+    font-size: 1.4rem;
+    color: var(--sgc-verde-negro);
+    font-weight: 700;
+    max-width: 480px;
+}
+
+.sgc-hero-parrafo {
+    color: var(--sgc-gris-texto);
+    max-width: 480px;
+}
+
+.sgc-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: .85rem;
+}
+
+.sgc-feature-icono {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    border-radius: 50%;
+    background: var(--sgc-verde-claro);
+    color: var(--sgc-verde-oscuro);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.sgc-feature strong {
+    color: var(--sgc-verde-negro);
+    font-size: 1.02rem;
+}
+
+.sgc-feature p {
+    color: var(--sgc-gris-texto);
+    font-size: .92rem;
+}
+
+.sgc-hero-foto {
+    flex: 1 1 420px;
+    min-height: 420px;
+    background-image: url("../img/fondo-especialista.jpg");
+    background-size: cover;
+    background-position: center;
+    /* Curva suave separando el panel de texto de la foto (un borde redondeado grande
+       en la esquina izquierda es mucho mas predecible entre navegadores que un
+       clip-path con porcentajes, que puede verse roto o encimado segun el tamano). */
+    border-radius: 90px 0 0 90px;
+}
+
+/* ---------- Franja de beneficios ---------- */
+.sgc-landing-franja {
+    background: linear-gradient(120deg, var(--sgc-verde-medio), var(--sgc-verde-suave));
+    color: #fff;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    padding: 1.5rem 3rem;
+}
+
+.sgc-franja-item {
+    display: flex;
+    align-items: flex-start;
+    gap: .7rem;
+    flex: 1 1 220px;
+}
+
+.sgc-franja-item i {
+    font-size: 1.4rem;
+    margin-top: .1rem;
+}
+
+.sgc-franja-item strong {
+    display: block;
+}
+
+.sgc-franja-item p {
+    font-size: .85rem;
+    opacity: .92;
+}
+
+/* ---------- Footer ---------- */
+.sgc-landing-footer {
+    background: var(--sgc-verde-negro);
+    color: #cdd4c6;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2.5rem;
+    padding: 1rem 1.5rem;
+    font-size: .9rem;
+}
+
+.sgc-landing-footer i {
+    margin-right: .4rem;
+}
+
+.sgc-landing-redes i {
+    margin: 0 .35rem 0 .9rem;
+}
+
+/* =====================================================
+   Login / Registro / Recuperar / Restablecer contrasena
+   Layout de dos paneles: formulario a la izquierda, foto a la derecha.
+   ===================================================== */
+
+.sgc-auth-body {
+    background: var(--sgc-fondo);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+
+.sgc-auth-panel {
+    display: flex;
+    width: 100%;
+    max-width: 1100px;
+    min-height: 620px;
+    background: #ffffff;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(21, 30, 16, .18);
+}
+
+.sgc-auth-formulario {
+    flex: 1 1 440px;
+    padding: 3rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.sgc-auth-formulario h1 {
+    font-size: 2.1rem;
+    margin-bottom: .5rem;
+}
+
+.sgc-auth-formulario .sgc-auth-intro {
+    color: var(--sgc-gris-texto);
+    font-size: .95rem;
+    margin-bottom: 1.75rem;
+}
+
+.sgc-auth-icono-circulo {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--sgc-verde-claro);
+    color: var(--sgc-verde-oscuro);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.sgc-auth-formulario label {
+    font-size: .85rem;
+    color: var(--sgc-gris-texto);
+    margin-bottom: .3rem;
+}
+
+.sgc-auth-input-group {
+    background: #f2f2f0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    padding: 0 .9rem;
+    margin-bottom: 1.1rem;
+}
+
+.sgc-auth-input-group i {
+    color: var(--sgc-gris-texto);
+    font-size: 1.05rem;
+}
+
+.sgc-auth-input-group input,
+.sgc-auth-input-group select {
+    border: none;
+    background: transparent;
+    padding: .75rem .6rem;
+    width: 100%;
+    outline: none;
+    font-size: .95rem;
+}
+
+.sgc-auth-input-group.is-invalid {
+    outline: 1px solid var(--sgc-estado-cancelada-texto);
+}
+
+.sgc-auth-error-campo {
+    color: var(--sgc-estado-cancelada-texto);
+    font-size: .8rem;
+    margin: -.85rem 0 1rem;
+}
+
+.sgc-auth-separador-texto {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    color: var(--sgc-gris-texto);
+    font-size: .8rem;
+    margin: 1.5rem 0 .75rem;
+}
+
+.sgc-auth-separador-texto::before,
+.sgc-auth-separador-texto::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--sgc-gris-borde);
+}
+
+.sgc-auth-pie {
+    text-align: center;
+    font-size: .9rem;
+    color: var(--sgc-gris-texto);
+}
+
+.sgc-auth-pie a {
+    color: var(--sgc-verde);
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.sgc-auth-foto {
+    flex: 1 1 420px;
+    position: relative;
+    background-image: url("../img/fondo-especialista.jpg");
+    background-size: cover;
+    background-position: center;
+}
+
+.sgc-auth-foto::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(10,15,8,.15), rgba(10,15,8,.35));
+}
+
+.sgc-auth-flotante {
+    position: absolute;
+    left: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+    z-index: 2;
+}
+
+.sgc-auth-flotante span {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .35);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.1rem;
+}
+
+.sgc-auth-cita {
+    position: absolute;
+    right: 1.5rem;
+    bottom: 1.75rem;
+    max-width: 260px;
+    background: rgba(20, 25, 15, .45);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    padding: 1rem 1.2rem;
+    border-radius: 14px;
+    font-style: italic;
+    font-size: .92rem;
+    z-index: 2;
+}
+
+.sgc-auth-checkbox {
+    font-size: .88rem;
+    color: var(--sgc-gris-texto);
+}
+
+.sgc-auth-link-derecha {
+    font-size: .88rem;
+    color: var(--sgc-verde);
+    text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+    .sgc-auth-foto {
+        display: none;
+    }
+    .sgc-auth-formulario {
+        padding: 2.25rem 1.75rem;
+    }
+    .sgc-hero-texto {
+        padding: 2.25rem 1.75rem;
+    }
+    .sgc-hero-foto {
+        min-height: 280px;
+        border-radius: 0;
+    }
+}
