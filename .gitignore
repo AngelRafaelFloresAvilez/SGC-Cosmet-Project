@@ -40,6 +40,8 @@ build/
 
 # Archivos de configuración de IntelliJ
 .idea/
+Integradora/
+src/main/resources/mail.properties
 
 # Carpeta de seguridad de Oracle (¡NUNCA SUBIR!)
 src/main/webapp/WEB-INF/Wallet_DB/

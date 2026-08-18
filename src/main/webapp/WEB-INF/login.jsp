@@ -23,10 +23,20 @@
                 <p class="hero-copy">¡Bienvenido/a! Hemos preparado este espacio para facilitarte la vida. Comienza a gestionar tus servicios o descubre nuestras promociones exclusivas.</p>
             </div>
 
-            <%-- Cambiamos request.getParameter por request.getAttribute --%>
+            <%-- Mensajes de estado --%>
             <% if ("invalid".equals(request.getAttribute("error"))) { %>
-            <div style="background-color: #fde8e8; color: #e02424; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 14px; font-family: 'Inter', sans-serif; border: 1px solid #f8b4b4;">
-                El correo electrónico o la contraseña son incorrectos. Por favor, verifica tus datos.
+            <div style="background-color: #fde8e8; color: #e02424; padding: 12px 16px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; font-family: 'Inter', sans-serif; border: 1px solid #f8b4b4;">
+                ⚠️ El correo electrónico o la contraseña son incorrectos. Por favor, verifica tus datos.
+            </div>
+            <% } %>
+            <% if ("true".equals(request.getParameter("resetSuccess")) || "true".equals(request.getAttribute("resetSuccess"))) { %>
+            <div style="background-color: #f0fdf4; color: #166534; padding: 12px 16px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; font-family: 'Inter', sans-serif; border: 1px solid #bbf7d0;">
+                ✅ ¡Tu contraseña ha sido restablecida exitosamente! Ya puedes iniciar sesión.
+            </div>
+            <% } %>
+            <% if ("true".equals(request.getParameter("registered")) || "true".equals(request.getAttribute("registered"))) { %>
+            <div style="background-color: #f0fdf4; color: #166534; padding: 12px 16px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; font-family: 'Inter', sans-serif; border: 1px solid #bbf7d0;">
+                ✅ ¡Cuenta creada con éxito! Te hemos enviado un correo de bienvenida a tu bandeja.
             </div>
             <% } %>
 
