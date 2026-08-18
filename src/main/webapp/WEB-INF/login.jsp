@@ -5,14 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar sesión - SGC Cosmetic</title>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Ruta corregida para el archivo CSS estático -->
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/styles.css">
+    <!-- Vinculamos tu nuevo archivo de estilos -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/stylesLogin.css">
+
+    <script src="${pageContext.request.contextPath}/js/login.js"></script>
 </head>
 <body>
 <div class="screen">
@@ -20,16 +21,17 @@
         <div class="form-content">
             <div class="form-header">
                 <h1>Iniciar Sesion</h1>
-                <p class="hero-copy">¡Bienvenido/a! Hemos preparado este espacio para facilitarte la vida. Comienza a gestionar tus servicios o descubre nuestras promociones exclusivas.</p>
+                <p class="hero-copy">¡Bienvenido/a! Hemos preparado este espacio para ti. Comienza a gestionar tus servicios o accede para conocer todo lo que te ofrecemos.</p>
             </div>
 
-            <%-- Cambiamos request.getParameter por request.getAttribute --%>
+            <%-- ALERTA DEL JSP ANTERIOR RESTAURADA --%>
             <% if ("invalid".equals(request.getAttribute("error"))) { %>
             <div style="background-color: #fde8e8; color: #e02424; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 14px; font-family: 'Inter', sans-serif; border: 1px solid #f8b4b4;">
                 El correo electrónico o la contraseña son incorrectos. Por favor, verifica tus datos.
             </div>
             <% } %>
 
+            <%-- FORMULARIO CON LÓGICA JSP (Action, Method POST y sin preventDefault) --%>
             <form id="loginForm" class="form-grid" action="${pageContext.request.contextPath}/autenticar-usuario" method="post">
                 <label for="loginEmail">
                     <span class="field-label">Correo</span>
@@ -46,26 +48,42 @@
                         <input id="showPassword" type="checkbox">
                         <span>Mostrar contraseña</span>
                     </label>
-                    <a href="${pageContext.request.contextPath}/recuperar-password" class="secondary-link">¿Olvidaste la contraseña?</a>
+                    <%-- Enlace dinámico del JSP --%>
+                    <a href="${pageContext.request.contextPath}/recuperar-password" class="secondary-link">Olvidaste tu contraseña?</a>
                 </div>
 
-                <button type="submit" class="btn-primary">Iniciar Sesion</button>
+                <button id="loginSubmitButton" type="submit" class="btn-primary">Iniciar Sesion</button>
 
                 <div class="footer-link">
                     <span>¿No tienes una cuenta de sgc-cosmetic?</span>
-                    <a href="${pageContext.request.contextPath}/registro">Regístrate ahora</a>
+                    <%-- Enlace dinámico del JSP --%>
+                    <p><a href="${pageContext.request.contextPath}/register">Registrate ahora</a></p>
                 </div>
             </form>
         </div>
 
+        <%-- DISEÑO NUEVO: Efecto de ola SVG --%>
+        <svg class="wave-separator" viewBox="0 0 240 600" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0 0 C60 120, 60 240, 0 360 C-60 480, 60 540, 0 600 L240 600 L240 0 Z" fill="#ffffff" />
+        </svg>
+
+        <%-- DISEÑO NUEVO: Imagen lateral con máscara SVG --%>
         <div class="form-side-image" aria-hidden="true">
-            <img src="${pageContext.request.contextPath}/assets/img/ImagenFondoLogin.png" alt="SGC Logo" class="footer-logo">
+            <svg class="side-image-svg" viewBox="0 0 480 600" preserveAspectRatio="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <clipPath id="clipRight">
+                        <path d="M120 0 C80 120,80 240,120 360 C160 480,80 540,120 600 L480 600 L480 0 Z" />
+                    </clipPath>
+                </defs>
+                <%-- Ruta de la imagen ajustada a la lógica del servidor Java --%>
+                <image href="${pageContext.request.contextPath}/assets/img/ImagenFondoLogin.png" width="480" height="600" clip-path="url(#clipRight)" preserveAspectRatio="xMidYMid slice" />
+            </svg>
         </div>
     </div>
 </div>
 
+<%-- Script seguro del JSP para la contraseña --%>
 <script>
-    // Conservamos este script simple que es muy útil para la experiencia del usuario
     const passwordInput = document.getElementById('loginPassword');
     const showPasswordCheckbox = document.getElementById('showPassword');
 
@@ -75,6 +93,7 @@
         });
     }
 </script>
-<%-- Eliminamos el JS loquillo de 1300 líneas --%>
+
+<%-- Tus scripts adicionales --%>
 </body>
 </html>

@@ -1,0 +1,89 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - SGC Cosmetic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/stylesRegister.css">
+    <script src="${pageContext.request.contextPath}/js/register.js"></script>
+
+</head>
+<body>
+<div class="screen">
+    <div class="form-card">
+        <div class="form-content">
+            <div class="form-header">
+                <h1>Crear tu cuenta</h1>
+                <p>Unete a sgc-cosmetics y disfruta de una experiencia personalizada.</p>
+            </div>
+
+            <form id="registerForm" class="form-grid" action="${pageContext.request.contextPath}/registrar-usuario" method="post">
+                <div class="input-row">
+                    <label for="nombre">
+                        <span>Nombre</span>
+                        <input id="nombre" name="nombre" type="text" placeholder="Tu nombre" required>
+                    </label>
+                    <label for="apellido">
+                        <span>Apellido</span>
+                        <input id="apellido" name="apellido" type="text" placeholder="Tu apellido" required>
+                    </label>
+                </div>
+
+                <label class="full-width" for="email">
+                    <span>Correo electrónico</span>
+                    <input id="email" name="email" type="email" placeholder="correo@ejemplo.com" required>
+                </label>
+
+                <div class="input-row">
+                    <label for="telefono">
+                        <span>Teléfono</span>
+                        <input id="telefono" name="telefono" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="14" placeholder="Tu número" required>
+                    </label>
+                    <label for="fecha">
+                        <span>Fecha de nacimiento</span>
+                        <input id="fecha" name="fecha" type="date" required>
+                    </label>
+                </div>
+
+                <div class="input-row">
+                    <label for="password">
+                        <span>Contraseña</span>
+                        <input id="password" name="password" type="password" placeholder="Crea una contraseña" required>
+                    </label>
+                    <label for="confirmPassword">
+                        <span>Confirmar contraseña</span>
+                        <input id="confirmPassword" name="confirmPassword" type="password" placeholder="Repite tu contraseña" required>
+                    </label>
+                </div>
+
+
+                <button id="registerSubmitButton" type="submit" class="btn-primary">Crear cuenta</button>
+                <div class="footer-link">
+                    <span>¿Ya tienes una cuenta?</span>
+                    <p><a href="${pageContext.request.contextPath}/login">Inicia sesión</a></p>
+                </div>
+            </form>
+        </div>
+        <!-- wave separator between form and image -->
+        <svg class="wave-separator" viewBox="0 0 240 600" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0 0 C60 120, 60 240, 0 360 C-60 480, 60 540, 0 600 L240 600 L240 0 Z" fill="#ffffff" />
+        </svg>
+        <div class="form-side-image" aria-hidden="true">
+            <svg class="side-image-svg" viewBox="0 0 480 600" preserveAspectRatio="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <clipPath id="clipRight">
+                        <path d="M120 0 C80 120,80 240,120 360 C160 480,80 540,120 600 L480 600 L480 0 Z" />
+                    </clipPath>
+                </defs>
+                <image href="${pageContext.request.contextPath}/assets/img/ImagenFondoLogin.png" width="480" height="600" clip-path="url(#clipRight)" preserveAspectRatio="xMidYMid slice" />
+            </svg>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
