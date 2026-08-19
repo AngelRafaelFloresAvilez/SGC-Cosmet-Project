@@ -1,6 +1,5 @@
 package com.proyecto.sgccosmetproject.controller; // Ajusta el nombre de tu paquete si difiere
 
-import com.proyecto.sgccosmetproject.model.Usuario;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;

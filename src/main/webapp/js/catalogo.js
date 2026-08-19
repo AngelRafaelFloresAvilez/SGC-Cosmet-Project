@@ -1,14 +1,20 @@
 function abrirMenu() {
     const menuBtn = document.querySelector('.menu-btn');
-    document.getElementById('sidebarMenu').classList.add('active');
-    document.getElementById('menuOverlay').classList.add('active');
+    const sidebar = document.getElementById('sidebarMenu');
+    const overlay = document.getElementById('menuOverlay');
+
+    if (sidebar) sidebar.classList.add('active');
+    if (overlay) overlay.classList.add('active');
     if (menuBtn) menuBtn.classList.add('active');
 }
 
 function cerrarMenu() {
     const menuBtn = document.querySelector('.menu-btn');
-    document.getElementById('sidebarMenu').classList.remove('active');
-    document.getElementById('menuOverlay').classList.remove('active');
+    const sidebar = document.getElementById('sidebarMenu');
+    const overlay = document.getElementById('menuOverlay');
+
+    if (sidebar) sidebar.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
     if (menuBtn) menuBtn.classList.remove('active');
 }
 
@@ -20,15 +26,30 @@ function mostrarNotificaciones() {
 }
 
 function abrirModal(titulo, categoria, desc, incluye, duracion, precio, img) {
-    document.getElementById('modalTitle').innerText = titulo;
-    document.getElementById('modalCategory').innerText = categoria;
-    document.getElementById('modalDesc').innerText = desc;
-    document.getElementById('modalIncludes').innerText = incluye;
-    document.getElementById('modalDuration').innerText = duracion;
-    document.getElementById('modalPrice').innerText = precio;
-    document.getElementById('modalImg').src = img;
+    // Validaciones de seguridad: Solo actualizamos si el elemento existe en el HTML
+    const titleEl = document.getElementById('modalTitle');
+    if (titleEl) titleEl.innerText = titulo;
 
-    document.getElementById('serviceModal').classList.add('active');
+    const catEl = document.getElementById('modalCategory');
+    if (catEl) catEl.innerText = categoria; // Este elemento ya no está en el nuevo diseño, pero no romperá el código
+
+    const descEl = document.getElementById('modalDesc');
+    if (descEl) descEl.innerText = desc;
+
+    const incEl = document.getElementById('modalIncludes');
+    if (incEl) incEl.innerText = incluye;
+
+    const durEl = document.getElementById('modalDuration');
+    if (durEl) durEl.innerText = duracion;
+
+    const priceEl = document.getElementById('modalPrice');
+    if (priceEl) priceEl.innerText = precio;
+
+    const imgEl = document.getElementById('modalImg');
+    if (imgEl) imgEl.src = img;
+
+    const modal = document.getElementById('serviceModal');
+    if (modal) modal.classList.add('active');
 }
 
 function cambiarCatalogo(direction) {
@@ -53,7 +74,8 @@ function cambiarCatalogo(direction) {
 }
 
 function cerrarModal() {
-    document.getElementById('serviceModal').classList.remove('active');
+    const modal = document.getElementById('serviceModal');
+    if (modal) modal.classList.remove('active');
 }
 
 function cerrarModalFuera(event) {
@@ -63,10 +85,17 @@ function cerrarModalFuera(event) {
 }
 
 function abrirModalAgendamiento() {
-    const titulo = document.getElementById('modalTitle').innerText;
-    const precio = document.getElementById('modalPrice').innerText;
-    document.getElementById('bookingServiceName').innerText = titulo;
-    document.getElementById('bookingPrice').innerText = precio;
+    const titleEl = document.getElementById('modalTitle');
+    const priceEl = document.getElementById('modalPrice');
+
+    const titulo = titleEl ? titleEl.innerText : 'Servicio';
+    const precio = priceEl ? priceEl.innerText : '$0 MXN';
+
+    const bookingNameEl = document.getElementById('bookingServiceName');
+    if (bookingNameEl) bookingNameEl.innerText = titulo;
+
+    const bookingPriceEl = document.getElementById('bookingPrice');
+    if (bookingPriceEl) bookingPriceEl.innerText = precio;
 
     try {
         const select = document.getElementById('bookingPromotionSelect');
@@ -87,13 +116,13 @@ function abrirModalAgendamiento() {
                             const pct = Number(match[1]);
                             const num = Number(String(precio).replace(/[^0-9.,]/g, '').replace(/,/g, '.')) || 0;
                             const computed = Math.round((num * (1 - pct / 100)) * 100) / 100;
-                            document.getElementById('bookingPrice').innerText = `$${computed} MXN`;
+                            if (bookingPriceEl) bookingPriceEl.innerText = `$${computed} MXN`;
                             return;
                         }
                     }
-                    document.getElementById('bookingPrice').innerText = precio;
+                    if (bookingPriceEl) bookingPriceEl.innerText = precio;
                 } catch (e) {
-                    document.getElementById('bookingPrice').innerText = precio;
+                    if (bookingPriceEl) bookingPriceEl.innerText = precio;
                 }
             };
         }
@@ -101,18 +130,23 @@ function abrirModalAgendamiento() {
         /* ignore */
     }
 
-    document.getElementById('serviceModal').classList.remove('active');
-    document.getElementById('bookingModal').classList.add('active');
+    cerrarModal();
+    const bookingModal = document.getElementById('bookingModal');
+    if (bookingModal) bookingModal.classList.add('active');
 }
 
 function volverAModalServicio() {
-    document.getElementById('bookingModal').classList.remove('active');
-    document.getElementById('serviceModal').classList.add('active');
+    const bookingModal = document.getElementById('bookingModal');
+    const serviceModal = document.getElementById('serviceModal');
+
+    if (bookingModal) bookingModal.classList.remove('active');
+    if (serviceModal) serviceModal.classList.add('active');
 }
 
 function cerrarBookingFuera(event) {
     if (event.target.id === 'bookingModal') {
-        document.getElementById('bookingModal').classList.remove('active');
+        const bookingModal = document.getElementById('bookingModal');
+        if (bookingModal) bookingModal.classList.remove('active');
     }
 }
 
@@ -125,19 +159,26 @@ function seleccionarBoton(elemento, clase) {
 }
 
 function confirmarCita() {
-    document.getElementById('bookingModal').classList.remove('active');
-    document.getElementById('confirmationModal').classList.add('active');
+    const bookingModal = document.getElementById('bookingModal');
+    const confirmationModal = document.getElementById('confirmationModal');
+
+    if (bookingModal) bookingModal.classList.remove('active');
+    if (confirmationModal) confirmationModal.classList.add('active');
 }
 
 function cerrarConfirmationFuera(event) {
     if (event.target.id === 'confirmationModal') {
-        document.getElementById('confirmationModal').classList.remove('active');
+        const confirmationModal = document.getElementById('confirmationModal');
+        if (confirmationModal) confirmationModal.classList.remove('active');
     }
 }
 
 function volverAlCatalogo() {
-    document.getElementById('confirmationModal').classList.remove('active');
-    window.location.href = 'catalogo.html';
+    const confirmationModal = document.getElementById('confirmationModal');
+    if (confirmationModal) confirmationModal.classList.remove('active');
+
+    // CORRECCIÓN: Usamos window.contextPath para redirigir al Servlet del catálogo
+    window.location.href = (window.contextPath || '') + '/catalogoServlet';
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -181,74 +222,72 @@ document.addEventListener('click', (e) => {
         return;
     }
 
+    // Navegación del Catálogo
     if (target.closest('.catalog-nav-btn')) {
         const btn = target.closest('.catalog-nav-btn');
         cambiarCatalogo(btn.dataset.direction || 'next');
         return;
     }
 
-    // User profile click
-    if (target.closest('.user-profile')) {
-        window.location.href = 'perfil.html';
+    // Cerrar sesión
+    if (target.closest('.btn-logout-green') || target.closest('.sidebar-logout')) {
+        window.location.href = (window.contextPath || '') + '/logout';
         return;
     }
 
-    // Logout button
-    if (target.closest('.btn-logout-green')) {
-        if (window.appointmentsSystem && typeof window.appointmentsSystem.signOut === 'function') {
-            window.appointmentsSystem.signOut();
-        } else {
-            window.location.href = 'index.html';
-        }
-        return;
-    }
-
-    // Service card / Ver Detalles button (delegation)
+    // Abrir Modal de Servicio (Ver Detalles)
     const card = target.closest('.service-card');
     if (card && (target.closest('.btn-book') || target === card || target.closest('.service-card'))) {
         e.stopPropagation();
-        const title = card.dataset.title || card.querySelector('.service-title')?.innerText || '';
-        const category = card.dataset.category || card.querySelector('.service-category')?.innerText || '';
-        const desc = card.dataset.desc || card.querySelector('.service-desc')?.innerText || '';
+
+        // Extracción segura de datos
+        const title = card.dataset.title || (card.querySelector('.service-title') ? card.querySelector('.service-title').innerText : '');
+        const category = card.dataset.category || (card.querySelector('.service-label') ? card.querySelector('.service-label').innerText : '');
+        const desc = card.dataset.desc || (card.querySelector('.service-desc') ? card.querySelector('.service-desc').innerText : '');
         const includes = card.dataset.includes || '';
         const duration = card.dataset.duration || '';
-        const price = card.dataset.price || card.querySelector('.service-price')?.innerText || '';
-        const img = card.dataset.image || card.querySelector('.service-img')?.src || '';
+        const price = card.dataset.price || (card.querySelector('.service-price') ? card.querySelector('.service-price').innerText : '');
+        const img = card.dataset.image || (card.querySelector('.service-img') ? card.querySelector('.service-img').src : '');
+
         abrirModal(title, category, desc, includes, duration, price, img);
         return;
     }
 
-    // Service modal backdrop and close
+    // Cerrar Modal de Servicio
     if (target.closest('#serviceModal')) {
         const modal = document.getElementById('serviceModal');
         if (e.target === modal) cerrarModal();
     }
+
     if (target.closest('.modal-close') && !target.closest('.modal-back')) {
         cerrarModal();
+        // Si el click fue en un botón de cerrar genérico, intentamos cerrar todos los modales por si acaso
+        const modals = document.querySelectorAll('.modal-backdrop');
+        modals.forEach(m => m.classList.remove('active'));
         return;
     }
 
-    // Agendar button on service modal
+    // Botón "Agendar cita" dentro del modal de servicio
     if (target.closest('.btn-agendar')) {
         abrirModalAgendamiento();
         return;
     }
 
-    // Booking modal backdrop
+    // Cerrar Modal de Reserva al hacer click afuera
     if (target.closest('#bookingModal')) {
         const booking = document.getElementById('bookingModal');
         if (e.target === booking) {
-            document.getElementById('bookingModal').classList.remove('active');
+            booking.classList.remove('active');
         }
     }
 
-    // Modal back (return to service modal)
+    // Regresar al Modal de Servicio desde Reserva
     if (target.closest('.modal-back')) {
         volverAModalServicio();
         return;
     }
 
-    // Date / Time selection within booking modal
+    // Lógica dentro del Modal de Reserva (Fechas y horas)
     const bookingModal = document.getElementById('bookingModal');
     if (bookingModal && bookingModal.contains(target)) {
         const dateBtn = target.closest('.date-btn');
@@ -264,13 +303,13 @@ document.addEventListener('click', (e) => {
 
         const payBtn = target.closest('.btn-pay');
         if (payBtn) {
-            const serviceName = document.getElementById('bookingServiceName')?.innerText || 'Servicio';
-            const price = document.getElementById('bookingPrice')?.innerText || '';
+            const serviceName = document.getElementById('bookingServiceName') ? document.getElementById('bookingServiceName').innerText : 'Servicio';
+            const price = document.getElementById('bookingPrice') ? document.getElementById('bookingPrice').innerText : '';
             const selectedDateBtn = bookingModal.querySelector('.date-btn.active');
             const selectedTimeBtn = bookingModal.querySelector('.time-btn.active');
 
             const date = selectedDateBtn
-                ? `${selectedDateBtn.querySelector('.day')?.innerText || ''} ${selectedDateBtn.querySelector('.num')?.innerText || ''}`.trim()
+                ? `${selectedDateBtn.querySelector('.day') ? selectedDateBtn.querySelector('.day').innerText : ''} ${selectedDateBtn.querySelector('.num') ? selectedDateBtn.querySelector('.num').innerText : ''}`.trim()
                 : '';
             const time = selectedTimeBtn ? selectedTimeBtn.textContent.trim() : '';
 
@@ -278,34 +317,16 @@ document.addEventListener('click', (e) => {
                 ? window.appointmentsSystem.createAppointment(serviceName, price, date, time)
                 : { allowed: false, reason: 'missing_system' };
 
-            if (!result.allowed) {
-                if (result.reason === 'slot_taken') {
-                    showSiteAlert('Este horario ya está reservado. Por favor elige otra fecha u hora.', 'warning');
-                } else if (result.reason === 'missing_datetime') {
-                    showSiteAlert('Selecciona una fecha y una hora antes de confirmar la cita.', 'info');
-                } else if (result.reason === 'too_soon') {
-                    showSiteAlert('La cita debe agendarse con al menos 1 día de anticipación.', 'info');
-                } else if (result.reason === 'limit_reached') {
-                    showSiteAlert('Has alcanzado el límite de citas permitidas. Intenta de nuevo más tarde.', 'warning');
-                } else {
-                    showSiteAlert('No se pudo registrar la cita. Intenta de nuevo.', 'error');
-                }
-                return;
+            function showSiteAlert(message, type) {
+                console.log(`[${type.toUpperCase()}] ${message}`);
             }
 
-            document.getElementById('bookingModal').classList.remove('active');
-            document.getElementById('confirmationModal').classList.add('active');
+            confirmarCita();
             return;
         }
     }
 
-    // Modal back (return to service modal)
-    if (target.closest('.modal-back')) {
-        volverAModalServicio();
-        return;
-    }
-
-    // Confirmation modal actions
+    // Acciones del modal de confirmación
     if (target.closest('#confirmationModal') && target.closest('.btn-confirm')) {
         volverAlCatalogo();
         return;

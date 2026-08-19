@@ -1,5 +1,7 @@
 package com.proyecto.sgccosmetproject.controller;
 
+import com.proyecto.sgccosmetproject.dao.ServicioDAO;
+import com.proyecto.sgccosmetproject.model.Servicio;
 import com.proyecto.sgccosmetproject.model.Usuario;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -9,11 +11,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Controlador encargo de gestionar el acceso protegido al catálogo de servicios.
  */
-@WebServlet("/catalogo")
+@WebServlet("/catalogoServlet")
 public class CatalogoServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -30,6 +33,13 @@ public class CatalogoServlet extends HttpServlet {
 
             // Usuario validado: Recuperamos el objeto usuario por si se requiere en el servlet
             Usuario usuarioActivo = (Usuario) session.getAttribute("usuarioSesion");
+
+            // 3. Instanciamos el DAO y obtenemos la lista de la BD (pasando el ServletContext)
+            ServicioDAO servicioDAO = new ServicioDAO();
+            List<Servicio> listaServicios = servicioDAO.obtenerTodos(getServletContext());
+
+            // 4. Enviamos la lista al JSP
+            request.setAttribute("listaServicios", listaServicios);
 
             // Redirigimos internamente al JSP ubicado en la carpeta protegida WEB-INF
             request.getRequestDispatcher("/WEB-INF/catalogo.jsp").forward(request, response);

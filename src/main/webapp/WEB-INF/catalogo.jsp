@@ -1,5 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="java.util.List" %>
 <%@ page import="com.proyecto.sgccosmetproject.model.Usuario" %>
+<%-- IMPORTANTE: Asegúrate de tener tu clase modelo Servicio creada --%>
+<%@ page import="com.proyecto.sgccosmetproject.model.Servicio" %>
 <%
     // LÓGICA JSP: Validar la sesión directamente al renderizar la vista
     Usuario usuarioActivo = (Usuario) session.getAttribute("usuarioSesion");
@@ -7,6 +10,9 @@
         response.sendRedirect(request.getContextPath() + "/login");
         return;
     }
+
+    // Recuperamos la lista dinámica de servicios desde el Servlet
+    List<Servicio> listaServicios = (List<Servicio>) request.getAttribute("listaServicios");
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -18,18 +24,327 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/stylesCatalogo.css">
-
     <script src="${pageContext.request.contextPath}/js/catalogo.js"></script>
 
+    <!-- ESTILOS AÑADIDOS PARA EL MODAL AVANZADO (Basado en la vista de diseño Figma) -->
+    <style>
+        .modal-advanced-box {
+            width: 100%;
+            max-width: 850px;
+            background: #ffffff;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .modal-banner-wrapper {
+            width: 100%;
+            height: 260px;
+            position: relative;
+        }
+
+        .modal-banner-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .modal-close-floating {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #ffffff;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: #2C3527;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        .modal-advanced-content {
+            display: flex;
+            padding: 30px;
+            gap: 40px;
+            text-align: left;
+        }
+
+        .modal-left-col {
+            flex: 1;
+        }
+
+        .modal-right-col {
+            width: 300px;
+            background: #ffffff;
+            border: 1px solid #EBEBEB;
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        }
+
+        .modal-main-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #1A1A1A;
+        }
+
+        .modal-main-desc {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .modal-features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #F0F0F0;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .feature-item i {
+            font-size: 1.1rem;
+            color: #6A7C59;
+            margin-top: 2px;
+        }
+
+        .feature-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .feature-text span {
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 2px;
+        }
+
+        .feature-text strong {
+            font-size: 0.85rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .modal-includes-section h4, .reviews-header h4 {
+            font-size: 1rem;
+            color: #1A1A1A;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .modal-includes-section p {
+            font-size: 0.85rem;
+            color: #555;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .reviews-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .view-all {
+            font-size: 0.8rem;
+            color: #6A7C59;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .review-card {
+            display: flex;
+            gap: 12px;
+            background: #ffffff;
+            padding: 16px;
+            border: 1px solid #F0F0F0;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .review-avatar {
+            width: 36px;
+            height: 36px;
+            background: #8e9e82;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .review-content p {
+            font-size: 0.85rem;
+            color: #555;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+
+        .review-meta {
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stars { color: #5f6757; font-size: 0.7rem; }
+        .time-ago { color: #999; font-size: 0.75rem;}
+
+        .review-dots {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .review-dots span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: #D9D9D9;
+            border-radius: 50%;
+            margin: 0 3px;
+        }
+
+        .review-dots span.active { background: #6A7C59; }
+
+        .price-section {
+            border-bottom: 1px solid #F0F0F0;
+            padding-bottom: 20px;
+        }
+
+        .price-label {
+            font-size: 0.8rem;
+            color: #888;
+            font-weight: 500;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .price-value {
+            font-size: 1.8rem;
+            color: #1A1A1A;
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+
+        .btn-agendar-advanced {
+            width: 100%;
+            background: #6A7C59;
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .btn-agendar-advanced:hover {
+            background: #566548;
+        }
+
+        .trust-badges .badge-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f7f7f7;
+        }
+
+        .trust-badges .badge-item:last-child {
+            border-bottom: none;
+        }
+
+        .trust-badges .badge-item i {
+            font-size: 1.2rem;
+            color: #1A1A1A;
+            margin-top: 2px;
+        }
+
+        .trust-badges .badge-item strong {
+            font-size: 0.85rem;
+            color: #1A1A1A;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .trust-badges .badge-item p {
+            font-size: 0.75rem;
+            color: #888;
+            margin: 0;
+        }
+
+        .success-badge {
+            background: #F4F8F1;
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 10px;
+            border: none !important;
+        }
+
+        .success-badge i {
+            color: #6A7C59 !important;
+        }
+
+        .success-badge strong {
+            color: #6A7C59 !important;
+        }
+
+        .success-badge p {
+            color: #8e9e82 !important;
+        }
+
+        .avatar-group {
+            display: flex;
+            margin-top: 8px;
+        }
+        .avatar-group span {
+            width: 24px;
+            height: 24px;
+            background: #8e9e82;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            border: 2px solid #F4F8F1;
+            margin-left: -8px;
+        }
+        .avatar-group span:first-child { margin-left: 0; }
+    </style>
 </head>
 <body class="catalog-page">
 <div class="main-wrapper">
     <div class="bg-overlay"></div>
-
     <div class="menu-overlay" id="menuOverlay"></div>
 
     <aside class="sidebar-menu" id="sidebarMenu">
@@ -50,8 +365,8 @@
         <div class="sidebar-section-label">General</div>
 
         <nav class="sidebar-nav">
-            <a href="${pageContext.request.contextPath}/autenticar-usuario"><i class="fa-solid fa-house"></i> Inicio</a>
-            <a href="${pageContext.request.contextPath}/catalogo" class="active"><i class="fa-solid fa-border-all"></i> Catálogo</a>
+            <a href="${pageContext.request.contextPath}/dashboardServlet"><i class="fa-solid fa-house"></i> Inicio</a>
+            <a href="${pageContext.request.contextPath}/catalogoServlet" class="active"><i class="fa-solid fa-border-all"></i> Catálogo</a>
             <a href="${pageContext.request.contextPath}/CitasServlet"><i class="fa-regular fa-calendar-check"></i> Mis citas</a>
             <hr class="sidebar-divider">
             <a href="${pageContext.request.contextPath}/PerfilServlet" class="nav-profile-link"><i class="fa-regular fa-user"></i> Mi perfil</a>
@@ -81,7 +396,7 @@
                 </div>
             </div>
 
-            <div class="user-profile">
+            <div class="user-profile" onclick="window.location.href='${pageContext.request.contextPath}/PerfilServlet';" style="cursor: pointer;">
                 <div class="user-avatar" aria-label="Avatar del cliente">
                     <i class="fa-solid fa-circle-user"></i>
                 </div>
@@ -102,161 +417,46 @@
 
         <div class="catalog-content">
             <div class="services-grid">
-                <article class="service-card">
-                    <div class="service-img-container">
-                        <img src="https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&q=80&w=500" alt="Limpieza Facial Profunda" class="service-img">
-                    </div>
-                    <div class="service-info">
-                        <span class="service-label">Rostro</span>
-                        <h3 class="service-title">Limpieza Facial Profunda</h3>
-                        <p class="service-desc">Elimina impurezas, células muertas y puntos negros devolviendo la frescura y oxigenación a tu piel.</p>
-                        <div class="service-price-row"><span class="service-price">$450 MXN</span></div>
-                        <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
-                    </div>
-                </article>
 
-                <article class="service-card">
+                <%
+                    // Generación dinámica de las tarjetas desde la Base de Datos
+                    if (listaServicios != null && !listaServicios.isEmpty()) {
+                        for (int i = 0; i < listaServicios.size(); i++) {
+                            Servicio s = listaServicios.get(i);
+                            // Ocultamos a partir de la tarjeta 6 para que la paginación JS funcione
+                            String hiddenClass = (i >= 6) ? "hidden-card" : "";
+                %>
+                <article class="service-card <%= hiddenClass %>"
+                         data-category="<%= s.getCategoria() %>"
+                         data-includes="<%= s.getIncluye() %>"
+                         data-duration="<%= s.getDuracion() %>"
+                         data-price="$<%= s.getPrecio() %> MXN"
+                         data-image="<%= s.getImagenUrl() %>"
+                         data-title="<%= s.getNombre() %>"
+                         data-desc="<%= s.getDescripcion() %>">
                     <div class="service-img-container">
-                        <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=500" alt="Masaje Relajante" class="service-img">
+                        <img src="<%= s.getImagenUrl() %>" alt="<%= s.getNombre() %>" class="service-img">
                     </div>
                     <div class="service-info">
-                        <span class="service-label">Cuerpo</span>
-                        <h3 class="service-title">Masaje Relajante</h3>
-                        <p class="service-desc">Terapia manual diseñada para aliviar tensiones musculares profundas y reducir el estrés.</p>
-                        <div class="service-price-row"><span class="service-price">$600 MXN</span></div>
-                        <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
+                        <span class="service-label"><%= s.getCategoria() %></span>
+                        <h3 class="service-title"><%= s.getNombre() %></h3>
+                        <p class="service-desc"><%= s.getDescripcion() %></p>
+                        <div class="service-price-row"><span class="service-price">$<%= s.getPrecio() %> MXN</span></div>
+                        <button class="cta-arrow btn-book" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
                     </div>
                 </article>
+                <%
+                    }
+                } else {
+                %>
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #5f6757;">
+                    <h3>No hay servicios disponibles en este momento.</h3>
+                    <p>Por favor, vuelve más tarde.</p>
+                </div>
+                <%
+                    }
+                %>
 
-                <article class="service-card">
-                    <div class="service-img-container">
-                        <img src="https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&q=80&w=500" alt="Masaje descontracturante" class="service-img">
-                    </div>
-                    <div class="service-info">
-                        <span class="service-label">Cuerpo</span>
-                        <h3 class="service-title">Masaje descontracturante</h3>
-                        <p class="service-desc">Relaja la espalda y el cuello con una presión terapéutica que libera contracturas y mejora la postura.</p>
-                        <div class="service-price-row"><span class="service-price">$700 MXN</span></div>
-                        <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
-                    </div>
-                </article>
-
-                <article class="service-card">
-                    <div class="service-img-container">
-                        <img src="https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&q=80&w=500" alt="Microdermoabrasión" class="service-img">
-                    </div>
-                    <div class="service-info">
-                        <span class="service-label">Tratamiento Clínico</span>
-                        <h3 class="service-title">Microdermoabrasión</h3>
-                        <p class="service-desc">Renovación celular profunda que minimiza poros dilatados y líneas finas para una piel más uniforme.</p>
-                        <div class="service-price-row"><span class="service-price">$800 MXN</span></div>
-                        <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
-                    </div>
-                </article>
-
-                <article class="service-card">
-                    <div class="service-img-container">
-                        <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=500" alt="Aromaterapia" class="service-img">
-                    </div>
-                    <div class="service-info">
-                        <span class="service-label">Aromaterapia</span>
-                        <h3 class="service-title">Aromaterapia</h3>
-                        <p class="service-desc">La combinación perfecta de aceites esenciales y masaje relajante para calmar la mente y el cuerpo.</p>
-                        <div class="service-price-row"><span class="service-price">$250 MXN</span></div>
-                        <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
-                    </div>
-                </article>
-
-                <article class="service-card">
-                    <div class="service-img-container">
-                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=500" alt="Depilación" class="service-img">
-                    </div>
-                    <div class="service-info">
-                        <span class="service-label">Depilación</span>
-                        <h3 class="service-title">Depilación</h3>
-                        <p class="service-desc">Eliminación progresiva del vello con tecnología segura, precisa y de bajo dolor para pieles sensibles.</p>
-                        <div class="service-price-row"><span class="service-price">$400 MXN</span></div>
-                        <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
-                    </div>
-                </article>
-
-                <article class="service-card">
-                    <div class="service-img-container">
-                        <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=500" alt="Lifting de pestañas" class="service-img">
-                    </div>
-                    <div class="service-info">
-                        <span class="service-label">Mirada</span>
-                        <h3 class="service-title">Lifting de pestañas</h3>
-                        <p class="service-desc">Eleva y define la mirada con una técnica que realza tus pestañas sin dañar la estructura natural.</p>
-                        <div class="service-price-row"><span class="service-price">$350 MXN</span></div>
-                        <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
-                    </div>
-                </article>
-
-                <article class="service-card">
-                    <div class="service-img-container">
-                        <img src="https://images.unsplash.com/photo-1521590832167-7e0b4f7d7a3a?auto=format&fit=crop&q=80&w=500" alt="Hidratación profunda" class="service-img">
-                    </div>
-                    <div class="service-info">
-                        <span class="service-label">Rostro</span>
-                        <h3 class="service-title">Hidratación profunda</h3>
-                        <p class="service-desc">Tratamiento intensivo para pieles secas o fatigadas que devuelve brillo, elasticidad y suavidad.</p>
-                        <div class="service-price-row"><span class="service-price">$550 MXN</span></div>
-                        <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
-                    </div>
-                </article>
-
-                <article class="service-card hidden-card">
-                    <div class="service-img-container">
-                        <img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&q=80&w=500" alt="Tratamiento antiacné" class="service-img">
-                    </div>
-                    <div class="service-info">
-                        <span class="service-label">Piel</span>
-                        <h3 class="service-title">Tratamiento antiacné</h3>
-                        <p class="service-desc">Reduce la inflamación, controla la grasa y mejora la textura para una piel más equilibrada.</p>
-                        <div class="service-price-row"><span class="service-price">$620 MXN</span></div>
-                        <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
-                    </div>
-                </article>
-
-                <article class="service-card hidden-card">
-                    <div class="service-img-container">
-                        <img src="https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&q=80&w=500" alt="Masaje reductivo" class="service-img">
-                    </div>
-                    <div class="service-info">
-                        <span class="service-label">Cuerpo</span>
-                        <h3 class="service-title">Masaje reductivo</h3>
-                        <p class="service-desc">Estimula la circulación y ayuda a reducir la retención de líquidos para una sensación más ligera.</p>
-                        <div class="service-price-row"><span class="service-price">$680 MXN</span></div>
-                        <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
-                    </div>
-                </article>
-
-                <article class="service-card hidden-card">
-                    <div class="service-img-container">
-                        <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=500" alt="Botox de pestañas" class="service-img">
-                    </div>
-                    <div class="service-info">
-                        <span class="service-label">Mirada</span>
-                        <h3 class="service-title">Botox de pestañas</h3>
-                        <p class="service-desc">Nutre y fortalece tus pestañas con una sesión de cuidado que mejora su brillo y flexibilidad.</p>
-                        <div class="service-price-row"><span class="service-price">$390 MXN</span></div>
-                        <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
-                    </div>
-                </article>
-
-                <article class="service-card hidden-card">
-                    <div class="service-img-container">
-                        <img src="https://images.unsplash.com/photo-1521590832167-7e0b4f7d7a3a?auto=format&fit=crop&q=80&w=500" alt="Peeling facial" class="service-img">
-                    </div>
-                    <div class="service-info">
-                        <span class="service-label">Rostro</span>
-                        <h3 class="service-title">Peeling facial</h3>
-                        <p class="service-desc">Exfoliación suave que revitaliza la piel, mejora el tono y ayuda a lucir una tez más luminosa.</p>
-                        <div class="service-price-row"><span class="service-price">$520 MXN</span></div>
-                        <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
-                    </div>
-                </article>
             </div>
 
             <div class="catalog-controls" aria-label="Cambiar servicios">
@@ -267,38 +467,123 @@
     </main>
 </div>
 
+<!-- === MODALES === -->
+
+<!-- Modal de Detalles del Servicio (Actualizado al diseño avanzado de Figma) -->
 <div class="modal-backdrop" id="serviceModal">
-    <div class="modal-box">
-        <button class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+    <div class="modal-advanced-box">
 
-        <div class="modal-body-content">
-            <div class="modal-img-wrapper">
-                <img id="modalImg" src="" alt="Imagen del Servicio" class="modal-img">
-            </div>
-            <div class="modal-details">
-                <div>
-                    <span id="modalCategory" class="service-category"></span>
-                    <h3 id="modalTitle" class="modal-title-custom"></h3>
-                    <p id="modalDesc" class="modal-desc-custom"></p>
+        <!-- Banner Superior -->
+        <div class="modal-banner-wrapper">
+            <img id="modalImg" src="" alt="Imagen del Servicio" class="modal-banner-img">
+            <!-- Botón cerrar con las clases necesarias para que el JS lo detecte -->
+            <button class="modal-close modal-close-floating"><i class="fa-solid fa-xmark"></i></button>
+        </div>
 
-                    <div class="modal-extra-info">
-                        <p><i class="fa-solid fa-check-circle"></i> <span><strong>Lo que incluye:</strong> <span id="modalIncludes"></span></span></p>
-                        <p><i class="fa-regular fa-clock"></i> <span><strong>Cuánto dura:</strong> <span id="modalDuration"></span></span></p>
+        <!-- Contenido Inferior Dividido -->
+        <div class="modal-advanced-content">
+
+            <!-- Columna Izquierda: Información -->
+            <div class="modal-left-col">
+                <h2 id="modalTitle" class="modal-main-title">Nombre del Servicio</h2>
+                <p id="modalDesc" class="modal-main-desc">Descripción del servicio.</p>
+
+                <div class="modal-features-grid">
+                    <div class="feature-item">
+                        <i class="fa-regular fa-circle-check"></i>
+                        <div class="feature-text">
+                            <span>Disponibilidad</span>
+                            <strong>Disponible</strong>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fa-regular fa-clock"></i>
+                        <div class="feature-text">
+                            <span>Duración</span>
+                            <strong id="modalDuration">1h - 2h</strong>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fa-solid fa-star"></i>
+                        <div class="feature-text">
+                            <span>Calificación</span>
+                            <strong>4.9 (120 opiniones)</strong>
+                        </div>
                     </div>
                 </div>
 
-                <div class="modal-price-action">
-                    <div>
-                        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; font-weight: 500;">Precio del Servicio</span>
-                        <span id="modalPrice" class="service-price"></span>
+                <div class="modal-includes-section">
+                    <h4>Incluye</h4>
+                    <p id="modalIncludes">Detalles de lo que incluye.</p>
+                </div>
+
+                <!-- Sección de Reseñas (Estática por ahora como en el diseño) -->
+                <div class="modal-reviews-section">
+                    <div class="reviews-header">
+                        <h4>Reseñas destacadas</h4>
+                        <a href="#" class="view-all">Ver todas <i class="fa-solid fa-arrow-right"></i></a>
                     </div>
-                    <button class="btn-book btn-agendar">Agendar Cita</button>
+                    <div class="review-card">
+                        <div class="review-avatar">J</div>
+                        <div class="review-content">
+                            <div class="review-meta">
+                                <strong>Juan</strong>
+                                <span class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></span>
+                                <span class="time-ago">- Hace 2 días</span>
+                            </div>
+                            <p>Me gustó mucho este servicio, definitivamente volvería a agendar una cita.</p>
+                        </div>
+                    </div>
+                    <div class="review-dots">
+                        <span class="active"></span><span></span><span></span>
+                    </div>
                 </div>
             </div>
+
+            <!-- Columna Derecha: Tarjeta de Precio y Acción -->
+            <div class="modal-right-col">
+                <div class="price-section">
+                    <span class="price-label">Precio</span>
+                    <h3 id="modalPrice" class="price-value">$0 MXN</h3>
+                    <!-- Se mantiene la clase 'btn-agendar' para que funcione el JS -->
+                    <button class="btn-agendar btn-agendar-advanced">
+                        <i class="fa-regular fa-calendar-check"></i> Agendar cita
+                    </button>
+                </div>
+
+                <div class="trust-badges">
+                    <div class="badge-item">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <div>
+                            <strong>Pago seguro</strong>
+                            <p>Tus datos están protegidos</p>
+                        </div>
+                    </div>
+                    <div class="badge-item">
+                        <i class="fa-regular fa-credit-card"></i>
+                        <div>
+                            <strong>Métodos de pago</strong>
+                            <p>Efectivo, tarjeta, transferencia</p>
+                        </div>
+                    </div>
+                    <div class="badge-item success-badge">
+                        <i class="fa-solid fa-users"></i>
+                        <div>
+                            <strong>+500 servicios realizados</strong>
+                            <p>Clientes satisfechos</p>
+                            <div class="avatar-group">
+                                <span>A</span><span>J</span><span>M</span><span>+</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
 
+<!-- Modal de Agendamiento / Pago -->
 <div class="modal-backdrop" id="bookingModal">
     <div class="modal-box booking-box">
         <button class="modal-close modal-back"><i class="fa-solid fa-arrow-left"></i></button>
@@ -362,15 +647,17 @@
     </div>
 </div>
 
+<!-- Modal de Confirmación -->
 <div class="modal-backdrop" id="confirmationModal">
     <div class="modal-box confirmation-box">
         <div class="confirmation-icon"><i class="fa-solid fa-circle-check"></i></div>
         <h3>Cita confirmada</h3>
         <p>Tu cita quedó registrada correctamente. Puedes volver al catálogo y seguir explorando nuestros servicios.</p>
-        <button class="btn-confirm" onclick="window.location.href='${pageContext.request.contextPath}/catalogo'">Volver a catálogo</button>
+        <button class="btn-confirm" onclick="window.location.href='${pageContext.request.contextPath}/catalogoServlet'">Volver a catálogo</button>
     </div>
 </div>
 
+<!-- Modal de Cancelación -->
 <div class="modal-backdrop" id="cancelAppointmentModal">
     <div class="modal-box confirmation-box">
         <div class="confirmation-icon" style="color:#C95C5C;"><i class="fa-solid fa-circle-exclamation"></i></div>
@@ -384,9 +671,8 @@
 </div>
 
 <script>
-    // Definir la variable global del contexto para que tu archivo catalogo.js la pueda utilizar si la necesita
+    // Variable global del contexto para el archivo JS
     window.contextPath = '${pageContext.request.contextPath}';
-
 </script>
 </body>
 </html>

@@ -53,8 +53,7 @@
 
     <nav class="sidebar-nav">
         <a href="#" class="active"><i class="fa-solid fa-house"></i> Inicio</a>
-        <!-- JSP: Rutas dinámicas correctas del backend -->
-        <a href="${pageContext.request.contextPath}/catalogo"><i class="fa-solid fa-border-all"></i> Catálogo</a>
+        <a href="${pageContext.request.contextPath}/catalogoServlet"><i class="fa-solid fa-border-all"></i> Catálogo</a>
         <a href="${pageContext.request.contextPath}/CitasServlet"><i class="fa-regular fa-calendar-check"></i> Mis citas</a>
         <hr class="sidebar-divider">
         <a href="${pageContext.request.contextPath}/PerfilServlet" class="nav-profile-link"><i class="fa-regular fa-user"></i> Mi perfil</a>
@@ -92,7 +91,7 @@
                 </div>
             </div>
 
-            <div class="user-profile">
+            <div class="user-profile" onclick="window.location.href='${pageContext.request.contextPath}/PerfilServlet';">
                 <div class="user-avatar" aria-label="Avatar del cliente">
                     <i class="fa-solid fa-circle-user"></i>
                 </div>
