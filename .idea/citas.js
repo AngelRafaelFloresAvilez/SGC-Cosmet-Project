@@ -50,4 +50,14 @@ window.addEventListener('DOMContentLoaded', () => {
   if (window.appointmentsSystem && typeof window.appointmentsSystem.init === 'function') {
     window.appointmentsSystem.init();
   }
+
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('.tab-btn, #appointmentPagination button')) return;
+    const detailPanel = document.getElementById('appointmentDetailPanel');
+    const detail = document.getElementById('appointmentDetail');
+    detailPanel?.classList.remove('is-open');
+    detailPanel?.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('detail-open');
+    if (detail) detail.innerHTML = '<div class="empty-state">Selecciona una cita para ver su información.</div>';
+  }, true);
 });

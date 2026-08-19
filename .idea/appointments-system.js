@@ -1,5 +1,6 @@
 (function () {
   const STORAGE_KEY = 'sgc_appointments_state_v1';
+  const AUTH_STORAGE_KEY = 'sgc_auth_users_v1';
   const defaults = {
     appointments: [],
     notifications: [],
@@ -119,7 +120,9 @@
 
   function getCurrentUserAppointments(state = readState()) {
     const session = getSession() || {};
-    if (!session.email) return [];
+    if (!session.email) {
+      return (state.appointments || []).filter((appointment) => !appointment.createdBy || !appointment.createdBy.email);
+    }
     if (session.role === 'admin' || session.role === 'specialist') {
       return Array.isArray(state.appointments) ? state.appointments : [];
     }
@@ -133,9 +136,10 @@
   }
 
   function createProfileFromUser(user, stateProfile = {}) {
+    const stateBelongsToUser = !user || (stateProfile.email && stateProfile.email.toLowerCase() === user.email.toLowerCase());
     const profile = {
       ...defaults.profile,
-      ...(user && stateProfile.email && stateProfile.email.toLowerCase() === user.email.toLowerCase() ? stateProfile : {}),
+      ...(stateBelongsToUser ? stateProfile : {}),
     };
     if (!user) return profile;
 
@@ -145,7 +149,7 @@
       email: user.email,
       phone: user.phone || defaults.profile.phone,
       birthDate: user.birthDate || defaults.profile.birthDate,
-      avatar: user.avatar || defaults.profile.avatar,
+      avatar: stateBelongsToUser && stateProfile.avatar ? stateProfile.avatar : (user.avatar || defaults.profile.avatar),
       role: user.role === 'client'
         ? 'Cliente'
         : user.role === 'specialist'
@@ -242,21 +246,36 @@
     return parsed;
   }
 
-  function isTimeSlotTaken(date, time, state = readState()) {
+  function isTimeSlotTaken(date, time, state = readState(), requestedDuration = 30, specialist = '') {
     if (!date || !time) return false;
     const attempted = parseDisplayedDateTime(date, time);
+    const attemptedDay = Number(String(date).match(/\d{1,2}/)?.[0]);
+    const attemptedStart = attempted ? attempted.getTime() : null;
     return state.appointments.some((appointment) => {
-      if (appointment.status === 'cancelled') return false;
-      // match by ISO if available
-      if (appointment.iso && attempted) {
-        try {
-          const aptDate = new Date(appointment.iso);
-          return aptDate.getTime() === attempted.getTime();
-        } catch (e) { /* ignore parse errors */ }
-      }
-      // fallback to string match
-      return appointment.date === date && appointment.time === time;
+      if (appointment.status === 'cancelled' || appointment.status === 'previous' || appointment.status === 'completed') return false;
+      const assignedSpecialist = appointment.specialist || appointment.createdBy?.specialist || '';
+      const hasSpecificAssignment = assignedSpecialist && assignedSpecialist !== 'Cualquiera. Mejor disponible';
+      if (specialist && specialist !== 'Cualquiera. Mejor disponible' && hasSpecificAssignment && assignedSpecialist !== specialist) return false;
+      const appointmentDay = Number(String(appointment.date || '').match(/\d{1,2}/)?.[0]);
+      const sameDay = appointmentDay === attemptedDay || (appointment.iso && attempted && new Date(appointment.iso).toDateString() === attempted.toDateString());
+      if (!sameDay) return false;
+      if (specialist && specialist !== 'Cualquiera. Mejor disponible' && !assignedSpecialist) return true;
+      const appointmentStartDate = parseDisplayedDateTime(appointment.date, appointment.time);
+      const appointmentStart = appointmentStartDate ? appointmentStartDate.getTime() : null;
+      if (attemptedStart === null || appointmentStart === null) return appointment.date === date && appointment.time === time;
+      const appointmentEnd = appointmentStart + (Number(appointment.duration) || 60) * 60 * 1000;
+      const attemptedEnd = attemptedStart + (requestedDuration + 30) * 60 * 1000;
+      return attemptedStart < appointmentEnd && attemptedEnd > appointmentStart;
     });
+  }
+
+  function isWithinSpecialistSchedule(date, duration, specialist = '') {
+    if (specialist && specialist !== 'Cualquiera. Mejor disponible' && specialist !== 'Dra. Sofía Reyes') return false;
+    const day = date.getDay();
+    if (day === 0) return false;
+    const start = date.getHours() * 60 + date.getMinutes();
+    const end = day === 6 ? 14 * 60 : 18 * 60;
+    return start >= 9 * 60 && start + duration <= end;
   }
 
   // Simple site alert/toast helper — appended to body and auto-dismissed
@@ -326,7 +345,7 @@
     return { removed: before - state.notifications.length };
   }
 
-  function createAppointment(serviceName, price, date, time, notes = '') {
+  function createAppointment(serviceName, price, date, time, notes = '', options = {}) {
     const state = readState();
     if (!canBookNewAppointment(state)) {
       return { allowed: false, reason: 'limit_reached' };
@@ -342,6 +361,7 @@
     if (!appointmentDateObj) {
       return { allowed: false, reason: 'missing_datetime' };
     }
+
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const minAllowed = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000); // tomorrow
@@ -349,7 +369,11 @@
       return { allowed: false, reason: 'too_soon' };
     }
 
-    if (isTimeSlotTaken(date, time, state)) {
+    if (!isWithinSpecialistSchedule(appointmentDateObj, Number(options.duration) || 60, options.specialist || '')) {
+      return { allowed: false, reason: 'outside_working_hours' };
+    }
+
+    if (isTimeSlotTaken(date, time, state, Number(options.duration) || 60, options.specialist || '')) {
       return { allowed: false, reason: 'slot_taken' };
     }
 
@@ -386,6 +410,8 @@
       time,
       iso: appointmentDateObj ? appointmentDateObj.toISOString() : null,
       notes,
+      duration: options.duration || 60,
+      specialist: options.specialist || 'Cualquiera. Mejor disponible',
       status: 'pending',
       createdAt: new Date().toISOString(),
       summary: 'Tu cita está pendiente de confirmación.',
@@ -401,6 +427,9 @@
       }
     };
 
+    if (options.draft) {
+      return { allowed: true, appointment };
+    }
     state.appointments.unshift(appointment);
     saveState(state);
     addNotification('Nueva cita registrada', `Tienes una nueva cita para ${serviceName} el ${date} a las ${time}.`, 'appointment');
@@ -442,6 +471,18 @@
       addNotification('Acceso re-evaluado', 'Se removió una cancelación; tu acceso podría quedar habilitado.', 'appointment');
     }
     return state;
+  }
+
+  function discardAppointment(id) {
+    if (!id) return { allowed: false };
+    const state = readState();
+    const before = state.appointments.length;
+    state.appointments = state.appointments.filter((item) => item.id !== id);
+    if (state.appointments.length === before) return { allowed: false };
+    saveState(state);
+    renderNotifications();
+    syncProfileUI();
+    return { allowed: true, state };
   }
 
   function specialistConfirmAppointment(id) {
@@ -818,6 +859,7 @@
       if (element.tagName === 'IMG') {
         element.src = profile.avatar;
         element.alt = profile.name;
+        element.classList.add('profile-avatar');
       }
     });
 
@@ -924,6 +966,11 @@
 
     document.querySelectorAll('.profile-cancel-count').forEach((element) => {
       element.textContent = cancelledCount;
+    });
+
+    document.querySelectorAll('.profile-absence-progress').forEach((element) => {
+      element.style.width = `${Math.min(cancelledCount, 3) / 3 * 100}%`;
+      element.style.background = cancelledCount >= 3 ? '#c95c5c' : '#93b575';
     });
 
     const cancelledCard = document.getElementById('cancelledSummaryCard');
@@ -1038,6 +1085,11 @@
     const state = readState();
     const list = document.getElementById('appointmentsList');
     const detail = document.getElementById('appointmentDetail');
+    const detailPanel = document.getElementById('appointmentDetailPanel');
+    detailPanel?.classList.remove('is-open');
+    detailPanel?.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('detail-open');
+    if (detail) detail.innerHTML = '<div class="empty-state">Selecciona una cita para ver su información.</div>';
     const cancelledCount = document.getElementById('cancelledCount');
     const summaryCards = {
       pending: document.getElementById('pendingCount'),
@@ -1064,14 +1116,26 @@
     if (!list || !detail) return;
 
     const tabs = document.querySelectorAll('.tab-btn');
-    const activeStatus = localStorage.getItem('sgc_active_tab') || 'pending';
+    const pagination = document.getElementById('appointmentPagination');
+    const storedStatus = localStorage.getItem('sgc_active_tab');
+    const activeStatus = ['pending', 'previous', 'cancelled'].includes(storedStatus) ? storedStatus : 'pending';
     const filtered = userAppointments.filter((item) => item.status === activeStatus).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const pageSize = 3;
+    const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const storedPage = Number(localStorage.getItem(`sgc_appointments_page_${activeStatus}`) || 1);
+    const activePage = Math.min(Math.max(storedPage, 1), pageCount);
+    const pageItems = filtered.slice((activePage - 1) * pageSize, activePage * pageSize);
 
     if (tabs && tabs.length) {
       tabs.forEach((btn) => {
         btn.classList.toggle('active', btn.dataset.statusTab === activeStatus);
         btn.onclick = () => {
+          detail.innerHTML = '<div class="empty-state">Selecciona una cita para ver su información.</div>';
+          detailPanel?.classList.remove('is-open');
+          detailPanel?.setAttribute('aria-hidden', 'true');
+          document.body.classList.remove('detail-open');
           localStorage.setItem('sgc_active_tab', btn.dataset.statusTab);
+          localStorage.setItem(`sgc_appointments_page_${btn.dataset.statusTab}`, '1');
           renderAppointmentsPage();
         };
       });
@@ -1080,17 +1144,44 @@
     if (!filtered.length) {
       list.innerHTML = '<div class="empty-state">No hay citas en esta sección.</div>';
       detail.innerHTML = '<div class="empty-state">Selecciona una cita para ver su información.</div>';
+      if (pagination) pagination.innerHTML = '';
       return;
     }
 
-    list.innerHTML = filtered.map((appointment) => `
+    if (pagination) {
+      pagination.innerHTML = [
+        `<button type="button" data-page="${activePage - 1}" ${activePage === 1 ? 'disabled' : ''}>‹</button>`,
+        ...Array.from({ length: pageCount }, (_, index) => `<button type="button" class="${index + 1 === activePage ? 'active' : ''}" data-page="${index + 1}">${index + 1}</button>`),
+        `<button type="button" data-page="${activePage + 1}" ${activePage === pageCount ? 'disabled' : ''}>›</button>`
+      ].join('');
+      pagination.querySelectorAll('button:not(:disabled)').forEach((button) => {
+        button.onclick = () => {
+          detail.innerHTML = '<div class="empty-state">Selecciona una cita para ver su información.</div>';
+          detailPanel?.classList.remove('is-open');
+          detailPanel?.setAttribute('aria-hidden', 'true');
+          document.body.classList.remove('detail-open');
+          localStorage.setItem(`sgc_appointments_page_${activeStatus}`, button.dataset.page);
+          renderAppointmentsPage();
+        };
+      });
+    }
+
+    const serviceImages = (window.appointmentsSystem.getServices?.() || []).reduce((images, service) => {
+      images[service.title?.toLowerCase()] = service.image;
+      return images;
+    }, {});
+    const currentProfile = getProfileForCurrentSession(state);
+    list.innerHTML = pageItems.map((appointment) => `
       <button class="appointment-item" data-appointment-id="${appointment.id}">
-        <div class="appointment-item-head">
-          <strong>${appointment.serviceName}</strong>
-          <span class="appointment-badge">${appointment.status === 'pending' ? 'Pendiente' : appointment.status === 'confirmed' ? 'Confirmada' : appointment.status === 'cancelled' ? 'Cancelada' : 'Completada'}</span>
+        <img class="appointment-item-image" src="${serviceImages[appointment.serviceName?.toLowerCase()] || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=160'}" alt="">
+        <div class="appointment-item-body">
+          <div class="appointment-item-head">
+            <div><strong>${appointment.serviceName}</strong><small>Relajante y liberador.</small></div>
+            <span class="appointment-badge appointment-status-${appointment.status}">${appointment.status === 'pending' ? 'Pendiente' : appointment.status === 'confirmed' ? 'Confirmada' : appointment.status === 'cancelled' ? 'Cancelada' : 'Completado'}</span>
+          </div>
+          <div class="appointment-item-meta"><span><i class="fa-regular fa-calendar"></i> Fecha<br>${appointment.date}</span><span><i class="fa-regular fa-clock"></i> Hora<br>${appointment.time}</span><span><i class="fa-regular fa-user"></i> Profesional<br>${appointment.specialist || 'Disponible'}</span></div>
         </div>
-        <div class="appointment-item-meta">${appointment.date} · ${appointment.time}</div>
-        <div class="appointment-item-price">${appointment.price}</div>
+        <span class="appointment-item-actions"><i class="fa-regular fa-eye"></i><i class="fa-solid fa-xmark"></i></span>
       </button>
     `).join('');
 
@@ -1098,14 +1189,17 @@
       button.addEventListener('click', () => {
         const current = getAppointmentById(button.dataset.appointmentId);
         if (!current) return;
+        detailPanel?.classList.add('is-open');
+        detailPanel?.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('detail-open');
         detail.innerHTML = `
           <div class="detail-card">
             <div class="detail-card-head">
               <h3>${current.serviceName}</h3>
-              <span class="appointment-badge">${current.status === 'pending' ? 'Pendiente' : current.status === 'confirmed' ? 'Confirmada' : current.status === 'cancelled' ? 'Cancelada' : 'Completada'}</span>
+              <div class="detail-card-actions"><span class="appointment-badge appointment-status-${current.status}">${current.status === 'pending' ? 'Pendiente' : current.status === 'confirmed' ? 'Confirmada' : current.status === 'cancelled' ? 'Cancelada' : 'Completada'}</span><button type="button" class="detail-close" aria-label="Cerrar información"><i class="fa-solid fa-xmark"></i></button></div>
             </div>
             <div class="client-info" style="display:flex;gap:12px;align-items:center;margin-top:10px">
-              <img src="${(current.createdBy && current.createdBy.avatar) || 'https://www.gravatar.com/avatar/?d=mp&s=80'}" alt="${(current.createdBy && current.createdBy.name) || 'Cliente'}" style="width:56px;height:56px;border-radius:50%;object-fit:cover">
+              <img src="${(current.createdBy && current.createdBy.avatar) || currentProfile.avatar}" alt="${(current.createdBy && current.createdBy.name) || currentProfile.name || 'Cliente'}" class="detail-client-avatar">
               <div>
                 <div><strong>${(current.createdBy && current.createdBy.name) || 'Cliente SGC'}</strong></div>
                 <div class="meta">${(current.createdBy && current.createdBy.email) || ''} ${current.createdBy && current.createdBy.phone ? '· ' + current.createdBy.phone : ''}</div>
@@ -1120,6 +1214,16 @@
             ${current.status === 'pending' ? `<div style="display:flex;gap:8px;flex-wrap:wrap">` + (getSession() && getSession().role === 'specialist' ? `<button class="btn-confirm" data-confirm-id="${current.id}">Confirmar</button>` : '') + `<button class="btn-cancel" data-cancel-id="${current.id}">Cancelar cita</button></div>` : (getSession() && getSession().role === 'specialist' ? `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-complete" data-complete-id="${current.id}">Marcar como atendida</button><button class="btn-delete" data-delete-id="${current.id}">Eliminar cita</button></div>` : '')}
           </div>
         `;
+        const detailClose = detail.querySelector('.detail-close');
+        if (detailClose) {
+          detailClose.addEventListener('click', (event) => {
+            event.stopPropagation();
+            detail.innerHTML = '<div class="empty-state">Selecciona una cita para ver su información.</div>';
+            detailPanel?.classList.remove('is-open');
+            detailPanel?.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('detail-open');
+          });
+        }
             const cancelButton = detail.querySelector('.btn-cancel');
         if (cancelButton) {
           cancelButton.addEventListener('click', () => {
@@ -1166,8 +1270,6 @@
       });
     });
 
-    const firstCard = list.querySelector('.appointment-item');
-    if (firstCard) firstCard.click();
   }
 
   function openCancelModal(id) {
@@ -1263,6 +1365,11 @@
     }
 
     window.addEventListener('sgc-state-updated', handleGlobalStateUpdate);
+    window.addEventListener('storage', (event) => {
+      if (event.key === STORAGE_KEY || event.key === AUTH_STORAGE_KEY) {
+        handleGlobalStateUpdate();
+      }
+    });
 
     syncProfileUI();
     renderNotifications();
@@ -1293,7 +1400,9 @@
       return result;
     },
     removeAppointment,
+      discardAppointment,
     readState,
+    getProfileForCurrentSession,
     canBookNewAppointment,
     restoreAccess,
     getServices,
@@ -1509,26 +1618,24 @@
 
   function setProfileAvatar(dataUrl) {
     try {
-      const state = readState();
+      const state = JSON.parse(localStorage.getItem('sgc_appointments_state_v1') || '{}');
+      const session = JSON.parse(sessionStorage.getItem('sgc_active_session_v1') || 'null') || {};
       state.profile = { ...(state.profile || {}), avatar: dataUrl };
-      saveState(state);
-      // also update auth users if session available
-      try {
-        const session = getSession() || {};
-        if (session && session.email) {
-          const users = readUsers();
-          const idx = users.findIndex(u => u.email && u.email.toLowerCase() === session.email.toLowerCase());
-          if (idx >= 0) {
-            users[idx].avatar = dataUrl;
-            saveUsers(users);
-          }
+      if (session.email) state.profile.email = session.email;
+      localStorage.setItem('sgc_appointments_state_v1', JSON.stringify(state));
+      if (session.email) {
+        const users = JSON.parse(localStorage.getItem('sgc_auth_users_v1') || '[]');
+        const user = users.find((item) => item.email && item.email.toLowerCase() === session.email.toLowerCase());
+        if (user) {
+          user.avatar = dataUrl;
+          localStorage.setItem('sgc_auth_users_v1', JSON.stringify(users));
         }
-      } catch (e) {
-        // ignore
       }
-      // update UI
-      renderProfilePage();
-      syncProfileUI();
+      try {
+        window.dispatchEvent(new Event('sgc-state-updated'));
+      } catch (e) {
+        // The avatar is already persisted if a view cannot be refreshed.
+      }
       return dataUrl;
     } catch (e) {
       return null;

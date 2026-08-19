@@ -33,14 +33,29 @@ function mostrarNotificaciones() {
 window.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('profileAvatarInput');
   const img = document.getElementById('profileAvatarImg');
-  const sidebarImg = document.getElementById('sidebarProfileAvatar');
+  const sidebarAvatar = document.getElementById('sidebarUserAvatar');
   const menuBtn = document.querySelector('.menu-btn');
   const overlay = document.getElementById('menuOverlay');
   const notificationToggle = document.querySelector('[data-notification-toggle]');
 
   function updateImgs(url) {
     if (img) img.src = url;
-    if (sidebarImg) sidebarImg.src = url;
+    document.querySelectorAll('.user-profile .user-avatar').forEach((avatar) => {
+      const headerImg = avatar.querySelector('img');
+      if (headerImg) {
+        headerImg.src = url;
+      } else {
+        avatar.innerHTML = `<img src="${url}" alt="Avatar del cliente" style="width:36px;height:36px;border-radius:50%;object-fit:cover">`;
+      }
+    });
+    if (sidebarAvatar) {
+      const sidebarImg = sidebarAvatar.querySelector('img');
+      if (sidebarImg) {
+        sidebarImg.src = url;
+      } else {
+        sidebarAvatar.innerHTML = `<img src="${url}" alt="Avatar del cliente" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
+      }
+    }
   }
 
   if (menuBtn) {
@@ -54,6 +69,15 @@ window.addEventListener('DOMContentLoaded', () => {
   if (notificationToggle) {
     notificationToggle.addEventListener('click', mostrarNotificaciones);
   }
+
+  try {
+    const profile = window.appointmentsSystem && typeof window.appointmentsSystem.getProfileForCurrentSession === 'function'
+      ? window.appointmentsSystem.getProfileForCurrentSession()
+      : null;
+    if (profile && profile.avatar) {
+      updateImgs(profile.avatar);
+    }
+  } catch (e) { /* ignore */ }
 
   if (input) {
     input.addEventListener('change', function () {
@@ -73,11 +97,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('sgc-state-updated', function () {
     try {
-      const state = window.appointmentsSystem && typeof window.appointmentsSystem.readState === 'function'
-        ? window.appointmentsSystem.readState()
+      const profile = window.appointmentsSystem && typeof window.appointmentsSystem.getProfileForCurrentSession === 'function'
+        ? window.appointmentsSystem.getProfileForCurrentSession()
         : null;
-      if (state && state.profile && state.profile.avatar) {
-        updateImgs(state.profile.avatar);
+      if (profile && profile.avatar) {
+        updateImgs(profile.avatar);
       }
     } catch (e) { /* ignore */ }
   });

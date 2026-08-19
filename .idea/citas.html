@@ -79,42 +79,59 @@
         </header>
 
 
-    <main class="catalog-container">
-      <div class="catalog-header">
-        <div class="hero-texts">
-          <div class="text-hello">Bienvenida de nuevo, Ana</div>
-          <div class="text-catalog">Gestión de citas</div>
-          <div class="text-desc">Consulta tus reservas, revisa el historial y mantén el control de tus próximas citas con un estilo consistente con el catálogo.</div>
-        </div>
+    <main class="appointments-page">
+      <div class="appointments-heading">
+        <h1>Gestión de citas.</h1>
+        <p>Consulta, modifica o cancela tus citas<br>programadas.</p>
       </div>
 
-      <div class="catalog-content">
-        <section class="appointments-panel">
-          <div class="stats-grid">
-            <div class="stat-card"><span>Pendientes</span><strong id="pendingCount">0</strong></div>
-            <div class="stat-card"><span>Anteriores</span><strong id="previousCount">0</strong></div>
-            <div class="stat-card"><span>Canceladas</span><strong id="cancelledSummaryCount">0</strong></div>
+      <div class="appointments-layout">
+        <aside class="profile-card">
+          <div class="profile-card-avatar"><img class="profile-avatar" src="https://www.gravatar.com/avatar/?d=mp&s=150" alt="Ana López"></div>
+          <h2 class="profile-card-name profile-name">Ana López</h2>
+          <span class="profile-card-role profile-role">Cliente</span>
+          <div class="profile-facts">
+            <div><i class="fa-regular fa-phone"></i><span class="profile-phone">+52 55 1234 5678</span></div>
+            <div><i class="fa-regular fa-envelope"></i><span class="profile-email">ana.lopez@sgc.com</span></div>
+            <div><i class="fa-regular fa-calendar"></i><span class="profile-birth">14/08/1997</span></div>
           </div>
+          <div class="absence-card">
+            <div><strong>Ausencias<br>Consecutivas</strong><b class="profile-cancel-count">0</b><b>/3</b></div>
+            <div class="absence-progress"><span class="profile-absence-progress"></span></div>
+            <small><i class="fa-solid fa-circle"></i> Estado: <span class="profile-status">Normal</span></small>
+            <p><i class="fa-solid fa-circle-exclamation"></i> Nota: Por cada 3 ausencias sin previo aviso resultará en un bloqueo automático de 30 días.</p>
+          </div>
+        </aside>
 
+        <section class="appointments-panel">
+          <div class="appointments-panel-title">
+            <h2>Mis citas programadas</h2>
+            <div class="appointment-counts" aria-label="Resumen de citas">
+              <span>Próximas <strong id="pendingCount">0</strong></span>
+              <span>Completadas <strong id="previousCount">0</strong></span>
+              <span>Canceladas <strong id="cancelledSummaryCount">0</strong></span>
+            </div>
+          </div>
           <div class="tabs">
-            <button class="tab-btn active" data-status-tab="pending">Pendientes</button>
-            <button class="tab-btn" data-status-tab="previous">Anteriores</button>
+            <button class="tab-btn active" data-status-tab="pending">Próximas</button>
+            <button class="tab-btn" data-status-tab="previous">Completadas</button>
             <button class="tab-btn" data-status-tab="cancelled">Canceladas</button>
           </div>
-
-          <div class="panel-layout">
-            <div class="list-panel">
-              <div id="appointmentsList"></div>
-            </div>
-            <div class="detail-panel">
-              <div id="appointmentDetail">Selecciona una cita para ver su información.</div>
-            </div>
-          </div>
-
-          <div class="stat-card" id="cancelledSummaryCard" style="margin-top:16px;"><span>Cancelaciones acumuladas</span><strong id="cancelledCount">0</strong></div>
+          <div class="appointments-list-shell" id="appointmentsList"></div>
+          <div class="appointment-pagination" id="appointmentPagination" aria-label="Paginación"></div>
+          <div class="stat-card" id="cancelledSummaryCard" hidden><span>Cancelaciones acumuladas</span><strong id="cancelledCount">0</strong></div>
         </section>
+
+        <aside class="appointments-aside">
+          <section class="priority-card"><div class="priority-icon"><i class="fa-regular fa-calendar"></i></div><h2>Tu comodidad es nuestra prioridad</h2><p>Recuerda anotar cuando será tu próxima cita para evitar ser sancionado.</p></section>
+          <section class="recommendations-card"><h2><i class="fa-regular fa-lightbulb"></i> Recomendaciones</h2><ul><li>Llega 10 min antes de cada cita.</li><li>Si necesitas reagendar hazlo con anticipación.</li><li>Cancela con al menos 12 hrs de anticipación para evitar sanciones.</li></ul></section>
+        </aside>
       </div>
     </main>
+  </div>
+
+  <div class="detail-panel" id="appointmentDetailPanel" aria-hidden="true">
+    <div id="appointmentDetail"></div>
   </div>
 
   <div class="modal-backdrop" id="cancelAppointmentModal">
