@@ -37,6 +37,7 @@
         <select name="idRol">
             <option value="1">Administrador</option>
             <option value="2">Empleado</option>
+            <option value="3">Cliente</option>
         </select>
 
         <button type="submit">Registrar Usuario</button>

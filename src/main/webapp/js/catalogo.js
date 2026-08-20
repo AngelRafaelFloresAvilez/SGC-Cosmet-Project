@@ -1,49 +1,85 @@
+// ==========================================
+// ESTADO GLOBAL DE LA RESERVA
+// ==========================================
+let reservaActual = {
+    idServicio: 1,
+    nombreServicio: '',
+    precio: 0,
+    duracion: '60 min',
+    idEmpleado: 1,
+    nombreEmpleado: 'Ana Torres',
+    fecha: '2026-08-09', // Fecha por defecto
+    hora: '14:00:00',     // Hora por defecto
+    metodoPago: 'Efectivo'
+};
+
+// ==========================================
+// FUNCIONES DE UI Y NAVEGACIÓN
+// ==========================================
+
 function abrirMenu() {
-    const menuBtn = document.querySelector('.menu-btn');
     const sidebar = document.getElementById('sidebarMenu');
     const overlay = document.getElementById('menuOverlay');
-
     if (sidebar) sidebar.classList.add('active');
     if (overlay) overlay.classList.add('active');
-    if (menuBtn) menuBtn.classList.add('active');
 }
 
 function cerrarMenu() {
-    const menuBtn = document.querySelector('.menu-btn');
     const sidebar = document.getElementById('sidebarMenu');
     const overlay = document.getElementById('menuOverlay');
-
     if (sidebar) sidebar.classList.remove('active');
     if (overlay) overlay.classList.remove('active');
-    if (menuBtn) menuBtn.classList.remove('active');
 }
 
-function mostrarNotificaciones() {
-    const panel = document.getElementById('notificationPanel');
-    if (panel) {
-        panel.classList.toggle('active');
+function cambiarCatalogo(direction) {
+    const container = document.querySelector('.services-grid');
+    if (container) {
+        const scrollAmount = 300;
+        if (direction === 'next') container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        else container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
     }
 }
 
+// ==========================================
+// FUNCIONES DE MODALES
+// ==========================================
+
+function cerrarModal() {
+    const modal = document.getElementById('serviceModal');
+    if (modal) modal.classList.remove('active');
+}
+
 function abrirModal(titulo, categoria, desc, incluye, duracion, precio, img) {
-    // Validaciones de seguridad: Solo actualizamos si el elemento existe en el HTML
     const titleEl = document.getElementById('modalTitle');
     if (titleEl) titleEl.innerText = titulo;
-
-    const catEl = document.getElementById('modalCategory');
-    if (catEl) catEl.innerText = categoria; // Este elemento ya no está en el nuevo diseño, pero no romperá el código
 
     const descEl = document.getElementById('modalDesc');
     if (descEl) descEl.innerText = desc;
 
-    const incEl = document.getElementById('modalIncludes');
-    if (incEl) incEl.innerText = incluye;
+    const incContainer = document.getElementById('modalIncludes');
+    if (incContainer) {
+        incContainer.innerHTML = '';
+        const items = incluye.split(',');
+        items.forEach(item => {
+            if (item.trim() !== '') {
+                const div = document.createElement('div');
+                div.className = 'include-item';
+                div.innerText = item.trim();
+                incContainer.appendChild(div);
+            }
+        });
+        if (incContainer.innerHTML === '') {
+            incContainer.innerHTML = '<div class="include-item">Servicio estándar</div>';
+        }
+    }
 
     const durEl = document.getElementById('modalDuration');
     if (durEl) durEl.innerText = duracion;
 
+    document.body.dataset.currentPrice = precio;
+
     const priceEl = document.getElementById('modalPrice');
-    if (priceEl) priceEl.innerText = precio;
+    if (priceEl) priceEl.innerText = `$${precio} MXN`;
 
     const imgEl = document.getElementById('modalImg');
     if (imgEl) imgEl.src = img;
@@ -52,283 +88,235 @@ function abrirModal(titulo, categoria, desc, incluye, duracion, precio, img) {
     if (modal) modal.classList.add('active');
 }
 
-function cambiarCatalogo(direction) {
-    const cards = Array.from(document.querySelectorAll('.service-card'));
-    if (!cards.length) return;
-
-    const pageSize = 6;
-    const total = cards.length;
-    let startIndex = Number(document.body.dataset.catalogStart || 0);
-
-    startIndex = (startIndex + (direction === 'next' ? pageSize : -pageSize) + total) % total;
-    document.body.dataset.catalogStart = String(startIndex);
-
-    const visibleIndexes = new Set();
-    for (let i = 0; i < Math.min(pageSize, total); i += 1) {
-        visibleIndexes.add((startIndex + i) % total);
-    }
-
-    cards.forEach((card, index) => {
-        card.classList.toggle('hidden-card', !visibleIndexes.has(index));
-    });
-}
-
-function cerrarModal() {
-    const modal = document.getElementById('serviceModal');
-    if (modal) modal.classList.remove('active');
-}
-
-function cerrarModalFuera(event) {
-    if (event.target.id === 'serviceModal') {
-        cerrarModal();
-    }
-}
-
 function abrirModalAgendamiento() {
-    const titleEl = document.getElementById('modalTitle');
-    const priceEl = document.getElementById('modalPrice');
-
-    const titulo = titleEl ? titleEl.innerText : 'Servicio';
-    const precio = priceEl ? priceEl.innerText : '$0 MXN';
-
-    const bookingNameEl = document.getElementById('bookingServiceName');
-    if (bookingNameEl) bookingNameEl.innerText = titulo;
-
-    const bookingPriceEl = document.getElementById('bookingPrice');
-    if (bookingPriceEl) bookingPriceEl.innerText = precio;
-
-    try {
-        const select = document.getElementById('bookingPromotionSelect');
-        if (select && window.appointmentsSystem && typeof window.appointmentsSystem.readState === 'function') {
-            const state = window.appointmentsSystem.readState();
-            select.innerHTML = '<option value="">-- Selecciona una promoción (opcional) --</option>' +
-                (state.promotions || []).map((p) => `<option value="${p.id}">${p.title}</option>`).join('');
-            select.onchange = function () {
-                const val = select.value;
-                if (window.appointmentsSystem && typeof window.appointmentsSystem.applyPromotion === 'function') {
-                    window.appointmentsSystem.applyPromotion(val || null);
-                }
-                try {
-                    const selPromo = (state.promotions || []).find((pp) => pp.id === val);
-                    if (selPromo && /(%)/.test(selPromo.title)) {
-                        const match = String(selPromo.title).match(/(\d+)%/);
-                        if (match) {
-                            const pct = Number(match[1]);
-                            const num = Number(String(precio).replace(/[^0-9.,]/g, '').replace(/,/g, '.')) || 0;
-                            const computed = Math.round((num * (1 - pct / 100)) * 100) / 100;
-                            if (bookingPriceEl) bookingPriceEl.innerText = `$${computed} MXN`;
-                            return;
-                        }
-                    }
-                    if (bookingPriceEl) bookingPriceEl.innerText = precio;
-                } catch (e) {
-                    if (bookingPriceEl) bookingPriceEl.innerText = precio;
-                }
-            };
-        }
-    } catch (e) {
-        /* ignore */
-    }
-
     cerrarModal();
-    const bookingModal = document.getElementById('bookingModal');
-    if (bookingModal) bookingModal.classList.add('active');
+    const calendarModal = document.getElementById('calendarModal');
+    if (calendarModal) calendarModal.classList.add('active');
 }
 
 function volverAModalServicio() {
-    const bookingModal = document.getElementById('bookingModal');
+    const calendarModal = document.getElementById('calendarModal');
     const serviceModal = document.getElementById('serviceModal');
-
-    if (bookingModal) bookingModal.classList.remove('active');
+    if (calendarModal) calendarModal.classList.remove('active');
     if (serviceModal) serviceModal.classList.add('active');
 }
 
-function cerrarBookingFuera(event) {
-    if (event.target.id === 'bookingModal') {
-        const bookingModal = document.getElementById('bookingModal');
-        if (bookingModal) bookingModal.classList.remove('active');
-    }
-}
-
-function seleccionarBoton(elemento, clase) {
-    const botones = document.getElementsByClassName(clase);
-    for (let i = 0; i < botones.length; i += 1) {
-        botones[i].classList.remove('active');
-    }
-    elemento.classList.add('active');
-}
-
-function confirmarCita() {
-    const bookingModal = document.getElementById('bookingModal');
-    const confirmationModal = document.getElementById('confirmationModal');
-
-    if (bookingModal) bookingModal.classList.remove('active');
-    if (confirmationModal) confirmationModal.classList.add('active');
-}
-
-function cerrarConfirmationFuera(event) {
-    if (event.target.id === 'confirmationModal') {
-        const confirmationModal = document.getElementById('confirmationModal');
-        if (confirmationModal) confirmationModal.classList.remove('active');
-    }
-}
-
 function volverAlCatalogo() {
-    const confirmationModal = document.getElementById('confirmationModal');
-    if (confirmationModal) confirmationModal.classList.remove('active');
-
-    // CORRECCIÓN: Usamos window.contextPath para redirigir al Servlet del catálogo
-    window.location.href = (window.contextPath || '') + '/catalogoServlet';
+    const modals = document.querySelectorAll('.modal-backdrop');
+    modals.forEach(m => m.classList.remove('active'));
 }
+
+// ==========================================
+// INICIALIZACIÓN
+// ==========================================
 
 window.addEventListener('DOMContentLoaded', () => {
-    if (window.appointmentsSystem && typeof window.appointmentsSystem.init === 'function') {
-        window.appointmentsSystem.init();
-    }
-
     const catalogGrid = document.querySelector('.services-grid');
-    if (catalogGrid) {
-        catalogGrid.style.gridTemplateColumns = 'repeat(3, minmax(210px, 1fr))';
-    }
-
-    const cards = document.querySelectorAll('.service-card');
-    if (cards.length) {
-        document.body.dataset.catalogStart = '0';
-        const pageSize = 6;
-        const total = cards.length;
-        const visibleIndexes = new Set();
-        for (let i = 0; i < Math.min(pageSize, total); i += 1) {
-            visibleIndexes.add(i);
-        }
-        cards.forEach((card, index) => {
-            card.classList.toggle('hidden-card', !visibleIndexes.has(index));
-        });
-    }
+    if (catalogGrid) catalogGrid.style.gridTemplateColumns = 'repeat(3, minmax(210px, 1fr))';
 });
 
-// Delegated event handlers to replace inline `onclick` attributes
+// ==========================================
+// LISTENER GLOBAL DE EVENTOS (DELEGACIÓN)
+// ==========================================
+
 document.addEventListener('click', (e) => {
     const target = e.target;
 
-    // Sidebar overlay and close
-    if (target.closest('#menuOverlay') || target.closest('.close-btn')) {
-        cerrarMenu();
-        return;
-    }
-
-    // Open menu
-    if (target.closest('.menu-btn')) {
-        abrirMenu();
-        return;
-    }
-
-    // Navegación del Catálogo
+    // --- 1. Controles Básicos ---
+    if (target.closest('#menuOverlay') || target.closest('.close-btn')) { cerrarMenu(); return; }
+    if (target.closest('.menu-btn')) { abrirMenu(); return; }
     if (target.closest('.catalog-nav-btn')) {
         const btn = target.closest('.catalog-nav-btn');
         cambiarCatalogo(btn.dataset.direction || 'next');
         return;
     }
-
-    // Cerrar sesión
-    if (target.closest('.btn-logout-green') || target.closest('.sidebar-logout')) {
+    if (target.closest('.sidebar-logout')) {
         window.location.href = (window.contextPath || '') + '/logout';
         return;
     }
 
-    // Abrir Modal de Servicio (Ver Detalles)
+    // --- 2. Abrir Detalles del Servicio (Tarjeta Catálogo) ---
     const card = target.closest('.service-card');
     if (card && (target.closest('.btn-book') || target === card || target.closest('.service-card'))) {
         e.stopPropagation();
 
-        // Extracción segura de datos
-        const title = card.dataset.title || (card.querySelector('.service-title') ? card.querySelector('.service-title').innerText : '');
-        const category = card.dataset.category || (card.querySelector('.service-label') ? card.querySelector('.service-label').innerText : '');
-        const desc = card.dataset.desc || (card.querySelector('.service-desc') ? card.querySelector('.service-desc').innerText : '');
-        const includes = card.dataset.includes || '';
-        const duration = card.dataset.duration || '';
-        const price = card.dataset.price || (card.querySelector('.service-price') ? card.querySelector('.service-price').innerText : '');
-        const img = card.dataset.image || (card.querySelector('.service-img') ? card.querySelector('.service-img').src : '');
+        // Guardar datos en el objeto global de reserva
+        reservaActual.idServicio = parseInt(card.dataset.id || '1');
+        reservaActual.nombreServicio = card.dataset.title || '';
+        reservaActual.precio = parseFloat(card.dataset.price || '0');
+        reservaActual.duracion = card.dataset.duration || '60 min';
 
-        abrirModal(title, category, desc, includes, duration, price, img);
+        abrirModal(
+            reservaActual.nombreServicio,
+            card.dataset.category || '',
+            card.dataset.desc || '',
+            card.dataset.includes || '',
+            reservaActual.duracion,
+            reservaActual.precio,
+            card.dataset.image || ''
+        );
         return;
     }
 
-    // Cerrar Modal de Servicio
-    if (target.closest('#serviceModal')) {
-        const modal = document.getElementById('serviceModal');
-        if (e.target === modal) cerrarModal();
-    }
+    // --- 3. Cierre Modales ---
+    if (target.closest('#serviceModal') && e.target.id === 'serviceModal') { cerrarModal(); return; }
+    if (target.closest('.modal-close') && !target.closest('.modal-back-calendar')) { cerrarModal(); return; }
 
-    if (target.closest('.modal-close') && !target.closest('.modal-back')) {
-        cerrarModal();
-        // Si el click fue en un botón de cerrar genérico, intentamos cerrar todos los modales por si acaso
-        const modals = document.querySelectorAll('.modal-backdrop');
-        modals.forEach(m => m.classList.remove('active'));
+    // --- 4. Transición Modal Detalles -> Calendario ---
+    if (target.closest('.btn-agendar')) { abrirModalAgendamiento(); return; }
+    if (target.closest('.modal-back-calendar')) { volverAModalServicio(); return; }
+
+    // --- 5. Interactividad Calendario ---
+    if (target.closest('.mini-cal-date')) {
+        const dateElement = target.closest('.mini-cal-date');
+        document.querySelectorAll('.mini-cal-date').forEach(el => el.classList.remove('active'));
+        dateElement.classList.add('active');
+
+        // Formatear día seleccionado a YYYY-MM-DD
+        const dayNumber = dateElement.innerText.padStart(2, '0');
+        reservaActual.fecha = `2026-08-${dayNumber}`;
         return;
     }
 
-    // Botón "Agendar cita" dentro del modal de servicio
-    if (target.closest('.btn-agendar')) {
-        abrirModalAgendamiento();
+    if (target.closest('#btnVerCatalogo')) {
+        const calendarModal = document.getElementById('calendarModal');
+        if (calendarModal) calendarModal.classList.remove('active');
         return;
     }
 
-    // Cerrar Modal de Reserva al hacer click afuera
-    if (target.closest('#bookingModal')) {
-        const booking = document.getElementById('bookingModal');
-        if (e.target === booking) {
-            booking.classList.remove('active');
-        }
-    }
+    // --- 6. Transición Calendario -> Modal Nueva Cita ---
+    if (target.closest('.btn-select-slot')) {
+        const slot = target.closest('.btn-select-slot');
+        const timeText = slot.querySelector('strong') ? slot.querySelector('strong').innerText : '14:00 PM';
+        const spans = slot.querySelectorAll('span');
+        const specialistText = spans.length > 1 ? spans[1].innerText : 'Ana Torres';
 
-    // Regresar al Modal de Servicio desde Reserva
-    if (target.closest('.modal-back')) {
-        volverAModalServicio();
+        // Guardar hora y especialista
+        reservaActual.hora = timeText.includes('11:00') ? '11:00:00' : '14:00:00';
+        reservaActual.nombreEmpleado = specialistText;
+
+        const activeDateEl = document.querySelector('.mini-cal-date.active');
+        const dayNumber = activeDateEl ? activeDateEl.innerText : '09';
+        const dateText = `${dayNumber} de Agosto, 2026`;
+
+        if (document.getElementById('confirmServiceName')) document.getElementById('confirmServiceName').innerText = reservaActual.nombreServicio || 'Servicio Estético';
+        if (document.getElementById('confirmSpecialist')) document.getElementById('confirmSpecialist').innerText = specialistText;
+        if (document.getElementById('confirmTime')) document.getElementById('confirmTime').innerText = timeText;
+        if (document.getElementById('confirmDate')) document.getElementById('confirmDate').innerText = dateText;
+
+        const calendarModal = document.getElementById('calendarModal');
+        if (calendarModal) calendarModal.classList.remove('active');
+        const newApptModal = document.getElementById('newAppointmentModal');
+        if (newApptModal) newApptModal.classList.add('active');
         return;
     }
 
-    // Lógica dentro del Modal de Reserva (Fechas y horas)
-    const bookingModal = document.getElementById('bookingModal');
-    if (bookingModal && bookingModal.contains(target)) {
-        const dateBtn = target.closest('.date-btn');
-        if (dateBtn) {
-            seleccionarBoton(dateBtn, 'date-btn');
-            return;
-        }
-        const timeBtn = target.closest('.time-btn');
-        if (timeBtn) {
-            seleccionarBoton(timeBtn, 'time-btn');
-            return;
-        }
-
-        const payBtn = target.closest('.btn-pay');
-        if (payBtn) {
-            const serviceName = document.getElementById('bookingServiceName') ? document.getElementById('bookingServiceName').innerText : 'Servicio';
-            const price = document.getElementById('bookingPrice') ? document.getElementById('bookingPrice').innerText : '';
-            const selectedDateBtn = bookingModal.querySelector('.date-btn.active');
-            const selectedTimeBtn = bookingModal.querySelector('.time-btn.active');
-
-            const date = selectedDateBtn
-                ? `${selectedDateBtn.querySelector('.day') ? selectedDateBtn.querySelector('.day').innerText : ''} ${selectedDateBtn.querySelector('.num') ? selectedDateBtn.querySelector('.num').innerText : ''}`.trim()
-                : '';
-            const time = selectedTimeBtn ? selectedTimeBtn.textContent.trim() : '';
-
-            const result = window.appointmentsSystem && typeof window.appointmentsSystem.createAppointment === 'function'
-                ? window.appointmentsSystem.createAppointment(serviceName, price, date, time)
-                : { allowed: false, reason: 'missing_system' };
-
-            function showSiteAlert(message, type) {
-                console.log(`[${type.toUpperCase()}] ${message}`);
-            }
-
-            confirmarCita();
-            return;
-        }
+    // --- 7. Volver de Nueva Cita -> Calendario ---
+    if (target.closest('#btnGoBackAppt')) {
+        const newApptModal = document.getElementById('newAppointmentModal');
+        if (newApptModal) newApptModal.classList.remove('active');
+        const calendarModal = document.getElementById('calendarModal');
+        if (calendarModal) calendarModal.classList.add('active');
+        return;
     }
 
-    // Acciones del modal de confirmación
+    // --- 8. Transición Nueva Cita -> MÉTODO DE PAGO ---
+    if (target.closest('#btnProceedPay')) {
+        const basePrice = reservaActual.precio || 500;
+
+        if (document.getElementById('payServiceName')) document.getElementById('payServiceName').innerText = reservaActual.nombreServicio;
+        if (document.getElementById('paySpecialist')) document.getElementById('paySpecialist').innerText = reservaActual.nombreEmpleado;
+        if (document.getElementById('payDateTime')) document.getElementById('payDateTime').innerText = reservaActual.fecha;
+        if (document.getElementById('paySubtotal')) document.getElementById('paySubtotal').innerText = `$${basePrice} MXN`;
+        if (document.getElementById('payTotal')) document.getElementById('payTotal').innerText = `$${basePrice} MXN`;
+
+        const newApptModal = document.getElementById('newAppointmentModal');
+        if (newApptModal) newApptModal.classList.remove('active');
+        const paymentModal = document.getElementById('paymentModal');
+        if (paymentModal) paymentModal.classList.add('active');
+        return;
+    }
+
+    // --- 9. Interactividad: Seleccionar Método de Pago ---
+    if (target.closest('.payment-option')) {
+        const option = target.closest('.payment-option');
+        document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('active'));
+        option.classList.add('active');
+
+        const metodoText = option.querySelector('.payment-info strong') ? option.querySelector('.payment-info strong').innerText : 'Efectivo';
+        reservaActual.metodoPago = metodoText;
+        return;
+    }
+
+    // --- 10. Volver de Método de Pago -> Nueva Cita ---
+    if (target.closest('#btnGoBackPayment')) {
+        const paymentModal = document.getElementById('paymentModal');
+        if (paymentModal) paymentModal.classList.remove('active');
+        const newApptModal = document.getElementById('newAppointmentModal');
+        if (newApptModal) newApptModal.classList.add('active');
+        return;
+    }
+
+    // --- 11. Transición Final: Confirmar y Guardar en BD ---
+    if (target.closest('#btnConfirmFinal')) {
+        e.preventDefault();
+        registrarCitaEnServidor();
+        return;
+    }
+
+    // --- 12. Cerrar Modal de Confirmación ---
     if (target.closest('#confirmationModal') && target.closest('.btn-confirm')) {
         volverAlCatalogo();
         return;
     }
 });
+
+// ==========================================
+// FUNCIÓN DE ENVÍO CON FETCH A ORACLE
+// ==========================================
+async function registrarCitaEnServidor() {
+    const btnConfirmFinal = document.getElementById('btnConfirmFinal');
+    if (btnConfirmFinal) {
+        btnConfirmFinal.disabled = true;
+        btnConfirmFinal.innerText = 'Procesando...';
+    }
+
+    const params = new URLSearchParams();
+    params.append('idServicio', reservaActual.idServicio);
+    params.append('idEmpleado', reservaActual.idEmpleado);
+    params.append('fecha', reservaActual.fecha);
+    params.append('hora', reservaActual.hora);
+    params.append('monto', reservaActual.precio);
+    params.append('duracion', reservaActual.duracion || '01:00:00');
+    params.append('metodoPago', reservaActual.metodoPago);
+
+    try {
+        const response = await fetch(`${window.contextPath || ''}/agendarCitaServlet`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            body: params.toString()
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.status === 'success') {
+            const paymentModal = document.getElementById('paymentModal');
+            if (paymentModal) paymentModal.classList.remove('active');
+
+            const confirmationModal = document.getElementById('confirmationModal');
+            if (confirmationModal) confirmationModal.classList.add('active');
+        } else {
+            alert(`Error: ${data.message || 'No se pudo registrar la cita en Oracle'}`);
+        }
+    } catch (error) {
+        console.error('Error al conectar con la base de datos:', error);
+        alert('Ocurrió un error de red al intentar agendar la cita.');
+    } finally {
+        if (btnConfirmFinal) {
+            btnConfirmFinal.disabled = false;
+            btnConfirmFinal.innerText = 'Confirmar cita';
+        }
+    }
+}

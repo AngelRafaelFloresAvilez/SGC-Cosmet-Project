@@ -1,0 +1,623 @@
+/* =====================================================
+   SGC Cosmetic - Modulo Especialista
+   Paleta tomada de la captura "SGC Color pallete" (Figma)
+
+   NOTA DE TAMANIO: el proyecto se presenta en proyector/auditorio, asi que
+   todo el contenido principal (tarjetas, texto, botones, formularios) esta
+   escalado mas grande de lo habitual. La barra superior (.sgc-topbar) y la
+   barra lateral (.sgc-sidebar) se dejaron con su tamanio original a proposito.
+   ===================================================== */
+:root {
+    --sgc-verde-clarisimo: #E4F7D7;
+    --sgc-verde-claro: #B5D49E;
+    --sgc-verde-suave: #92AB7F;
+    --sgc-verde-medio: #708461;
+    --sgc-verde: #4B613F;
+    --sgc-verde-oscuro: #2F3E27;
+    --sgc-verde-negro: #151E10;
+
+    --sgc-fondo: #F2F1EF;
+    --sgc-blanco: #FFFFFF;
+    --sgc-gris-texto: #5B5956;
+    --sgc-gris-borde: #E1E0DC;
+
+    /* Colores semanticos para estados (no forman parte de la paleta verde,
+       pero son necesarios para diferenciar pendiente/confirmada/cancelada
+       de forma accesible). */
+    --sgc-estado-pendiente-bg: #FCEFD9;
+    --sgc-estado-pendiente-texto: #9A6B14;
+    --sgc-estado-confirmada-bg: #E4F7D7;
+    --sgc-estado-confirmada-texto: #3A5A2C;
+    --sgc-estado-cancelada-bg: #FBE3E1;
+    --sgc-estado-cancelada-texto: #A33F3A;
+    --sgc-estado-completada-bg: #E7E7E7;
+    --sgc-estado-completada-texto: #5B5956;
+
+    --sgc-radio: 20px;
+    --sgc-sombra: 0 3px 14px rgba(21, 30, 16, 0.08);
+}
+
+body {
+    color: var(--sgc-verde-negro);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+
+    /* Fondo fotografico con una capa oscura semitransparente encima (~30%)
+       para que las tarjetas blancas y el texto resalten con mas contraste. */
+    background-image:
+        linear-gradient(rgba(10, 15, 8, 0.30), rgba(10, 15, 8, 0.30)),
+        url("../img/fondo-especialista.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+h1, h2, h3, .fuente-titulo {
+    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+    color: var(--sgc-verde);
+}
+
+a {
+    text-decoration: none;
+}
+
+/* ---------- "Shell" de la app: evita el scroll de toda la pagina ---------- */
+html, body {
+    height: 100%;
+}
+
+.sgc-app-shell {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* =====================================================
+   Barra superior y barra lateral: SIN CAMBIOS DE TAMANIO
+   ===================================================== */
+
+/* ---------- Barra superior ---------- */
+.sgc-topbar {
+    background: linear-gradient(180deg, var(--sgc-verde-medio), var(--sgc-verde));
+    color: #fff;
+    padding: .75rem 1.25rem;
+}
+
+.sgc-topbar .btn-icono {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.4rem;
+}
+
+.sgc-chip-usuario {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    padding: .35rem .9rem;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+
+.sgc-chip-usuario small {
+    display: block;
+    opacity: .85;
+    font-size: .72rem;
+}
+
+/* ---------- Sidebar (offcanvas) ---------- */
+.sgc-sidebar {
+    background: #ffffff;
+    color: var(--sgc-verde-negro);
+    width: 270px;
+    box-shadow: 4px 0 20px rgba(21, 30, 16, .18);
+}
+
+.sgc-sidebar .sgc-sidebar-header {
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--sgc-gris-borde);
+}
+
+.sgc-sidebar .sgc-sidebar-header .fw-semibold {
+    color: var(--sgc-verde-negro);
+    font-size: 1.3rem;
+}
+
+.sgc-sidebar .sgc-sidebar-header small {
+    color: var(--sgc-gris-texto) !important;
+    font-size: 1.05rem;
+}
+
+.sgc-sidebar .avatar-sidebar {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: var(--sgc-verde-claro);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sgc-verde-oscuro);
+    font-weight: 600;
+    font-size: 1.15rem;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.sgc-sidebar .btn-close {
+    filter: none;
+}
+
+.sgc-sidebar .nav-section-title {
+    text-transform: uppercase;
+    font-size: .88rem;
+    letter-spacing: .08em;
+    color: #7c8672;
+    padding: 1rem 1.25rem .35rem;
+}
+
+.sgc-sidebar .nav-link {
+    color: var(--sgc-verde-oscuro);
+    padding: .8rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    border-radius: 10px;
+    margin: 0 .6rem;
+    font-size: 1.25rem;
+}
+
+.sgc-sidebar .nav-link i {
+    font-size: 1.4rem;
+}
+
+.sgc-sidebar .nav-link:hover {
+    background: var(--sgc-verde-clarisimo);
+    color: var(--sgc-verde-oscuro);
+}
+
+.sgc-sidebar .nav-link.activo {
+    background: var(--sgc-verde);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.sgc-sidebar .btn-cerrar-sesion {
+    background: var(--sgc-verde);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: .7rem 1rem;
+    width: calc(100% - 2.4rem);
+    margin: 1rem 1.2rem 0;
+    font-size: 1.2rem;
+}
+
+.sgc-sidebar .marca-footer {
+    text-align: center;
+    letter-spacing: .12em;
+    font-size: .92rem;
+    color: #7c8672;
+    padding: 1.25rem 0;
+}
+
+/* Al abrir la barra lateral, Bootstrap agrega un ".offcanvas-backdrop" sobre el
+   resto de la pagina; le sumamos desenfoque (ademas de oscurecer un poco) para
+   que la barra lateral blanca se distinga con claridad del contenido de atras. */
+.offcanvas-backdrop {
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.offcanvas-backdrop.show {
+    opacity: 1;
+    background-color: rgba(10, 15, 8, .28);
+}
+
+/* =====================================================
+   Contenido principal: TAMANIO AUMENTADO para proyector
+   ===================================================== */
+
+.sgc-contenido {
+    padding: 1.75rem 2.25rem;
+    max-width: 1600px;
+    width: 100%;
+    margin: 0 auto;
+    font-size: 1.1rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Tarjetas que deben "alargarse" para ocupar todo el alto disponible en su
+   columna, con el encabezado fijo y solo la lista interna con scroll si de
+   verdad no cabe todo el contenido (evita que la pagina completa scrollee). */
+.sgc-card-alta {
+    display: flex;
+    flex-direction: column;
+}
+
+.sgc-card-alta .sgc-lista-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* Bootstrap define los tamanios de titulos/textos utilitarios con rem (relativo
+   a la raiz del documento), por lo que no crecen solos con el font-size del
+   contenedor. Los agrandamos explicitamente, mas la barra lateral/superior. */
+.sgc-contenido h1 { font-size: 2.75rem; }
+.sgc-contenido h2 { font-size: 1.75rem; }
+.sgc-contenido h3 { font-size: 1.5rem; }
+.sgc-contenido .h5 { font-size: 1.5rem; }
+.sgc-contenido .h6 { font-size: 1.25rem; }
+.sgc-contenido .small,
+.sgc-contenido small { font-size: .95rem; }
+
+.sgc-subtitulo {
+    color: var(--sgc-gris-texto);
+    font-size: 1.15rem;
+}
+
+/* Encabezado de cada pantalla (titulo + subtitulo) y barras de herramientas que
+   quedan directamente sobre la foto de fondo: en vez de ponerles una base/panel
+   detras, se usa texto claro con una sombra marcada (tecnica estandar para leer
+   texto sobre fotos) para que resalte sin importar que parte de la imagen
+   quede detras. */
+.sgc-encabezado-hero h1,
+.sgc-encabezado-hero h2 {
+    color: #ffffff;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, .55), 0 1px 2px rgba(0, 0, 0, .6);
+}
+
+.sgc-encabezado-hero .sgc-subtitulo {
+    color: #f2f5ee;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, .55);
+}
+
+.sgc-encabezado-hero .text-muted {
+    color: #e3e8dc !important;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, .5);
+}
+
+.sgc-encabezado-hero .btn-icono,
+.sgc-barra-herramientas .btn-icono {
+    color: #ffffff;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, .55);
+}
+
+.sgc-barra-herramientas .fw-semibold {
+    color: #ffffff;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, .55);
+}
+
+.sgc-barra-herramientas .btn-outline-sgc {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, .85);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, .5);
+}
+
+.sgc-barra-herramientas .btn-outline-sgc:hover {
+    background: rgba(255, 255, 255, .18);
+    color: #ffffff;
+}
+
+/* ---------- Tarjetas ---------- */
+.sgc-card {
+    background: var(--sgc-blanco);
+    border-radius: var(--sgc-radio);
+    box-shadow: var(--sgc-sombra);
+    border: 1px solid var(--sgc-gris-borde);
+}
+
+.sgc-card .card-header-plano {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.1rem 1.35rem 0;
+    flex-shrink: 0;
+}
+
+.sgc-stat {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    padding: 1.25rem 1.5rem;
+}
+
+.sgc-stat .sgc-stat-icono {
+    width: 46px;
+    height: 46px;
+    font-size: 1.3rem;
+    border-radius: 50%;
+    background: var(--sgc-verde-clarisimo);
+    color: var(--sgc-verde);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sgc-stat .sgc-stat-valor {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--sgc-verde-negro);
+}
+
+.sgc-stat a {
+    color: var(--sgc-verde);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* ---------- Badges de estado ---------- */
+.badge-estado {
+    border-radius: 999px;
+    padding: .45rem 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.badge-pendiente { background: var(--sgc-estado-pendiente-bg); color: var(--sgc-estado-pendiente-texto); }
+.badge-confirmada { background: var(--sgc-estado-confirmada-bg); color: var(--sgc-estado-confirmada-texto); }
+.badge-cancelada { background: var(--sgc-estado-cancelada-bg); color: var(--sgc-estado-cancelada-texto); }
+.badge-completada { background: var(--sgc-estado-completada-bg); color: var(--sgc-estado-completada-texto); }
+
+/* ---------- Listas de citas ---------- */
+.sgc-fila-cita {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .95rem 1.35rem;
+    font-size: 1.05rem;
+    border-bottom: 1px solid var(--sgc-gris-borde);
+}
+
+.sgc-fila-cita:last-child {
+    border-bottom: none;
+}
+
+.sgc-hora {
+    width: 105px;
+    color: var(--sgc-gris-texto);
+    font-size: 1.02rem;
+    flex-shrink: 0;
+}
+
+.avatar-cliente {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--sgc-verde-suave);
+    flex-shrink: 0;
+}
+
+.avatar-cliente-grande {
+    width: 155px;
+    height: 155px;
+    border-radius: 50%;
+    background: var(--sgc-verde-claro);
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.avatar-cliente img, .avatar-cliente-grande img, .avatar-sidebar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* ---------- Botones (fuera de la barra superior/lateral) ---------- */
+.sgc-contenido .btn {
+    font-size: 1.08rem;
+    padding: .65rem 1.4rem;
+    border-radius: 10px;
+}
+
+.sgc-contenido .btn-sm {
+    font-size: .98rem;
+    padding: .5rem 1.05rem;
+}
+
+.btn-sgc {
+    background: var(--sgc-verde);
+    border-color: var(--sgc-verde);
+    color: #fff;
+}
+
+.btn-sgc:hover {
+    background: var(--sgc-verde-oscuro);
+    border-color: var(--sgc-verde-oscuro);
+    color: #fff;
+}
+
+.btn-sgc-suave {
+    background: var(--sgc-verde-clarisimo);
+    border: none;
+    color: var(--sgc-verde-oscuro);
+}
+
+.btn-sgc-suave:hover {
+    background: var(--sgc-verde-claro);
+    color: var(--sgc-verde-oscuro);
+}
+
+.btn-outline-sgc {
+    border: 1px solid var(--sgc-verde);
+    color: var(--sgc-verde);
+    background: transparent;
+}
+
+.btn-outline-sgc:hover {
+    background: var(--sgc-verde);
+    color: #fff;
+}
+
+/* Boton principal de accion (call-to-action) reutilizado en formularios de auth
+   y en el flujo de reserva del cliente: degradado verde, texto blanco, ancho completo. */
+.btn-submit {
+    background: linear-gradient(120deg, var(--sgc-verde-suave), var(--sgc-verde));
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    padding: .85rem;
+    width: 100%;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-submit:hover {
+    filter: brightness(1.05);
+    color: #fff;
+}
+
+.btn-submit:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+    filter: none;
+}
+
+/* ---------- Recordatorios ---------- */
+.sgc-recordatorio {
+    background: var(--sgc-verde-clarisimo);
+    border-radius: 14px;
+    padding: .9rem 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+    margin-bottom: .55rem;
+    color: var(--sgc-verde-oscuro);
+    font-size: 1.02rem;
+}
+
+/* ---------- Agenda: toggle dia/semana/mes ---------- */
+.sgc-toggle-vista .btn {
+    border-radius: 999px !important;
+    padding: .55rem 1.4rem !important;
+    font-size: 1.05rem !important;
+}
+
+/* ---------- Calendario mensual ---------- */
+.sgc-calendario-mes {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+}
+
+.sgc-dia-mes {
+    background: var(--sgc-fondo);
+    border-radius: 12px;
+    padding: .75rem;
+    min-height: 100px;
+    font-size: 1rem;
+    border: 1px solid transparent;
+}
+
+.sgc-dia-mes.fuera-de-mes {
+    opacity: .45;
+}
+
+.sgc-dia-mes.es-hoy {
+    border-color: var(--sgc-verde);
+}
+
+.sgc-dia-mes .badge-conteo {
+    background: var(--sgc-verde);
+    color: #fff;
+    border-radius: 999px;
+    font-size: .85rem;
+    padding: .15rem .55rem;
+}
+
+/* ---------- Formularios de perfil ---------- */
+.form-label-sgc {
+    color: var(--sgc-gris-texto);
+    font-size: 1rem;
+    margin-bottom: .35rem;
+}
+
+.sgc-contenido .form-control,
+.sgc-contenido .form-select {
+    font-size: 1.1rem;
+    padding: .6rem .95rem;
+    border-radius: 10px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--sgc-verde-suave);
+    box-shadow: 0 0 0 .2rem rgba(75, 97, 63, .15);
+}
+
+.sgc-horario-fila {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .6rem 0;
+    font-size: 1.05rem;
+    border-bottom: 1px dashed var(--sgc-gris-borde);
+}
+
+.sgc-horario-fila:last-child {
+    border-bottom: none;
+}
+
+.badge-horario-activo {
+    background: var(--sgc-estado-confirmada-bg);
+    color: var(--sgc-estado-confirmada-texto);
+    border-radius: 999px;
+    padding: .4rem .9rem;
+    font-size: .95rem;
+}
+
+.badge-horario-inactivo {
+    background: var(--sgc-estado-cancelada-bg);
+    color: var(--sgc-estado-cancelada-texto);
+    border-radius: 999px;
+    padding: .4rem .9rem;
+    font-size: .95rem;
+}
+
+/* ---------- Alertas de exito/error ---------- */
+.sgc-contenido .alert {
+    font-size: 1.05rem;
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+}
+
+/* ---------- Pestanias (perfil) ---------- */
+.sgc-contenido .nav-tabs .nav-link {
+    font-size: 1.1rem;
+    padding: .7rem 1.3rem;
+}
+
+/* Overlay del input file de la foto de perfil */
+.sgc-foto-wrapper {
+    position: relative;
+    width: 155px;
+    margin: 0 auto;
+}
+
+.sgc-foto-wrapper input[type="file"] {
+    display: none;
+}
+
+/* Lineas separadoras suaves entre secciones de una tarjeta (ej. la tarjeta de
+   perfil), para que los bloques de texto no se sientan pegados entre si. */
+.sgc-separador {
+    border: none;
+    border-top: 1px solid var(--sgc-gris-borde);
+    margin: 0;
+    opacity: 1;
+}
+
+@media (max-width: 767px) {
+    .sgc-contenido {
+        padding: 1.25rem;
+        font-size: 1.05rem;
+    }
+}

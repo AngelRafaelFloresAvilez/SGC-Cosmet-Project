@@ -682,3 +682,78 @@ header {
     header { padding: 20px; }
     .appointments-panel { padding: 20px; }
 }
+
+/* ==========================================
+   POPUP ALERTA PERSONALIZADA
+   ========================================== */
+
+.custom-alert-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 15, 10, 0.65);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.custom-alert-backdrop.active {
+    display: flex;
+    opacity: 1;
+}
+
+.custom-alert-card {
+    background: #FFFFFF;
+    border-radius: 20px;
+    padding: 28px 24px;
+    width: 90%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--border-color);
+    transform: scale(0.9);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.custom-alert-backdrop.active .custom-alert-card {
+    transform: scale(1);
+}
+
+.custom-alert-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 1.6rem;
+}
+
+.custom-alert-icon.success {
+    background: #EEF5E7;
+    color: var(--primary-green);
+}
+
+.custom-alert-icon.error {
+    background: #FBE8E8;
+    color: var(--danger);
+}
+
+.custom-alert-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+
+.custom-alert-message {
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    margin-bottom: 22px;
+    line-height: 1.5;
+}

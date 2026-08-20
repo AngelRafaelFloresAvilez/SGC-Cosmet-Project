@@ -29,7 +29,7 @@ public class RegistrarUsuarioServlet extends HttpServlet {
 
         // 3. Asignamos un rol por defecto (ej. 2 para cliente).
         // En el formulario público el usuario no elige su rol por seguridad.
-        int idRolCliente = 2;
+        int idRolCliente = 3;
 
         // Sentencia SQL basada en la estructura original
         String sql = "INSERT INTO usuarios (nombre_completo, correo, telefono, fecha_nacimiento, contrasena, id_rol, estado_veto, faltas_consecutivas) VALUES (?, ?, ?, TO_DATE(?, 'YYYY-MM-DD'), ?, ?, 'FALSE', 0)";

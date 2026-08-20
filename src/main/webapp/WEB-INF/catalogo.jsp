@@ -1,17 +1,13 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.proyecto.sgccosmetproject.model.Usuario" %>
-<%-- IMPORTANTE: Asegúrate de tener tu clase modelo Servicio creada --%>
 <%@ page import="com.proyecto.sgccosmetproject.model.Servicio" %>
 <%
-    // LÓGICA JSP: Validar la sesión directamente al renderizar la vista
     Usuario usuarioActivo = (Usuario) session.getAttribute("usuarioSesion");
     if (usuarioActivo == null) {
         response.sendRedirect(request.getContextPath() + "/login");
         return;
     }
-
-    // Recuperamos la lista dinámica de servicios desde el Servlet
     List<Servicio> listaServicios = (List<Servicio>) request.getAttribute("listaServicios");
 %>
 <!DOCTYPE html>
@@ -19,7 +15,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGC COSMETIC - Catálogo y Pagos</title>
+    <title>SGC COSMETIC - Catálogo y Calendario</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,320 +23,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/stylesCatalogo.css">
     <script src="${pageContext.request.contextPath}/js/catalogo.js"></script>
-
-    <!-- ESTILOS AÑADIDOS PARA EL MODAL AVANZADO (Basado en la vista de diseño Figma) -->
-    <style>
-        .modal-advanced-box {
-            width: 100%;
-            max-width: 850px;
-            background: #ffffff;
-            border-radius: 20px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .modal-banner-wrapper {
-            width: 100%;
-            height: 260px;
-            position: relative;
-        }
-
-        .modal-banner-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .modal-close-floating {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: #ffffff;
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            color: #2C3527;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            z-index: 10;
-        }
-
-        .modal-advanced-content {
-            display: flex;
-            padding: 30px;
-            gap: 40px;
-            text-align: left;
-        }
-
-        .modal-left-col {
-            flex: 1;
-        }
-
-        .modal-right-col {
-            width: 300px;
-            background: #ffffff;
-            border: 1px solid #EBEBEB;
-            border-radius: 16px;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-        }
-
-        .modal-main-title {
-            font-family: 'Inter', sans-serif;
-            font-size: 1.6rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: #1A1A1A;
-        }
-
-        .modal-main-desc {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 24px;
-            line-height: 1.5;
-        }
-
-        .modal-features-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 24px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid #F0F0F0;
-        }
-
-        .feature-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-        }
-
-        .feature-item i {
-            font-size: 1.1rem;
-            color: #6A7C59;
-            margin-top: 2px;
-        }
-
-        .feature-text {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .feature-text span {
-            font-size: 0.75rem;
-            color: #888;
-            margin-bottom: 2px;
-        }
-
-        .feature-text strong {
-            font-size: 0.85rem;
-            color: #333;
-            font-weight: 600;
-        }
-
-        .modal-includes-section h4, .reviews-header h4 {
-            font-size: 1rem;
-            color: #1A1A1A;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .modal-includes-section p {
-            font-size: 0.85rem;
-            color: #555;
-            margin-bottom: 24px;
-            line-height: 1.5;
-        }
-
-        .reviews-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .view-all {
-            font-size: 0.8rem;
-            color: #6A7C59;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .review-card {
-            display: flex;
-            gap: 12px;
-            background: #ffffff;
-            padding: 16px;
-            border: 1px solid #F0F0F0;
-            border-radius: 12px;
-            margin-bottom: 10px;
-        }
-
-        .review-avatar {
-            width: 36px;
-            height: 36px;
-            background: #8e9e82;
-            color: #fff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            flex-shrink: 0;
-        }
-
-        .review-content p {
-            font-size: 0.85rem;
-            color: #555;
-            margin-top: 6px;
-            line-height: 1.4;
-        }
-
-        .review-meta {
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .stars { color: #5f6757; font-size: 0.7rem; }
-        .time-ago { color: #999; font-size: 0.75rem;}
-
-        .review-dots {
-            text-align: center;
-            margin-top: 10px;
-        }
-
-        .review-dots span {
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            background: #D9D9D9;
-            border-radius: 50%;
-            margin: 0 3px;
-        }
-
-        .review-dots span.active { background: #6A7C59; }
-
-        .price-section {
-            border-bottom: 1px solid #F0F0F0;
-            padding-bottom: 20px;
-        }
-
-        .price-label {
-            font-size: 0.8rem;
-            color: #888;
-            font-weight: 500;
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        .price-value {
-            font-size: 1.8rem;
-            color: #1A1A1A;
-            margin-bottom: 16px;
-            font-weight: 700;
-        }
-
-        .btn-agendar-advanced {
-            width: 100%;
-            background: #6A7C59;
-            color: #fff;
-            border: none;
-            padding: 14px;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            transition: background 0.2s;
-        }
-
-        .btn-agendar-advanced:hover {
-            background: #566548;
-        }
-
-        .trust-badges .badge-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 10px 0;
-            border-bottom: 1px solid #f7f7f7;
-        }
-
-        .trust-badges .badge-item:last-child {
-            border-bottom: none;
-        }
-
-        .trust-badges .badge-item i {
-            font-size: 1.2rem;
-            color: #1A1A1A;
-            margin-top: 2px;
-        }
-
-        .trust-badges .badge-item strong {
-            font-size: 0.85rem;
-            color: #1A1A1A;
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        .trust-badges .badge-item p {
-            font-size: 0.75rem;
-            color: #888;
-            margin: 0;
-        }
-
-        .success-badge {
-            background: #F4F8F1;
-            padding: 12px;
-            border-radius: 10px;
-            margin-top: 10px;
-            border: none !important;
-        }
-
-        .success-badge i {
-            color: #6A7C59 !important;
-        }
-
-        .success-badge strong {
-            color: #6A7C59 !important;
-        }
-
-        .success-badge p {
-            color: #8e9e82 !important;
-        }
-
-        .avatar-group {
-            display: flex;
-            margin-top: 8px;
-        }
-        .avatar-group span {
-            width: 24px;
-            height: 24px;
-            background: #8e9e82;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.6rem;
-            border: 2px solid #F4F8F1;
-            margin-left: -8px;
-        }
-        .avatar-group span:first-child { margin-left: 0; }
-    </style>
 </head>
 <body class="catalog-page">
 <div class="main-wrapper">
@@ -349,21 +31,14 @@
 
     <aside class="sidebar-menu" id="sidebarMenu">
         <div class="sidebar-user-box">
-            <div class="sidebar-user-avatar" id="sidebarUserAvatar">
-                <i class="fa-solid fa-circle-user"></i>
-            </div>
+            <div class="sidebar-user-avatar" id="sidebarUserAvatar"><i class="fa-solid fa-circle-user"></i></div>
             <div class="sidebar-user-meta">
                 <span class="sidebar-user-name"><%= usuarioActivo.getNombreCompleto() %></span>
                 <span class="sidebar-user-role">Rol ID: <%= usuarioActivo.getIdRol() %></span>
             </div>
         </div>
-
-        <div class="sidebar-header">
-            <hr class="sidebar-divider">
-        </div>
-
+        <div class="sidebar-header"><hr class="sidebar-divider"></div>
         <div class="sidebar-section-label">General</div>
-
         <nav class="sidebar-nav">
             <a href="${pageContext.request.contextPath}/dashboardServlet"><i class="fa-solid fa-house"></i> Inicio</a>
             <a href="${pageContext.request.contextPath}/catalogoServlet" class="active"><i class="fa-solid fa-border-all"></i> Catálogo</a>
@@ -371,72 +46,36 @@
             <hr class="sidebar-divider">
             <a href="${pageContext.request.contextPath}/PerfilServlet" class="nav-profile-link"><i class="fa-regular fa-user"></i> Mi perfil</a>
         </nav>
-
-        <button class="sidebar-logout" type="button" onclick="window.location.href='${pageContext.request.contextPath}/logout'">
-            <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
-        </button>
-
-        <hr class="sidebar-divider">
-        <div class="sidebar-brand">SGC COSMETICS</div>
+        <button class="sidebar-logout" type="button" onclick="window.location.href='${pageContext.request.contextPath}/logout'"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
+        <hr class="sidebar-divider"><div class="sidebar-brand">SGC COSMETICS</div>
     </aside>
 
     <header>
-        <button class="menu-btn">
-            <i class="fa-solid fa-bars"></i>
-        </button>
-
+        <button class="menu-btn"><i class="fa-solid fa-bars"></i></button>
         <div class="header-actions">
             <div style="position:relative;">
-                <button class="btn-notification" type="button" data-notification-toggle>
-                    <i class="fa-regular fa-bell"></i>
-                    <span class="notification-badge"></span>
-                </button>
-                <div class="notification-panel" id="notificationPanel">
-                    <div id="notificationList"></div>
-                </div>
+                <button class="btn-notification" type="button" data-notification-toggle><i class="fa-regular fa-bell"></i><span class="notification-badge"></span></button>
+                <div class="notification-panel" id="notificationPanel"><div id="notificationList"></div></div>
             </div>
-
             <div class="user-profile" onclick="window.location.href='${pageContext.request.contextPath}/PerfilServlet';" style="cursor: pointer;">
-                <div class="user-avatar" aria-label="Avatar del cliente">
-                    <i class="fa-solid fa-circle-user"></i>
-                </div>
-                <div class="user-meta">
-                    <span class="user-name"><%= usuarioActivo.getNombreCompleto() %></span>
-                    <span class="user-role">Rol ID: <%= usuarioActivo.getIdRol() %></span>
-                </div>
+                <div class="user-avatar"><i class="fa-solid fa-circle-user"></i></div>
+                <div class="user-meta"><span class="user-name"><%= usuarioActivo.getNombreCompleto() %></span><span class="user-role">Rol ID: <%= usuarioActivo.getIdRol() %></span></div>
             </div>
         </div>
     </header>
 
     <main class="catalog-container">
-        <div class="catalog-header">
-            <div class="hero-texts">
-                <h1 class="text-catalog">Catálogo:</h1>
-            </div>
-        </div>
-
+        <div class="catalog-header"><div class="hero-texts"><h1 class="text-catalog">Catálogo:</h1></div></div>
         <div class="catalog-content">
             <div class="services-grid">
-
                 <%
-                    // Generación dinámica de las tarjetas desde la Base de Datos
                     if (listaServicios != null && !listaServicios.isEmpty()) {
                         for (int i = 0; i < listaServicios.size(); i++) {
                             Servicio s = listaServicios.get(i);
-                            // Ocultamos a partir de la tarjeta 6 para que la paginación JS funcione
                             String hiddenClass = (i >= 6) ? "hidden-card" : "";
                 %>
-                <article class="service-card <%= hiddenClass %>"
-                         data-category="<%= s.getCategoria() %>"
-                         data-includes="<%= s.getIncluye() %>"
-                         data-duration="<%= s.getDuracion() %>"
-                         data-price="$<%= s.getPrecio() %> MXN"
-                         data-image="<%= s.getImagenUrl() %>"
-                         data-title="<%= s.getNombre() %>"
-                         data-desc="<%= s.getDescripcion() %>">
-                    <div class="service-img-container">
-                        <img src="<%= s.getImagenUrl() %>" alt="<%= s.getNombre() %>" class="service-img">
-                    </div>
+                <article class="service-card <%= hiddenClass %>" data-id="<%= s.getIdServicio() %>" data-category="<%= s.getCategoria() %>" data-includes="<%= s.getIncluye() %>" data-duration="<%= s.getDuracion() %>" data-price="<%= s.getPrecio() %>" data-image="<%= s.getImagenUrl() %>" data-title="<%= s.getNombre() %>" data-desc="<%= s.getDescripcion() %>">
+                    <div class="service-img-container"><img src="<%= s.getImagenUrl() %>" alt="<%= s.getNombre() %>" class="service-img"></div>
                     <div class="service-info">
                         <span class="service-label"><%= s.getCategoria() %></span>
                         <h3 class="service-title"><%= s.getNombre() %></h3>
@@ -445,23 +84,15 @@
                         <button class="cta-arrow btn-book" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
                     </div>
                 </article>
-                <%
-                    }
-                } else {
-                %>
+                <% } } else { %>
                 <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #5f6757;">
                     <h3>No hay servicios disponibles en este momento.</h3>
-                    <p>Por favor, vuelve más tarde.</p>
                 </div>
-                <%
-                    }
-                %>
-
+                <% } %>
             </div>
-
-            <div class="catalog-controls" aria-label="Cambiar servicios">
-                <button class="catalog-nav-btn" data-direction="prev" aria-label="Servicios anteriores"><i class="fa-solid fa-chevron-left"></i></button>
-                <button class="catalog-nav-btn" data-direction="next" aria-label="Siguientes servicios"><i class="fa-solid fa-chevron-right"></i></button>
+            <div class="catalog-controls">
+                <button class="catalog-nav-btn" data-direction="prev"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="catalog-nav-btn" data-direction="next"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
         </div>
     </main>
@@ -469,209 +100,293 @@
 
 <!-- === MODALES === -->
 
-<!-- Modal de Detalles del Servicio (Actualizado al diseño avanzado de Figma) -->
+<!-- 1. Modal de Detalles del Servicio (NUEVO DISEÑO image_f02627.jpg) -->
 <div class="modal-backdrop" id="serviceModal">
     <div class="modal-advanced-box">
-
-        <!-- Banner Superior -->
         <div class="modal-banner-wrapper">
             <img id="modalImg" src="" alt="Imagen del Servicio" class="modal-banner-img">
-            <!-- Botón cerrar con las clases necesarias para que el JS lo detecte -->
             <button class="modal-close modal-close-floating"><i class="fa-solid fa-xmark"></i></button>
         </div>
-
-        <!-- Contenido Inferior Dividido -->
         <div class="modal-advanced-content">
-
-            <!-- Columna Izquierda: Información -->
+            <!-- Izquierda: Info del Servicio -->
             <div class="modal-left-col">
                 <h2 id="modalTitle" class="modal-main-title">Nombre del Servicio</h2>
-                <p id="modalDesc" class="modal-main-desc">Descripción del servicio.</p>
+                <p id="modalDesc" class="modal-main-desc">Descripción detallada del servicio.</p>
 
-                <div class="modal-features-grid">
+                <div class="modal-features-row">
                     <div class="feature-item">
                         <i class="fa-regular fa-circle-check"></i>
-                        <div class="feature-text">
-                            <span>Disponibilidad</span>
-                            <strong>Disponible</strong>
-                        </div>
+                        <div class="feature-text"><span>Disponibilidad</span><strong>Disponible</strong></div>
                     </div>
                     <div class="feature-item">
                         <i class="fa-regular fa-clock"></i>
-                        <div class="feature-text">
-                            <span>Duración</span>
-                            <strong id="modalDuration">1h - 2h</strong>
-                        </div>
+                        <div class="feature-text"><span>Duración</span><strong id="modalDuration">1 h - 2 h</strong></div>
                     </div>
                     <div class="feature-item">
                         <i class="fa-solid fa-star"></i>
-                        <div class="feature-text">
-                            <span>Calificación</span>
-                            <strong>4.9 (120 opiniones)</strong>
-                        </div>
+                        <div class="feature-text"><span>Calificación</span><strong>4.8 (120 opiniones)</strong></div>
                     </div>
                 </div>
 
                 <div class="modal-includes-section">
                     <h4>Incluye</h4>
-                    <p id="modalIncludes">Detalles de lo que incluye.</p>
+                    <div class="includes-grid" id="modalIncludes">
+                        <!-- El JS inyectará los items aquí -->
+                        <div class="include-item">Evaluación previa</div>
+                        <div class="include-item">Procedimiento</div>
+                    </div>
                 </div>
 
-                <!-- Sección de Reseñas (Estática por ahora como en el diseño) -->
-                <div class="modal-reviews-section">
+                <div class="reviews-section">
                     <div class="reviews-header">
                         <h4>Reseñas destacadas</h4>
-                        <a href="#" class="view-all">Ver todas <i class="fa-solid fa-arrow-right"></i></a>
+                        <a href="#">Ver todas <i class="fa-solid fa-arrow-right"></i></a>
                     </div>
                     <div class="review-card">
                         <div class="review-avatar">J</div>
                         <div class="review-content">
-                            <div class="review-meta">
-                                <strong>Juan</strong>
-                                <span class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></span>
-                                <span class="time-ago">- Hace 2 días</span>
+                            <h5>Juan <span class="review-date">Hace 2 dias</span></h5>
+                            <div class="review-stars">
+                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
                             </div>
-                            <p>Me gustó mucho este servicio, definitivamente volvería a agendar una cita.</p>
+                            <p class="review-text">Me gusto mucho este servicio, definitivamente volveria a agendar una cita</p>
                         </div>
                     </div>
-                    <div class="review-dots">
-                        <span class="active"></span><span></span><span></span>
-                    </div>
+                    <div class="review-dots">...</div>
                 </div>
             </div>
 
-            <!-- Columna Derecha: Tarjeta de Precio y Acción -->
+            <!-- Derecha: Precio y Checkout -->
             <div class="modal-right-col">
-                <div class="price-section">
+                <div class="price-booking-card">
                     <span class="price-label">Precio</span>
-                    <h3 id="modalPrice" class="price-value">$0 MXN</h3>
-                    <!-- Se mantiene la clase 'btn-agendar' para que funcione el JS -->
-                    <button class="btn-agendar btn-agendar-advanced">
-                        <i class="fa-regular fa-calendar-check"></i> Agendar cita
-                    </button>
+                    <h3 id="modalPrice" class="price-value">$500 MXN</h3>
+                    <button class="btn-agendar btn-agendar-advanced"><i class="fa-regular fa-calendar-check"></i> Agendar cita</button>
                 </div>
 
-                <div class="trust-badges">
-                    <div class="badge-item">
-                        <i class="fa-solid fa-shield-halved"></i>
-                        <div>
-                            <strong>Pago seguro</strong>
-                            <p>Tus datos están protegidos</p>
-                        </div>
+                <hr class="divider">
+
+                <div class="trust-item">
+                    <div class="trust-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="trust-text">
+                        <strong>Pago seguro</strong>
+                        <span>Tus datos estan protegidos</span>
                     </div>
-                    <div class="badge-item">
-                        <i class="fa-regular fa-credit-card"></i>
-                        <div>
-                            <strong>Métodos de pago</strong>
-                            <p>Efectivo, tarjeta, transferencia</p>
-                        </div>
+                </div>
+
+                <div class="trust-item">
+                    <div class="trust-icon"><i class="fa-regular fa-credit-card"></i></div>
+                    <div class="trust-text">
+                        <strong>Metodos de pago</strong>
+                        <span>Efectivo, tarjeta, transferencia</span>
                     </div>
-                    <div class="badge-item success-badge">
-                        <i class="fa-solid fa-users"></i>
-                        <div>
-                            <strong>+500 servicios realizados</strong>
-                            <p>Clientes satisfechos</p>
-                            <div class="avatar-group">
-                                <span>A</span><span>J</span><span>M</span><span>+</span>
-                            </div>
+                    <i class="fa-solid fa-arrow-right trust-arrow"></i>
+                </div>
+
+                <div class="stats-badge">
+                    <div class="stats-icon"><i class="fa-solid fa-user-group"></i></div>
+                    <div class="stats-text">
+                        <strong>+500 servicios realizados</strong>
+                        <span>Clientes satisfechos</span>
+                        <div class="stats-avatars">
+                            <div><i class="fa-solid fa-user"></i></div>
+                            <div><i class="fa-solid fa-user"></i></div>
+                            <div><i class="fa-solid fa-user"></i></div>
+                            <div>+500</div>
                         </div>
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
 
-<!-- Modal de Agendamiento / Pago -->
-<div class="modal-backdrop" id="bookingModal">
-    <div class="modal-box booking-box">
-        <button class="modal-close modal-back"><i class="fa-solid fa-arrow-left"></i></button>
-
-        <div class="booking-header">
-            <h3>Reserva tu cita</h3>
-            <p id="bookingServiceName">Nombre del Servicio</p>
-            <div style="margin-top:8px">
-                <label for="bookingPromotionSelect" style="font-size:0.8rem;color:#5f6757;display:block;margin-bottom:6px">Promoción</label>
-                <select id="bookingPromotionSelect" style="padding:8px;border-radius:8px;border:1px solid #e6e6e6;min-width:220px">
-                    <option value="">-- Selecciona una promoción (opcional) --</option>
-                </select>
+<!-- 2. Modal del Calendario -->
+<div class="modal-backdrop" id="calendarModal">
+    <button class="modal-close-floating modal-back-calendar" style="position: absolute; top: 20px; right: 20px; z-index: 1000;"><i class="fa-solid fa-xmark"></i></button>
+    <div class="calendar-layout-container">
+        <!-- Sidebar Izquierdo -->
+        <div class="calendar-sidebar-left">
+            <div class="calendar-card-white">
+                <div class="mini-cal-header"><i class="fa-solid fa-chevron-left mini-cal-nav"></i><span>Agosto 2026</span><i class="fa-solid fa-chevron-right mini-cal-nav"></i></div>
+                <div class="mini-cal-grid">
+                    <div class="mini-cal-day-name">Su</div><div class="mini-cal-day-name">Mo</div><div class="mini-cal-day-name">Tu</div><div class="mini-cal-day-name">We</div><div class="mini-cal-day-name">Th</div><div class="mini-cal-day-name">Fr</div><div class="mini-cal-day-name">Sa</div>
+                    <div class="mini-cal-date faded">25</div><div class="mini-cal-date faded">26</div><div class="mini-cal-date faded">27</div><div class="mini-cal-date faded">28</div><div class="mini-cal-date faded">29</div><div class="mini-cal-date">1</div><div class="mini-cal-date">2</div>
+                    <div class="mini-cal-date">3</div><div class="mini-cal-date">4</div><div class="mini-cal-date">5</div><div class="mini-cal-date">6</div><div class="mini-cal-date">7</div><div class="mini-cal-date">8</div><div class="mini-cal-date active">9</div>
+                    <div class="mini-cal-date">10</div><div class="mini-cal-date">11</div><div class="mini-cal-date">12</div><div class="mini-cal-date">13</div><div class="mini-cal-date">14</div><div class="mini-cal-date">15</div><div class="mini-cal-date">16</div>
+                    <div class="mini-cal-date">17</div><div class="mini-cal-date">18</div><div class="mini-cal-date">19</div><div class="mini-cal-date">20</div><div class="mini-cal-date">21</div><div class="mini-cal-date">22</div><div class="mini-cal-date">23</div>
+                    <div class="mini-cal-date">24</div><div class="mini-cal-date">25</div><div class="mini-cal-date">26</div><div class="mini-cal-date">27</div><div class="mini-cal-date">28</div><div class="mini-cal-date">29</div><div class="mini-cal-date">30</div>
+                    <div class="mini-cal-date">31</div><div class="mini-cal-date faded">1</div><div class="mini-cal-date faded">2</div><div class="mini-cal-date faded">3</div><div class="mini-cal-date faded">4</div><div class="mini-cal-date faded">5</div><div class="mini-cal-date faded">6</div>
+                </div>
+            </div>
+            <div class="calendar-card-white promo-banner-card">
+                <h3>Tu belleza,<br>nuestra prioridad</h3>
+                <p>Descubre tratamientos<br>personalizados para ti</p>
+                <button class="promo-btn" id="btnVerCatalogo">Ver catálogo</button>
             </div>
         </div>
-
-        <div class="booking-body">
-            <div class="professional-card">
-                <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=200" alt="Dra. Sofía Reyes">
-                <div class="prof-info">
-                    <h4>Dra. Sofía Reyes</h4>
-                    <span><i class="fa-solid fa-star"></i> Cosmetóloga Principal Asignada</span>
+        <!-- Área Principal -->
+        <div class="calendar-main-area">
+            <div class="calendar-main-header">
+                <div class="calendar-controls">
+                    <button class="btn-cal-control">Hoy</button>
+                    <button class="btn-cal-control btn-cal-icon"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button class="btn-cal-control btn-cal-icon"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+                <div class="specialist-select-area">
+                    <label>Elige a tu especialista:</label>
+                    <select class="specialist-select">
+                        <option>Cualquiera, Mejor disponible</option>
+                        <option>Ana Torres</option>
+                    </select>
                 </div>
             </div>
-
-            <div class="datetime-layout">
-                <div class="date-section">
-                    <div class="section-title"><i class="fa-regular fa-calendar"></i> Fechas Disponibles</div>
-                    <div class="date-grid">
-                        <div class="date-btn active"><span class="day">Lun</span><span class="num">12</span></div>
-                        <div class="date-btn"><span class="day">Mar</span><span class="num">13</span></div>
-                        <div class="date-btn"><span class="day">Mié</span><span class="num">14</span></div>
-                        <div class="date-btn"><span class="day">Jue</span><span class="num">15</span></div>
-                        <div class="date-btn"><span class="day">Vie</span><span class="num">16</span></div>
-                        <div class="date-btn"><span class="day">Sáb</span><span class="num">17</span></div>
+            <div class="week-grid-container">
+                <div class="week-header-row">
+                    <div></div>
+                    <div class="week-day-header"><span class="day-name">Lun</span><span class="day-number">17</span></div>
+                    <div class="week-day-header"><span class="day-name">Mar</span><span class="day-number">18</span></div>
+                    <div class="week-day-header"><span class="day-name">Mié</span><span class="day-number">19</span></div>
+                    <div class="week-day-header"><span class="day-name">Jue</span><span class="day-number">20</span></div>
+                    <div class="week-day-header"><span class="day-name">Vie</span><span class="day-number">21</span></div>
+                    <div class="week-day-header"><span class="day-name">Sáb</span><span class="day-number">22</span></div>
+                    <div class="week-day-header"><span class="day-name">Dom</span><span class="day-number">23</span></div>
+                </div>
+                <div class="week-body-wrapper">
+                    <div class="time-axis">
+                        <div class="time-label">8:00</div><div class="time-label">9:00</div><div class="time-label">10:00</div><div class="time-label">11:00</div>
+                        <div class="time-label">12:00</div><div class="time-label">13:00</div><div class="time-label">14:00</div><div class="time-label">15:00</div>
+                        <div class="time-label">16:00</div><div class="time-label">17:00</div><div class="time-label">18:00</div><div class="time-label">19:00</div>
                     </div>
-                </div>
-
-                <div class="time-section">
-                    <div class="section-title"><i class="fa-regular fa-clock"></i> Horarios Recomendados</div>
-                    <div class="time-grid">
-                        <button class="time-btn"><i class="fa-solid fa-check"></i> 10:00 AM</button>
-                        <button class="time-btn active"><i class="fa-solid fa-check"></i> 11:30 AM</button>
-                        <button class="time-btn"><i class="fa-solid fa-check"></i> 01:00 PM</button>
-                        <button class="time-btn"><i class="fa-solid fa-check"></i> 02:30 PM</button>
-                        <button class="time-btn"><i class="fa-solid fa-check"></i> 04:00 PM</button>
-                        <button class="time-btn"><i class="fa-solid fa-check"></i> 05:30 PM</button>
+                    <div class="day-column"></div>
+                    <div class="day-column">
+                        <div class="event-slot slot-green btn-select-slot" style="top: 180px; height: 115px;">
+                            <strong>11:00 AM</strong><span>Facial profundo...</span><span style="display:block; margin-top:4px;">Ana Torres</span>
+                        </div>
                     </div>
+                    <div class="day-column"></div>
+                    <div class="day-column"></div>
+                    <div class="day-column">
+                        <div class="event-slot slot-green btn-select-slot" style="top: 300px; height: 55px;">
+                            <strong>13:00 PM</strong><span>Masaje de espalda</span><span style="display:block;">Ana Torres</span>
+                        </div>
+                    </div>
+                    <div class="day-column"></div>
+                    <div class="day-column"></div>
                 </div>
             </div>
-        </div>
-
-        <div class="booking-footer">
-            <div class="booking-summary">
-                <span>Total de tu reserva</span>
-                <strong id="bookingPrice">$0 MXN</strong>
-            </div>
-            <button class="btn-pay">
-                Confirmar cita <i class="fa-solid fa-arrow-right"></i>
-            </button>
         </div>
     </div>
 </div>
 
-<!-- Modal de Confirmación -->
+<!-- 3. Modal: Resumen de "Nueva cita" -->
+<div class="modal-backdrop" id="newAppointmentModal">
+    <div class="new-appointment-box">
+        <h2 class="new-appointment-title">Nueva cita.</h2>
+        <div class="form-group-readonly">
+            <label>Servicio</label>
+            <div class="readonly-input" id="confirmServiceName">Masaje de espalda</div>
+        </div>
+        <div class="form-group-readonly">
+            <label>Especialista asignado</label>
+            <div class="readonly-input" id="confirmSpecialist">Ana Torres</div>
+        </div>
+        <div class="form-group-readonly">
+            <label>Fecha</label>
+            <div class="readonly-input" id="confirmDate">09 de Julio, 2026</div>
+        </div>
+        <div class="form-group-readonly">
+            <label>Hora</label>
+            <div class="readonly-input" id="confirmTime">14:00 P.M</div>
+        </div>
+        <button class="btn-proceed-pay" id="btnProceedPay">Proceder al pago</button>
+        <button class="btn-go-back" id="btnGoBackAppt">← Volver atrás</button>
+    </div>
+</div>
+
+<!-- 4. MODAL: "Selecciona tu metodo de pago" -->
+<div class="modal-backdrop" id="paymentModal">
+    <div class="payment-modal-box">
+        <div class="payment-header">
+            <h2>Selecciona tu metodo de pago</h2>
+            <p>Elige el metodo de pago que prefieras, tu pago esta 100% asegurado</p>
+        </div>
+
+        <div class="payment-body">
+            <div class="payment-left-col">
+                <h3 class="col-title">Resumen del servicio</h3>
+                <div class="summary-item">
+                    <div class="summary-icon"><i class="fa-solid fa-shirt"></i></div>
+                    <div class="summary-text"><strong>Servicio</strong><span id="payServiceName">Masaje de espalda</span></div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-icon"><i class="fa-regular fa-circle-user"></i></div>
+                    <div class="summary-text"><strong>Profesional</strong><span id="paySpecialist">Ana Torres</span></div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-icon"><i class="fa-regular fa-calendar"></i></div>
+                    <div class="summary-text"><strong>Fecha y hora</strong><span id="payDateTime">09 de Julio, 2026</span></div>
+                </div>
+
+                <div class="summary-totals">
+                    <div class="summary-row"><span class="label">Subtotal</span><span class="value" id="paySubtotal">$480 MXN</span></div>
+                    <div class="summary-row total-row"><span class="label">Total</span><span class="value" id="payTotal">$500 MXN</span></div>
+                </div>
+
+                <div class="safe-payment-badge">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <div class="safe-payment-text"><strong>Pago seguro</strong><span>Tus datos estan protegidos</span></div>
+                </div>
+            </div>
+
+            <div class="payment-right-col">
+                <h3 class="col-title">Selecciona tu metodo de pago</h3>
+                <div class="payment-option active">
+                    <div class="payment-radio"></div>
+                    <div class="payment-info"><strong>Efectivo</strong><span>Paga desde tienda</span></div>
+                    <div class="payment-icon-right"><i class="fa-solid fa-money-bill-wave"></i></div>
+                </div>
+                <div class="payment-option">
+                    <div class="payment-radio"></div>
+                    <div class="payment-info"><strong>Tarjeta de credito</strong><span>Visa, AmericanExpress, MasterCard</span></div>
+                    <div class="payment-icon-right"><i class="fa-brands fa-cc-visa" style="color: #1434CB;"></i><i class="fa-brands fa-cc-amex" style="color: #002663;"></i><i class="fa-brands fa-cc-mastercard" style="color: #EB001B;"></i></div>
+                </div>
+                <div class="payment-option">
+                    <div class="payment-radio"></div>
+                    <div class="payment-info"><strong>Tarjeta de debito</strong><span>Paga desde tu banca en linea</span></div>
+                    <div class="payment-icon-right"><i class="fa-regular fa-credit-card"></i></div>
+                </div>
+                <div class="payment-option">
+                    <div class="payment-radio"></div>
+                    <div class="payment-info"><strong>Transferencia</strong><span>Paga desde tu telefono con tu aplicacion</span></div>
+                    <div class="payment-icon-right"><i class="fa-solid fa-mobile-screen-button"></i></div>
+                </div>
+                <div class="payment-option">
+                    <div class="payment-radio"></div>
+                    <div class="payment-info"><strong>Cortesia</strong><span>Introduce tu cupon de cortesia</span></div>
+                    <div class="payment-icon-right"><i class="fa-solid fa-ticket"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="payment-actions">
+            <button class="btn-payment-back" id="btnGoBackPayment">← Volver atras</button>
+            <button class="btn-payment-confirm" id="btnConfirmFinal">Confirmar cita</button>
+        </div>
+    </div>
+</div>
+
+<!-- 5. Modal de Confirmación FINAL -->
 <div class="modal-backdrop" id="confirmationModal">
     <div class="modal-box confirmation-box">
         <div class="confirmation-icon"><i class="fa-solid fa-circle-check"></i></div>
         <h3>Cita confirmada</h3>
-        <p>Tu cita quedó registrada correctamente. Puedes volver al catálogo y seguir explorando nuestros servicios.</p>
+        <p>Tu cita quedó registrada exitosamente. Puedes volver al catálogo.</p>
         <button class="btn-confirm" onclick="window.location.href='${pageContext.request.contextPath}/catalogoServlet'">Volver a catálogo</button>
     </div>
 </div>
 
-<!-- Modal de Cancelación -->
-<div class="modal-backdrop" id="cancelAppointmentModal">
-    <div class="modal-box confirmation-box">
-        <div class="confirmation-icon" style="color:#C95C5C;"><i class="fa-solid fa-circle-exclamation"></i></div>
-        <h3>Cancelar cita</h3>
-        <p>¿Deseas cancelar esta cita? Esta acción contará como una falta y aparecerá en tu historial.</p>
-        <div class="modal-actions" style="display:flex; gap:12px; justify-content:center; margin-top:16px;">
-            <button class="btn-confirm cancel-cancel-btn" style="background:#EDEEEE; color:#2C3527;">No, mantener</button>
-            <button class="btn-confirm cancel-confirm-btn" style="background:#C95C5C;">Sí, cancelar</button>
-        </div>
-    </div>
-</div>
-
 <script>
-    // Variable global del contexto para el archivo JS
     window.contextPath = '${pageContext.request.contextPath}';
 </script>
 </body>

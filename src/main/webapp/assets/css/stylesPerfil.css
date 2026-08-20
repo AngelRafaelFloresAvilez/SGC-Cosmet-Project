@@ -360,3 +360,117 @@ header {
     .profile-grid { grid-template-columns: 1fr; }
     .profile-shell { padding: 0 24px 24px; }
 }
+
+/* ==========================================
+   BOTONES DE EDICIÓN DE PERFIL Y POPUP
+   ========================================== */
+
+.btn-profile-action {
+    padding: 10px 22px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition-smooth);
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-profile-edit,
+.btn-profile-save {
+    background-color: var(--primary-green);
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(82, 107, 74, 0.3);
+}
+
+.btn-profile-edit:hover,
+.btn-profile-save:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(82, 107, 74, 0.4);
+}
+
+.btn-profile-cancel {
+    background-color: #E5E7EB;
+    color: #4B5563;
+}
+
+.btn-profile-cancel:hover {
+    background-color: #D1D5DB;
+    color: #1F2937;
+}
+
+/* Modal Emergente Personalizado (Popup) */
+.custom-alert-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 15, 10, 0.65);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.custom-alert-backdrop.active {
+    display: flex;
+    opacity: 1;
+}
+
+.custom-alert-card {
+    background: #FFFFFF;
+    border-radius: 20px;
+    padding: 28px 24px;
+    width: 90%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--border-color);
+    transform: scale(0.9);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.custom-alert-backdrop.active .custom-alert-card {
+    transform: scale(1);
+}
+
+.custom-alert-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 1.6rem;
+}
+
+.custom-alert-icon.success {
+    background: #EEF5E7;
+    color: var(--primary-green);
+}
+
+.custom-alert-icon.error {
+    background: #FBE8E8;
+    color: var(--danger);
+}
+
+.custom-alert-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+
+.custom-alert-message {
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    margin-bottom: 22px;
+    line-height: 1.5;
+}

@@ -19,11 +19,10 @@ public class AutenticarUsuarioServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        // Leemos con los nombres EXACTOS que vienen de tu formulario
         String correo = request.getParameter("loginEmail");
         String contrasena = request.getParameter("loginPassword");
 
-        String sql = "SELECT nombre_completo, correo, telefono, fecha_nacimiento, id_rol, estado_veto " +
+        String sql = "SELECT id_usuario, nombre_completo, correo, telefono, fecha_nacimiento, id_rol, estado_veto " +
                 "FROM usuarios WHERE correo = ? AND contrasena = ?";
 
         try (Connection conexion = ConexionBD.obtenerConexion(getServletContext());
@@ -34,7 +33,6 @@ public class AutenticarUsuarioServlet extends HttpServlet {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    // 1. Creamos el objeto del usuario logueado
                     Usuario usuarioLogueado = new Usuario(
                             rs.getString("nombre_completo"),
                             rs.getString("correo"),
@@ -44,16 +42,28 @@ public class AutenticarUsuarioServlet extends HttpServlet {
                             rs.getString("estado_veto")
                     );
 
-                    // 2. Guardamos en la sesión
+                    usuarioLogueado.setIdUsuario(rs.getInt("id_usuario"));
+
                     HttpSession session = request.getSession();
                     session.setAttribute("usuarioSesion", usuarioLogueado);
 
-                    // 3. ¡LA CORRECCIÓN AQUÍ! Damos el pase interno hacia WEB-INF
-                    request.getRequestDispatcher("/WEB-INF/dashboard.jsp").forward(request, response);
+                    switch (usuarioLogueado.getIdRol()) {
+                        case 1: // Administrador
+                            response.sendRedirect(request.getContextPath() + "/admin-dashboard");
+                            break;
+
+                        case 2: // Especialista / Empleado
+                            response.sendRedirect(request.getContextPath() + "/especialista-dashboard");
+                            break;
+
+                        case 3: // Cliente
+                        default:
+                            response.sendRedirect(request.getContextPath() + "/dashboardServlet");
+                            break;
+                    }
 
                 } else {
-                    // Si falla, también le damos un pase interno de regreso al login con el error
-                    request.setAttribute("error", "invalid"); // Usamos setAttribute en lugar de parámetro en la URL
+                    request.setAttribute("error", "invalid");
                     request.getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
                 }
             } catch (ServletException e) {

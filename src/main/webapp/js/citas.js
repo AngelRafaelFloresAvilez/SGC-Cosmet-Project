@@ -1,25 +1,57 @@
-// Variable global para almacenar qué cita se quiere cancelar
 let citaACancelarId = null;
+let misCitas = [];
+let estadoTabActual = 'pending';
 
 // ==========================================
-// 1. DATOS DE PRUEBA (Mock Data)
+// 1. OBTENER DATOS DE LA BASE DE DATOS
 // ==========================================
-// NOTA: Cuando tu backend esté listo, reemplazaremos esto con un fetch() a tu CitasServlet
-let misCitas = [
-    { id: 101, servicio: "Limpieza Facial Profunda", fecha: "25 de Agosto, 2026", hora: "10:00 AM", precio: "$450.00 MXN", estado: "pending" },
-    { id: 102, servicio: "Masaje Relajante", fecha: "28 de Agosto, 2026", hora: "04:00 PM", precio: "$600.00 MXN", estado: "pending" },
-    { id: 103, servicio: "Manicura y Pedicura", fecha: "10 de Agosto, 2026", hora: "12:00 PM", precio: "$350.00 MXN", estado: "previous" },
-    { id: 104, servicio: "Corte y Estilo", fecha: "05 de Agosto, 2026", hora: "02:00 PM", precio: "$250.00 MXN", estado: "cancelled" }
-];
+
+async function cargarCitasBD() {
+    try {
+        const context = window.contextPath || '';
+        const url = `${context}/CitasServlet?action=obtenerCitas`;
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        });
+
+        if (!response.ok) throw new Error(`Error ${response.status}`);
+
+        const citasBD = await response.json();
+
+        // Normalizar la categoría de cada cita
+        misCitas = citasBD.map(c => {
+            const st = (c.estado || '').toLowerCase();
+            let cat = 'pending';
+            if (st === 'cancelada' || st === 'cancelled' || st === 'cancelado') {
+                cat = 'cancelled';
+            } else if (st === 'completada' || st === 'completado' || st === 'realizada' || st === 'previous') {
+                cat = 'previous';
+            }
+            return { ...c, categoria: cat };
+        });
+
+        actualizarContadores();
+        renderizarLista(estadoTabActual);
+
+    } catch (error) {
+        console.error('Error al cargar citas:', error);
+        const contenedor = document.getElementById('appointmentsList');
+        if (contenedor) {
+            contenedor.innerHTML = '<div class="empty-state">Ocurrió un error al cargar tus citas.</div>';
+        }
+    }
+}
 
 // ==========================================
 // 2. LÓGICA DE RENDERIZADO
 // ==========================================
 
 function actualizarContadores() {
-    const pending = misCitas.filter(c => c.estado === 'pending').length;
-    const previous = misCitas.filter(c => c.estado === 'previous').length;
-    const cancelled = misCitas.filter(c => c.estado === 'cancelled').length;
+    const pending = misCitas.filter(c => c.categoria === 'pending').length;
+    const previous = misCitas.filter(c => c.categoria === 'previous').length;
+    const cancelled = misCitas.filter(c => c.categoria === 'cancelled').length;
 
     document.getElementById('pendingCount').innerText = pending;
     document.getElementById('previousCount').innerText = previous;
@@ -28,22 +60,20 @@ function actualizarContadores() {
 }
 
 function renderizarLista(estado) {
+    estadoTabActual = estado;
     const contenedor = document.getElementById('appointmentsList');
     const detalle = document.getElementById('appointmentDetail');
 
-    // Limpiar contenedor
     contenedor.innerHTML = '';
     detalle.innerHTML = 'Selecciona una cita para ver su información.';
 
-    // Filtrar citas por el estado seleccionado en el tab
-    const citasFiltradas = misCitas.filter(cita => cita.estado === estado);
+    const citasFiltradas = misCitas.filter(cita => cita.categoria === estado);
 
     if (citasFiltradas.length === 0) {
         contenedor.innerHTML = '<div class="empty-state">No hay citas en esta categoría.</div>';
         return;
     }
 
-    // Crear HTML para cada cita
     citasFiltradas.forEach(cita => {
         const item = document.createElement('div');
         item.className = 'appointment-item';
@@ -73,8 +103,7 @@ function mostrarDetalleCita(idCita) {
 
     const detalle = document.getElementById('appointmentDetail');
 
-    // Botón de cancelar solo si está pendiente
-    const botonCancelar = cita.estado === 'pending'
+    const botonCancelar = cita.categoria === 'pending'
         ? `<button class="btn-cancel btn-abrir-modal-cancelar" data-id="${cita.id}"><i class="fa-solid fa-ban"></i> Cancelar Cita</button>`
         : '';
 
@@ -99,7 +128,7 @@ function mostrarDetalleCita(idCita) {
 }
 
 // ==========================================
-// 3. FUNCIONES DE MODALES Y MENÚ
+// 3. POPUPS Y MODALES
 // ==========================================
 
 function toggleMenu() {
@@ -117,48 +146,108 @@ function cerrarModalCancelar() {
     document.getElementById('cancelAppointmentModal').classList.remove('active');
 }
 
-function confirmarCancelacion() {
+function mostrarAlerta(titulo, mensaje, esError = false) {
+    const modal = document.getElementById('customAlertModal');
+    const iconDiv = document.getElementById('customAlertIcon');
+    const iconI = document.getElementById('customAlertIconI');
+    const titleEl = document.getElementById('customAlertTitle');
+    const msgEl = document.getElementById('customAlertMessage');
+
+    if (!modal) {
+        alert(mensaje);
+        return;
+    }
+
+    if (esError) {
+        iconDiv.className = 'custom-alert-icon error';
+        iconI.className = 'fa-solid fa-triangle-exclamation';
+    } else {
+        iconDiv.className = 'custom-alert-icon success';
+        iconI.className = 'fa-solid fa-check';
+    }
+
+    titleEl.innerText = titulo;
+    msgEl.innerText = mensaje;
+    modal.classList.add('active');
+}
+
+function cerrarAlerta() {
+    const modal = document.getElementById('customAlertModal');
+    if (modal) modal.classList.remove('active');
+}
+
+async function confirmarCancelacion() {
     if (!citaACancelarId) return;
 
-    // REDIRECCIÓN AL SERVLET PARA CANCELAR
-    // Cambia "/cancelar-cita" por el mapeo real de tu Servlet (ej. /CancelarCitaServlet)
-    window.location.href = (window.contextPath || '') + '/cancelar-cita?id=' + citaACancelarId;
+    try {
+        const context = window.contextPath || '';
+        const url = `${context}/CitasServlet`;
+
+        const params = new URLSearchParams();
+        params.append('action', 'cancelarCita');
+        params.append('id', citaACancelarId);
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params.toString()
+        });
+
+        const resData = await response.json();
+        cerrarModalCancelar();
+
+        if (resData.success) {
+            mostrarAlerta("Cita Cancelada", "Tu cita ha sido cancelada correctamente.", false);
+            cargarCitasBD();
+        } else {
+            mostrarAlerta("Error", resData.error || "No se pudo cancelar la cita.", true);
+        }
+
+    } catch (err) {
+        console.error("Error al cancelar cita:", err);
+        cerrarModalCancelar();
+        mostrarAlerta("Error de Conexión", "Ocurrió un problema de comunicación con el servidor.", true);
+    }
 }
 
 // ==========================================
-// 4. DELEGACIÓN DE EVENTOS Y ARRANQUE
+// 4. EVENTOS Y ARRANQUE
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Inicializar la vista con las citas pendientes
-    actualizarContadores();
-    renderizarLista('pending');
+    cargarCitasBD();
+
+    const alertCloseBtn = document.getElementById('customAlertCloseBtn');
+    if (alertCloseBtn) alertCloseBtn.addEventListener('click', cerrarAlerta);
+
+    const notificationToggle = document.querySelector('[data-notification-toggle]');
+    if (notificationToggle) {
+        notificationToggle.addEventListener('click', () => {
+            const panel = document.getElementById('notificationPanel');
+            if (panel) panel.classList.toggle('active');
+        });
+    }
 });
 
 document.addEventListener('click', (e) => {
     const target = e.target;
 
-    // Menú
     if (target.closest('.menu-btn') || target.closest('#menuOverlay')) {
         toggleMenu();
         return;
     }
 
-    // Tabs (Pestañas Pendientes / Anteriores / Canceladas)
     if (target.closest('.tab-btn')) {
         const tabBtn = target.closest('.tab-btn');
         const estado = tabBtn.getAttribute('data-status-tab');
 
-        // Cambiar clase activa en botones
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         tabBtn.classList.add('active');
 
-        // Renderizar lista correspondiente
         renderizarLista(estado);
         return;
     }
 
-    // Clic en una cita de la lista para ver el detalle
     const itemCita = target.closest('.appointment-item');
     if (itemCita) {
         const idCita = itemCita.getAttribute('data-id');
@@ -166,7 +255,6 @@ document.addEventListener('click', (e) => {
         return;
     }
 
-    // Clic en el botón "Cancelar Cita" dentro del detalle
     const btnCancelar = target.closest('.btn-abrir-modal-cancelar');
     if (btnCancelar) {
         const idCita = btnCancelar.getAttribute('data-id');
@@ -174,11 +262,11 @@ document.addEventListener('click', (e) => {
         return;
     }
 
-    // Clics en el Modal de Cancelación
     if (target.closest('.cancel-cancel-btn') || target.id === 'cancelAppointmentModal') {
         cerrarModalCancelar();
         return;
     }
+
     if (target.closest('.cancel-confirm-btn')) {
         confirmarCancelacion();
         return;
