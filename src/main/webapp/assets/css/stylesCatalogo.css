@@ -333,7 +333,14 @@ header {
     margin-top: 12px;
     flex-grow: 1;
     position: relative;
-    z-index: 1;
+    z-index: 1;.event-slot.slot-grey {
+    background-color: #e0e0e0 !important;
+    border: 1px solid #d6d6d6;
+    color: #757575 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important; /* Impide cualquier interacción de clic */
+    opacity: 0.7;
+}
 }
 
 .sidebar-nav a {
@@ -939,3 +946,113 @@ hr.divider { border: none; border-top: 1px solid #F0F0F0; margin: 5px 0; }
 .btn-payment-back:hover { background: #f9f9f9; }
 .btn-payment-confirm { flex: 1; background: #849c71; color: #fff; border: none; padding: 14px; border-radius: 10px; font-size: 1rem; font-weight: 500; cursor: pointer; transition: background 0.2s; font-family: 'Inter', sans-serif;}
 .btn-payment-confirm:hover { background: #6A7C59; }
+
+
+/* 1. CUADROS BLANCOS: Disponibles dentro de horario laboral (ÚNICOS SELECCIONABLES) */
+.event-slot.slot-white {
+    background-color: #ffffff !important;
+    border: 1.5px solid #a3b899;
+    color: #2c3e50;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+
+.event-slot.slot-white:hover {
+    background-color: #f0f7ef !important;
+    border-color: #526b4a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+}
+
+/* 2. CUADROS VERDES: Citas agendadas (DESHABILITADOS) */
+.event-slot.slot-green {
+    background-color: #c8e6c9 !important;
+    border: 1px solid #a5d6a7;
+    color: #1b5e20 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important; /* Impide cualquier interacción de clic */
+    opacity: 0.9;
+}
+
+/* 3. CUADROS GRISES: Fuera de horario laboral (DESHABILITADOS) */
+.event-slot.slot-grey {
+    background-color: #e0e0e0 !important;
+    border: 1px solid #d6d6d6;
+    color: #757575 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important; /* Impide cualquier interacción de clic */
+    opacity: 0.7;
+}
+/* Posicionamiento exacto del menú desplegable */
+.notification-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 310px;
+    max-height: 380px;
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    overflow: hidden;
+}
+
+/* Estado visible al hacer clic */
+.notification-panel.active {
+    display: block;
+}
+
+/* Encabezado del menú desplegable */
+.notification-header {
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #2c3e50;
+    border-bottom: 1px solid #f0f0f0;
+    background: #fdfdfd;
+}
+
+/* Contenedor con scroll de elementos */
+#notificationList {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+/* Items individuales de la lista */
+.notification-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f5f5f5;
+    transition: background 0.2s ease;
+}
+
+.notification-item:hover {
+    background-color: #f9fbf9;
+}
+
+.notification-empty {
+    padding: 24px;
+    text-align: center;
+    color: #888888;
+    font-size: 13px;
+}
+
+/* Contador rojo sobre el icono */
+.notification-badge {
+    display: none;
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 18px;
+    height: 18px;
+    background-color: #e74c3c;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: bold;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+}

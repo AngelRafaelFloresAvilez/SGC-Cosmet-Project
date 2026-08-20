@@ -9,6 +9,10 @@
         return;
     }
     List<Servicio> listaServicios = (List<Servicio>) request.getAttribute("listaServicios");
+
+    String fotoSrc = (usuarioActivo.getFotoPerfil() != null && !usuarioActivo.getFotoPerfil().isEmpty())
+            ? usuarioActivo.getFotoPerfil()
+            : "https://www.gravatar.com/avatar/?d=mp&s=150";
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -22,7 +26,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/stylesCatalogo.css">
-    <script src="${pageContext.request.contextPath}/js/catalogo.js"></script>
+    <script src="${pageContext.request.contextPath}/js/catalogo.js" defer></script>
 </head>
 <body class="catalog-page">
 <div class="main-wrapper">
@@ -31,7 +35,9 @@
 
     <aside class="sidebar-menu" id="sidebarMenu">
         <div class="sidebar-user-box">
-            <div class="sidebar-user-avatar" id="sidebarUserAvatar"><i class="fa-solid fa-circle-user"></i></div>
+            <div class="sidebar-user-avatar" id="sidebarUserAvatar" style="cursor: pointer;">
+                <img id="sidebarProfileImg" src="<%= fotoSrc %>" alt="Avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+            </div>
             <div class="sidebar-user-meta">
                 <span class="sidebar-user-name"><%= usuarioActivo.getNombreCompleto() %></span>
                 <span class="sidebar-user-role">Rol ID: <%= usuarioActivo.getIdRol() %></span>
@@ -51,20 +57,35 @@
     </aside>
 
     <header>
-        <button class="menu-btn"><i class="fa-solid fa-bars"></i></button>
+        <button class="menu-btn" style="color: #FFFFFF;"><i class="fa-solid fa-bars"></i></button>
         <div class="header-actions">
             <div style="position:relative;">
-                <button class="btn-notification" type="button" data-notification-toggle><i class="fa-regular fa-bell"></i><span class="notification-badge"></span></button>
-                <div class="notification-panel" id="notificationPanel"><div id="notificationList"></div></div>
+                <button class="btn-notification" type="button" data-notification-toggle>
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="notification-badge"></span>
+                </button>
+                <div class="notification-panel" id="notificationPanel">
+                    <div class="notification-header" style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #f0f0f0; background: #fdfdfd; color: #2c3e50;">Notificaciones</div>
+                    <div id="notificationList">
+                        <div class="notification-empty" style="padding: 24px; text-align: center; color: #888; font-size: 13px;">No tienes notificaciones pendientes</div>
+                    </div>
+                </div>
             </div>
-            <div class="user-profile" onclick="window.location.href='${pageContext.request.contextPath}/PerfilServlet';" style="cursor: pointer;">
-                <div class="user-avatar"><i class="fa-solid fa-circle-user"></i></div>
-                <div class="user-meta"><span class="user-name"><%= usuarioActivo.getNombreCompleto() %></span><span class="user-role">Rol ID: <%= usuarioActivo.getIdRol() %></span></div>
+
+            <div class="user-profile" style="cursor: pointer;">
+                <div class="user-avatar" aria-label="Avatar del cliente" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                    <img src="<%= fotoSrc %>" alt="Avatar" style="width:100%; height:100%; object-fit:cover;">
+                </div>
+                <div class="user-meta">
+                    <span class="user-name"><%= usuarioActivo.getNombreCompleto() %></span>
+                    <span class="user-role">Rol ID: <%= usuarioActivo.getIdRol() %></span>
+                </div>
             </div>
         </div>
     </header>
 
     <main class="catalog-container">
+
         <div class="catalog-header"><div class="hero-texts"><h1 class="text-catalog">Catálogo:</h1></div></div>
         <div class="catalog-content">
             <div class="services-grid">
@@ -100,7 +121,7 @@
 
 <!-- === MODALES === -->
 
-<!-- 1. Modal de Detalles del Servicio (NUEVO DISEÑO image_f02627.jpg) -->
+<!-- 1. Modal de Detalles del Servicio -->
 <div class="modal-backdrop" id="serviceModal">
     <div class="modal-advanced-box">
         <div class="modal-banner-wrapper">
@@ -108,7 +129,6 @@
             <button class="modal-close modal-close-floating"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="modal-advanced-content">
-            <!-- Izquierda: Info del Servicio -->
             <div class="modal-left-col">
                 <h2 id="modalTitle" class="modal-main-title">Nombre del Servicio</h2>
                 <p id="modalDesc" class="modal-main-desc">Descripción detallada del servicio.</p>
@@ -124,39 +144,32 @@
                     </div>
                     <div class="feature-item">
                         <i class="fa-solid fa-star"></i>
-                        <div class="feature-text"><span>Calificación</span><strong>4.8 (120 opiniones)</strong></div>
+                        <div class="feature-text"><span>Calificación</span><strong id="modalRatingAvg">0.0 (0)</strong></div>
                     </div>
                 </div>
 
                 <div class="modal-includes-section">
                     <h4>Incluye</h4>
                     <div class="includes-grid" id="modalIncludes">
-                        <!-- El JS inyectará los items aquí -->
                         <div class="include-item">Evaluación previa</div>
                         <div class="include-item">Procedimiento</div>
                     </div>
                 </div>
 
+                <!-- Sección dinámicamente conectada a la BD para Reseñas -->
                 <div class="reviews-section">
-                    <div class="reviews-header">
-                        <h4>Reseñas destacadas</h4>
-                        <a href="#">Ver todas <i class="fa-solid fa-arrow-right"></i></a>
+                    <div class="reviews-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h4 style="margin: 0;">Reseñas del servicio</h4>
+                        <button type="button" id="btnOpenAddReview" style="background: #5f6757; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">
+                            <i class="fa-solid fa-plus"></i> Añadir reseña
+                        </button>
                     </div>
-                    <div class="review-card">
-                        <div class="review-avatar">J</div>
-                        <div class="review-content">
-                            <h5>Juan <span class="review-date">Hace 2 dias</span></h5>
-                            <div class="review-stars">
-                                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                            </div>
-                            <p class="review-text">Me gusto mucho este servicio, definitivamente volveria a agendar una cita</p>
-                        </div>
+                    <div id="reviewsListContainer">
+                        <div style="font-size: 13px; color: #777;">Cargando reseñas...</div>
                     </div>
-                    <div class="review-dots">...</div>
                 </div>
             </div>
 
-            <!-- Derecha: Precio y Checkout -->
             <div class="modal-right-col">
                 <div class="price-booking-card">
                     <span class="price-label">Precio</span>
@@ -201,11 +214,42 @@
     </div>
 </div>
 
+<!-- Modal para Escribir / Añadir Reseña -->
+<div class="modal-backdrop" id="addReviewModal" style="display:none; z-index: 1050;">
+    <div style="background:#fff; width:90%; max-width:450px; padding:25px; border-radius:12px; position:relative; margin:auto; box-shadow:0 10px 30px rgba(0,0,0,0.3);">
+        <button type="button" id="btnCloseAddReview" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:20px; cursor:pointer; color:#666;"><i class="fa-solid fa-xmark"></i></button>
+        <h3 style="margin-top:0; margin-bottom:15px; color:#2c3e50;">Añadir Reseña</h3>
+
+        <form id="formAddReview">
+            <input type="hidden" id="reviewServiceId" name="idServicio">
+
+            <div style="margin-bottom:15px;">
+                <label style="display:block; margin-bottom:6px; font-weight:600; font-size:14px; color:#333;">Calificación:</label>
+                <div id="starRatingInput" style="font-size:26px; color:#ddd; cursor:pointer;">
+                    <i class="fa-solid fa-star star-btn" data-value="1"></i>
+                    <i class="fa-solid fa-star star-btn" data-value="2"></i>
+                    <i class="fa-solid fa-star star-btn" data-value="3"></i>
+                    <i class="fa-solid fa-star star-btn" data-value="4"></i>
+                    <i class="fa-solid fa-star star-btn" data-value="5"></i>
+                </div>
+                <input type="hidden" id="reviewRating" name="calificacion" value="5">
+            </div>
+
+            <div style="margin-bottom:15px;">
+                <label style="display:block; margin-bottom:6px; font-weight:600; font-size:14px; color:#333;">Comentario (Máx. 4000 caracteres):</label>
+                <textarea id="reviewComment" name="comentario" maxlength="4000" rows="4" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; font-family:inherit; resize:vertical;" placeholder="Cuéntanos tu experiencia con este servicio..."></textarea>
+                <small style="color:#777; display:block; text-align:right; margin-top:4px;" id="charCount">0 / 4000</small>
+            </div>
+
+            <button type="submit" style="width:100%; background:#5f6757; color:#fff; border:none; padding:12px; border-radius:6px; font-weight:600; cursor:pointer; font-size:14px;">Guardar Reseña</button>
+        </form>
+    </div>
+</div>
+
 <!-- 2. Modal del Calendario -->
 <div class="modal-backdrop" id="calendarModal">
     <button class="modal-close-floating modal-back-calendar" style="position: absolute; top: 20px; right: 20px; z-index: 1000;"><i class="fa-solid fa-xmark"></i></button>
     <div class="calendar-layout-container">
-        <!-- Sidebar Izquierdo -->
         <div class="calendar-sidebar-left">
             <div class="calendar-card-white">
                 <div class="mini-cal-header"><i class="fa-solid fa-chevron-left mini-cal-nav"></i><span>Agosto 2026</span><i class="fa-solid fa-chevron-right mini-cal-nav"></i></div>
@@ -225,7 +269,7 @@
                 <button class="promo-btn" id="btnVerCatalogo">Ver catálogo</button>
             </div>
         </div>
-        <!-- Área Principal -->
+
         <div class="calendar-main-area">
             <div class="calendar-main-header">
                 <div class="calendar-controls">
@@ -252,34 +296,81 @@
                     <div class="week-day-header"><span class="day-name">Sáb</span><span class="day-number">22</span></div>
                     <div class="week-day-header"><span class="day-name">Dom</span><span class="day-number">23</span></div>
                 </div>
+
                 <div class="week-body-wrapper">
                     <div class="time-axis">
-                        <div class="time-label">8:00</div><div class="time-label">9:00</div><div class="time-label">10:00</div><div class="time-label">11:00</div>
-                        <div class="time-label">12:00</div><div class="time-label">13:00</div><div class="time-label">14:00</div><div class="time-label">15:00</div>
-                        <div class="time-label">16:00</div><div class="time-label">17:00</div><div class="time-label">18:00</div><div class="time-label">19:00</div>
+                        <div class="time-label">8:00</div>
+                        <div class="time-label">9:00</div>
+                        <div class="time-label">10:00</div>
+                        <div class="time-label">11:00</div>
+                        <div class="time-label">12:00</div>
+                        <div class="time-label">13:00</div>
+                        <div class="time-label">14:00</div>
+                        <div class="time-label">15:00</div>
+                        <div class="time-label">16:00</div>
+                        <div class="time-label">17:00</div>
+                        <div class="time-label">18:00</div>
                     </div>
-                    <div class="day-column"></div>
+
                     <div class="day-column">
-                        <div class="event-slot slot-green btn-select-slot" style="top: 180px; height: 115px;">
-                            <strong>11:00 AM</strong><span>Facial profundo...</span><span style="display:block; margin-top:4px;">Ana Torres</span>
-                        </div>
+                        <div class="event-slot slot-grey" style="top: 0px; height: 60px;"><strong>08:00 AM</strong><span>Fuera de horario</span></div>
+                        <div class="event-slot slot-white btn-select-slot" data-hora="10:00:00" style="top: 120px; height: 50px;"><strong>10:00 AM</strong><span>Disponible</span></div>
+                        <div class="event-slot slot-white btn-select-slot" data-hora="12:00:00" style="top: 240px; height: 50px;"><strong>12:00 PM</strong><span>Disponible</span></div>
+                        <div class="event-slot slot-grey" style="top: 540px; height: 60px;"><strong>17:00 PM</strong><span>Fuera de horario</span></div>
                     </div>
-                    <div class="day-column"></div>
-                    <div class="day-column"></div>
+
                     <div class="day-column">
-                        <div class="event-slot slot-green btn-select-slot" style="top: 300px; height: 55px;">
-                            <strong>13:00 PM</strong><span>Masaje de espalda</span><span style="display:block;">Ana Torres</span>
+                        <div class="event-slot slot-grey" style="top: 0px; height: 60px;"><strong>08:00 AM</strong><span>Fuera de horario</span></div>
+                        <div class="event-slot slot-white btn-select-slot" data-hora="10:00:00" style="top: 120px; height: 50px;"><strong>10:00 AM</strong><span>Disponible</span></div>
+                        <div class="event-slot slot-green" style="top: 180px; height: 110px;">
+                            <strong>11:00 AM</strong><span>Facial profundo</span><span style="display:block; margin-top:2px;">Ocupado - Ana Torres</span>
                         </div>
+                        <div class="event-slot slot-white btn-select-slot" data-hora="14:00:00" style="top: 360px; height: 50px;"><strong>14:00 PM</strong><span>Disponible</span></div>
+                        <div class="event-slot slot-grey" style="top: 540px; height: 60px;"><strong>17:00 PM</strong><span>Fuera de horario</span></div>
                     </div>
-                    <div class="day-column"></div>
-                    <div class="day-column"></div>
+
+                    <div class="day-column">
+                        <div class="event-slot slot-grey" style="top: 0px; height: 60px;"><strong>08:00 AM</strong><span>Fuera de horario</span></div>
+                        <div class="event-slot slot-white btn-select-slot" data-hora="10:00:00" style="top: 120px; height: 50px;"><strong>10:00 AM</strong><span>Disponible</span></div>
+                        <div class="event-slot slot-white btn-select-slot" data-hora="11:00:00" style="top: 180px; height: 50px;"><strong>11:00 AM</strong><span>Disponible</span></div>
+                        <div class="event-slot slot-white btn-select-slot" data-hora="12:00:00" style="top: 240px; height: 50px;"><strong>12:00 PM</strong><span>Disponible</span></div>
+                        <div class="event-slot slot-grey" style="top: 540px; height: 60px;"><strong>17:00 PM</strong><span>Fuera de horario</span></div>
+                    </div>
+
+                    <div class="day-column">
+                        <div class="event-slot slot-grey" style="top: 0px; height: 60px;"><strong>08:00 AM</strong><span>Fuera de horario</span></div>
+                        <div class="event-slot slot-white btn-select-slot" data-hora="10:00:00" style="top: 120px; height: 50px;"><strong>10:00 AM</strong><span>Disponible</span></div>
+                        <div class="event-slot slot-white btn-select-slot" data-hora="13:00:00" style="top: 300px; height: 50px;"><strong>13:00 PM</strong><span>Disponible</span></div>
+                        <div class="event-slot slot-grey" style="top: 540px; height: 60px;"><strong>17:00 PM</strong><span>Fuera de horario</span></div>
+                    </div>
+
+                    <div class="day-column">
+                        <div class="event-slot slot-grey" style="top: 0px; height: 60px;"><strong>08:00 AM</strong><span>Fuera de horario</span></div>
+                        <div class="event-slot slot-white btn-select-slot" data-hora="11:00:00" style="top: 180px; height: 50px;"><strong>11:00 AM</strong><span>Disponible</span></div>
+                        <div class="event-slot slot-green" style="top: 300px; height: 55px;">
+                            <strong>13:00 PM</strong><span>Masaje de espalda</span><span style="display:block;">Ocupado - Ana Torres</span>
+                        </div>
+                        <div class="event-slot slot-white btn-select-slot" data-hora="14:00:00" style="top: 360px; height: 50px;"><strong>14:00 PM</strong><span>Disponible</span></div>
+                        <div class="event-slot slot-grey" style="top: 540px; height: 60px;"><strong>17:00 PM</strong><span>Fuera de horario</span></div>
+                    </div>
+
+                    <div class="day-column">
+                        <div class="event-slot slot-grey" style="top: 0px; height: 60px;"><strong>08:00 AM</strong><span>Fuera de horario</span></div>
+                        <div class="event-slot slot-white btn-select-slot" data-hora="10:00:00" style="top: 120px; height: 50px;"><strong>10:00 AM</strong><span>Disponible</span></div>
+                        <div class="event-slot slot-white btn-select-slot" data-hora="12:00:00" style="top: 240px; height: 50px;"><strong>12:00 PM</strong><span>Disponible</span></div>
+                        <div class="event-slot slot-grey" style="top: 540px; height: 60px;"><strong>17:00 PM</strong><span>Fuera de horario</span></div>
+                    </div>
+
+                    <div class="day-column">
+                        <div class="event-slot slot-grey" style="top: 0px; height: 600px;"><strong>08:00 AM - 18:00 PM</strong><span>Cerrado</span></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 3. Modal: Resumen de "Nueva cita" -->
+<!-- 3. Modal: Resumen de Nueva Cita -->
 <div class="modal-backdrop" id="newAppointmentModal">
     <div class="new-appointment-box">
         <h2 class="new-appointment-title">Nueva cita.</h2>
@@ -293,7 +384,7 @@
         </div>
         <div class="form-group-readonly">
             <label>Fecha</label>
-            <div class="readonly-input" id="confirmDate">09 de Julio, 2026</div>
+            <div class="readonly-input" id="confirmDate">09 de Agosto, 2026</div>
         </div>
         <div class="form-group-readonly">
             <label>Hora</label>
@@ -304,7 +395,7 @@
     </div>
 </div>
 
-<!-- 4. MODAL: "Selecciona tu metodo de pago" -->
+<!-- 4. Modal: Selecciona tu Método de Pago -->
 <div class="modal-backdrop" id="paymentModal">
     <div class="payment-modal-box">
         <div class="payment-header">
@@ -325,7 +416,7 @@
                 </div>
                 <div class="summary-item">
                     <div class="summary-icon"><i class="fa-regular fa-calendar"></i></div>
-                    <div class="summary-text"><strong>Fecha y hora</strong><span id="payDateTime">09 de Julio, 2026</span></div>
+                    <div class="summary-text"><strong>Fecha y hora</strong><span id="payDateTime">09 de Agosto, 2026</span></div>
                 </div>
 
                 <div class="summary-totals">
@@ -382,7 +473,7 @@
         <div class="confirmation-icon"><i class="fa-solid fa-circle-check"></i></div>
         <h3>Cita confirmada</h3>
         <p>Tu cita quedó registrada exitosamente. Puedes volver al catálogo.</p>
-        <button class="btn-confirm" onclick="window.location.href='${pageContext.request.contextPath}/catalogoServlet'">Volver a catálogo</button>
+        <button class="btn-confirm" type="button">Volver a catálogo</button>
     </div>
 </div>
 

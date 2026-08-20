@@ -41,10 +41,12 @@ public class AdminEmpleadosEstadoServlet extends HttpServlet {
                     }
                     session.setAttribute("mensajeExito", "Empleado eliminado correctamente.");
                 } else if ("activar".equalsIgnoreCase(accion) || "desactivar".equalsIgnoreCase(accion)) {
-                    String nuevoEstado = "activar".equalsIgnoreCase(accion) ? "ACTIVO" : "INACTIVO";
-                    String sql = "UPDATE empleados SET estado = ? WHERE id_empleado = ?";
+                    // 'FALSE' = Usuario activo, 'TRUE' = Usuario vetado/desactivado
+                    String estadoVeto = "activar".equalsIgnoreCase(accion) ? "FALSE" : "TRUE";
+                    String sql = "UPDATE usuarios SET estado_veto = ? WHERE id_usuario = (SELECT id_usuario FROM empleados WHERE id_empleado = ?)";
+
                     try (PreparedStatement ps = conexion.prepareStatement(sql)) {
-                        ps.setString(1, nuevoEstado);
+                        ps.setString(1, estadoVeto);
                         ps.setInt(2, idEmpleado);
                         ps.executeUpdate();
                     }

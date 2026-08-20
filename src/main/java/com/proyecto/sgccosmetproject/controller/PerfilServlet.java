@@ -34,6 +34,9 @@ public class PerfilServlet extends HttpServlet {
         Usuario usuario = (Usuario) session.getAttribute("usuarioSesion");
         String action = request.getParameter("action");
 
+        // Refrescar estado_veto actualizado desde la BD
+        refrescarUsuarioEnSesion(session, usuario);
+
         if ("obtenerDatos".equals(action)) {
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
@@ -176,6 +179,20 @@ public class PerfilServlet extends HttpServlet {
         }
 
         doGet(request, response);
+    }
+
+    private void refrescarUsuarioEnSesion(HttpSession session, Usuario usuario) {
+        String sql = "SELECT estado_veto FROM usuarios WHERE id_usuario = ?";
+        try (Connection con = ConexionBD.obtenerConexion(getServletContext());
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, usuario.getIdUsuario());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    usuario.setEstadoVeto(rs.getString("estado_veto"));
+                    session.setAttribute("usuarioSesion", usuario);
+                }
+            }
+        } catch (Exception ignored) {}
     }
 
     private String escapeJson(String input) {

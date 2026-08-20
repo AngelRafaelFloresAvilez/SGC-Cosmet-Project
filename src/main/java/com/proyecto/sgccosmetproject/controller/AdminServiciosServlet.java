@@ -87,7 +87,8 @@ public class AdminServiciosServlet extends HttpServlet {
     }
 
     private int obtenerDuracionPromedio(Connection conexion) {
-        String sql = "SELECT COALESCE(ROUND(AVG(duracion_estimada)), 0) FROM servicios";
+        // Extrae el valor numérico al inicio del texto (ej. de '60 minutos' extrae 60)
+        String sql = "SELECT COALESCE(ROUND(AVG(TO_NUMBER(REGEXP_SUBSTR(duracion_estimada, '^[0-9]+')))), 0) FROM servicios";
         try (PreparedStatement ps = conexion.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             if (rs.next()) return rs.getInt(1);
         } catch (Exception e) { e.printStackTrace(); }
@@ -119,7 +120,7 @@ public class AdminServiciosServlet extends HttpServlet {
         List<Map<String, Object>> lista = new ArrayList<>();
         int offset = (pagina - 1) * cantidad;
 
-        String sql = "SELECT id_servicio, nombre, descripcion, duracion_estimada AS duracion_minutos, costo AS precio, estado, foto_url AS ruta_foto "
+        String sql = "SELECT id_servicio, nombre, descripcion, duracion_estimada, costo AS precio, estado, foto_url AS ruta_foto "
                 + "FROM servicios "
                 + "WHERE LOWER(nombre) LIKE ? OR LOWER(COALESCE(descripcion, '')) LIKE ? "
                 + "ORDER BY id_servicio DESC "
@@ -138,7 +139,19 @@ public class AdminServiciosServlet extends HttpServlet {
                     s.put("idServicio", rs.getInt("id_servicio"));
                     s.put("nombre", rs.getString("nombre"));
                     s.put("descripcion", rs.getString("descripcion") != null ? rs.getString("descripcion") : "");
-                    s.put("duracionMinutos", rs.getInt("duracion_minutos"));
+
+                    // Tratamiento de duracion_estimada como Texto y extracción de enteros
+                    String duracionStr = rs.getString("duracion_estimada");
+                    s.put("duracionTexto", duracionStr != null ? duracionStr : "");
+
+                    int duracionNum = 0;
+                    if (duracionStr != null) {
+                        String numLimpio = duracionStr.replaceAll("[^0-9]", "");
+                        if (!numLimpio.isEmpty()) {
+                            duracionNum = Integer.parseInt(numLimpio);
+                        }
+                    }
+                    s.put("duracionMinutos", duracionNum);
 
                     double precio = rs.getDouble("precio");
                     s.put("precio", precio);

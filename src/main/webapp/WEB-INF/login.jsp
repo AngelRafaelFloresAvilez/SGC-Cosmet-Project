@@ -66,7 +66,7 @@
                 <div class="footer-link">
                     <span>¿No tienes una cuenta de sgc-cosmetic?</span>
                     <!-- Ruta corregida hacia el registro -->
-                    <p><a href="${pageContext.request.contextPath}/registro">Regístrate ahora</a></p>
+                    <p><a href="${pageContext.request.contextPath}/register">Regístrate ahora</a></p>
                 </div>
             </form>
         </div>

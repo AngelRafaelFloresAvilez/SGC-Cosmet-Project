@@ -60,6 +60,7 @@ public class AdminClientesServlet extends HttpServlet {
             request.setAttribute("paginaActual", paginaActual);
             request.setAttribute("totalPaginas", totalPaginas);
 
+            // RUTA RUTA CORREGIDA: Apunta a tu carpeta real de administrador
             request.getRequestDispatcher("/WEB-INF/administrador/clientes.jsp").forward(request, response);
 
         } catch (Exception e) {
@@ -77,7 +78,7 @@ public class AdminClientesServlet extends HttpServlet {
     }
 
     private int obtenerClientesActivosCount(Connection conexion) {
-        String sql = "SELECT COUNT(*) FROM usuarios WHERE id_rol <> 1 AND (estado_veto IS NULL OR UPPER(estado_veto) IN ('NO', '0', 'FALSE'))";
+        String sql = "SELECT COUNT(*) FROM usuarios WHERE id_rol <> 1 AND (estado_veto IS NULL OR UPPER(estado_veto) = 'FALSE')";
         try (PreparedStatement ps = conexion.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             if (rs.next()) return rs.getInt(1);
         } catch (Exception e) { e.printStackTrace(); }
@@ -127,7 +128,7 @@ public class AdminClientesServlet extends HttpServlet {
                     c.put("faltas", rs.getInt("faltas"));
 
                     String vetoStr = rs.getString("estado_veto");
-                    boolean vetado = vetoStr != null && ("SI".equalsIgnoreCase(vetoStr) || "1".equals(vetoStr) || "TRUE".equalsIgnoreCase(vetoStr));
+                    boolean vetado = "TRUE".equalsIgnoreCase(vetoStr);
 
                     c.put("vetado", vetado);
                     c.put("estadoTexto", vetado ? "Vetado" : "Activo");

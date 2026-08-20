@@ -33,27 +33,36 @@ public class AdminCitasAccionServlet extends HttpServlet {
         if (idStr != null && accion != null) {
             try (Connection conexion = ConexionBD.obtenerConexion(getServletContext())) {
                 int idCita = Integer.parseInt(idStr);
-                String nuevoEstado = "confirmar".equalsIgnoreCase(accion) ? "CONFIRMADA" : "CANCELADA";
+                String nuevoEstado = null;
 
-                String sql = "UPDATE citas SET estado_cita = ? WHERE id_cita = ?";
-                try (PreparedStatement ps = conexion.prepareStatement(sql)) {
-                    ps.setString(1, nuevoEstado);
-                    ps.setInt(2, idCita);
-                    ps.executeUpdate();
+                // Mapeo exacto según la restricción CHECK: 'Pendiente', 'Confirmada', 'Cancelada', 'Inasistencia'
+                if ("confirmar".equalsIgnoreCase(accion)) {
+                    nuevoEstado = "Confirmada";
+                } else if ("cancelar".equalsIgnoreCase(accion)) {
+                    nuevoEstado = "Cancelada";
+                } else if ("inasistencia".equalsIgnoreCase(accion)) {
+                    nuevoEstado = "Inasistencia";
                 }
 
-                session.setAttribute("mensajeExito", "La cita #" + idCita + " fue actualizada a " + nuevoEstado.toLowerCase() + ".");
-
+                if (nuevoEstado != null) {
+                    String sql = "UPDATE citas SET estado_cita = ? WHERE id_cita = ?";
+                    try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+                        ps.setString(1, nuevoEstado);
+                        ps.setInt(2, idCita);
+                        ps.executeUpdate();
+                    }
+                    session.setAttribute("mensajeExito", "Estado de la cita actualizado a " + nuevoEstado);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
-                session.setAttribute("mensajeError", "Error procesando la cita: " + e.getMessage());
+                session.setAttribute("mensajeError", "Error al actualizar la cita: " + e.getMessage());
             }
         }
 
-        String redirectUrl = request.getContextPath() + "/admin/citas";
+        String target = request.getContextPath() + "/admin/citas";
         if (pagina != null && !pagina.isEmpty()) {
-            redirectUrl += "?pagina=" + pagina;
+            target += "?pagina=" + pagina;
         }
-        response.sendRedirect(redirectUrl);
+        response.sendRedirect(target);
     }
 }

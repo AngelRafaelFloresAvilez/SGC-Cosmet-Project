@@ -38,7 +38,16 @@ public class Usuario {
 
     private Date fechaNacimiento;
     private int idRol;
+
+    public void setEstadoVeto(String estadoVeto) {
+        this.estadoVeto = estadoVeto;
+    }
+
     private String estadoVeto;
+
+    public void setIdRol(int idRol) {
+        this.idRol = idRol;
+    }
 
     // Constructor completo (incluye idUsuario devuelto por la BD)
     public Usuario(int idUsuario, String nombreCompleto, String correo, String telefono, Date fechaNacimiento, int idRol, String estadoVeto) {

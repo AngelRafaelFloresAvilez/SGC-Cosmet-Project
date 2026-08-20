@@ -13,15 +13,18 @@ import jakarta.servlet.http.Part;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.UUID;
 
 @WebServlet("/admin/servicios/guardar")
 @MultipartConfig(
-        fileSizeThreshold = 1024 * 1024 * 1,
-        maxFileSize = 1024 * 1024 * 5,
-        maxRequestSize = 1024 * 1024 * 10
+        fileSizeThreshold = 1024 * 1024 * 1, // 1 MB
+        maxFileSize = 1024 * 1024 * 5,       // 5 MB
+        maxRequestSize = 1024 * 1024 * 10    // 10 MB
 )
 public class AdminServiciosGuardarServlet extends HttpServlet {
 
@@ -35,74 +38,101 @@ public class AdminServiciosGuardarServlet extends HttpServlet {
             return;
         }
 
+        request.setCharacterEncoding("UTF-8");
+
         String idStr = request.getParameter("id");
         String nombre = request.getParameter("nombre");
         String precioStr = request.getParameter("precio");
         String duracionStr = request.getParameter("duracion");
-        String estado = request.getParameter("estado");
+        String estadoRaw = request.getParameter("estado");
         String descripcion = request.getParameter("descripcion");
-        String fotoUrl = request.getParameter("fotoUrl");
+        String fotoUrlInput = request.getParameter("fotoUrl");
 
-        Part fotoArchivo = request.getPart("fotoArchivo");
-        String rutaFotoProcesada = null;
+        String estadoFinal = "Activo";
+        if (estadoRaw != null && ("Inactivo".equalsIgnoreCase(estadoRaw) || "false".equalsIgnoreCase(estadoRaw))) {
+            estadoFinal = "Inactivo";
+        }
 
-        if (fotoArchivo != null && fotoArchivo.getSize() > 0) {
-            String fileName = UUID.randomUUID().toString() + "_" + obtenerNombreArchivo(fotoArchivo);
-            String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads" + File.separator + "servicios";
-            File uploadDir = new File(uploadPath);
-            if (!uploadDir.exists()) uploadDir.mkdirs();
+        double costo = 0.0;
+        if (precioStr != null && !precioStr.trim().isEmpty()) {
+            try {
+                costo = Double.parseDouble(precioStr.trim());
+            } catch (NumberFormatException ignored) {}
+        }
 
-            fotoArchivo.write(uploadPath + File.separator + fileName);
-            rutaFotoProcesada = "/uploads/servicios/" + fileName;
-        } else if (fotoUrl != null && !fotoUrl.trim().isEmpty()) {
-            rutaFotoProcesada = fotoUrl.trim();
+        String duracion = (duracionStr != null && !duracionStr.trim().isEmpty())
+                ? duracionStr.trim() + " minutos"
+                : "60 minutos";
+
+        // Procesar foto / imagen
+        String rutaFoto = null;
+        if (fotoUrlInput != null && !fotoUrlInput.trim().isEmpty()) {
+            rutaFoto = fotoUrlInput.trim();
+        } else {
+            try {
+                Part filePart = request.getPart("fotoArchivo");
+                if (filePart != null && filePart.getSize() > 0 && filePart.getSubmittedFileName() != null) {
+                    String fileName = filePart.getSubmittedFileName();
+                    String extension = fileName.contains(".") ? fileName.substring(fileName.lastIndexOf(".")) : ".jpg";
+                    String nuevoNombre = UUID.randomUUID().toString() + extension;
+
+                    String uploadDir = getServletContext().getRealPath("/assets/uploads");
+                    File dir = new File(uploadDir);
+                    if (!dir.exists()) dir.mkdirs();
+
+                    File fileToSave = new File(dir, nuevoNombre);
+                    try (InputStream input = filePart.getInputStream()) {
+                        Files.copy(input, fileToSave.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    rutaFoto = "/assets/uploads/" + nuevoNombre;
+                }
+            } catch (Exception ignored) {}
         }
 
         try (Connection conexion = ConexionBD.obtenerConexion(getServletContext())) {
-            double precio = Double.parseDouble(precioStr);
-            int duracion = Integer.parseInt(duracionStr);
-            String estadoNormalizado = "activo".equalsIgnoreCase(estado) ? "ACTIVO" : "INACTIVO";
 
-            if (idStr == null || idStr.trim().isEmpty()) {
-                String sql = "INSERT INTO servicios (nombre, descripcion, duracion_estimada, costo, estado, foto_url) "
-                        + "VALUES (?, ?, ?, ?, ?, ?)";
+            if (idStr != null && !idStr.trim().isEmpty()) {
+                // ACTUALIZAR
+                int idServicio = Integer.parseInt(idStr.trim());
+
+                StringBuilder sql = new StringBuilder("UPDATE servicios SET nombre = ?, descripcion = ?, costo = ?, duracion_estimada = ?, estado = ?");
+                if (rutaFoto != null) {
+                    sql.append(", foto_url = ?");
+                }
+                sql.append(" WHERE id_servicio = ?");
+
+                try (PreparedStatement ps = conexion.prepareStatement(sql.toString())) {
+                    ps.setString(1, nombre);
+                    ps.setString(2, descripcion);
+                    ps.setDouble(3, costo);
+                    ps.setString(4, duracion);
+                    ps.setString(5, estadoFinal);
+
+                    if (rutaFoto != null) {
+                        ps.setString(6, rutaFoto);
+                        ps.setInt(7, idServicio);
+                    } else {
+                        ps.setInt(6, idServicio);
+                    }
+                    ps.executeUpdate();
+                }
+
+                session.setAttribute("mensajeExito", "Servicio actualizado correctamente.");
+
+            } else {
+                // INSERTAR
+                String sql = "INSERT INTO servicios (nombre, descripcion, costo, duracion_estimada, estado, foto_url) VALUES (?, ?, ?, ?, ?, ?)";
                 try (PreparedStatement ps = conexion.prepareStatement(sql)) {
                     ps.setString(1, nombre);
                     ps.setString(2, descripcion);
-                    ps.setInt(3, duracion);
-                    ps.setDouble(4, precio);
-                    ps.setString(5, estadoNormalizado);
-                    ps.setString(6, rutaFotoProcesada);
+                    ps.setDouble(3, costo);
+                    ps.setString(4, duracion);
+                    ps.setString(5, estadoFinal);
+                    ps.setString(6, rutaFoto);
                     ps.executeUpdate();
                 }
-                session.setAttribute("mensajeExito", "Servicio creado exitosamente.");
-            } else {
-                int idServicio = Integer.parseInt(idStr);
-                if (rutaFotoProcesada != null) {
-                    String sql = "UPDATE servicios SET nombre=?, descripcion=?, duracion_estimada=?, costo=?, estado=?, foto_url=? WHERE id_servicio=?";
-                    try (PreparedStatement ps = conexion.prepareStatement(sql)) {
-                        ps.setString(1, nombre);
-                        ps.setString(2, descripcion);
-                        ps.setInt(3, duracion);
-                        ps.setDouble(4, precio);
-                        ps.setString(5, estadoNormalizado);
-                        ps.setString(6, rutaFotoProcesada);
-                        ps.setInt(7, idServicio);
-                        ps.executeUpdate();
-                    }
-                } else {
-                    String sql = "UPDATE servicios SET nombre=?, descripcion=?, duracion_estimada=?, costo=?, estado=? WHERE id_servicio=?";
-                    try (PreparedStatement ps = conexion.prepareStatement(sql)) {
-                        ps.setString(1, nombre);
-                        ps.setString(2, descripcion);
-                        ps.setInt(3, duracion);
-                        ps.setDouble(4, precio);
-                        ps.setString(5, estadoNormalizado);
-                        ps.setInt(6, idServicio);
-                        ps.executeUpdate();
-                    }
-                }
-                session.setAttribute("mensajeExito", "Servicio actualizado correctamente.");
+
+                session.setAttribute("mensajeExito", "Servicio creado correctamente.");
             }
 
         } catch (Exception e) {
@@ -111,15 +141,5 @@ public class AdminServiciosGuardarServlet extends HttpServlet {
         }
 
         response.sendRedirect(request.getContextPath() + "/admin/servicios");
-    }
-
-    private String obtenerNombreArchivo(Part part) {
-        String contentDisp = part.getHeader("content-disposition");
-        for (String token : contentDisp.split(";")) {
-            if (token.trim().startsWith("filename")) {
-                return token.substring(token.indexOf('=') + 2, token.length() - 1);
-            }
-        }
-        return "imagen.jpg";
     }
 }

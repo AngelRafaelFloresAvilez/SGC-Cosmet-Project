@@ -6,6 +6,10 @@
         response.sendRedirect(request.getContextPath() + "/login");
         return;
     }
+
+    String fotoSrc = (usuarioActivo.getFotoPerfil() != null && !usuarioActivo.getFotoPerfil().isEmpty())
+            ? usuarioActivo.getFotoPerfil()
+            : "https://www.gravatar.com/avatar/?d=mp&s=150";
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -31,8 +35,8 @@
 
 <aside class="sidebar-menu" id="sidebarMenu">
     <div class="sidebar-user-box">
-        <div class="sidebar-user-avatar" id="sidebarUserAvatar">
-            <i class="fa-solid fa-circle-user"></i>
+        <div class="sidebar-user-avatar" id="sidebarUserAvatar" style="cursor: pointer;">
+            <img id="sidebarProfileImg" src="<%= fotoSrc %>" alt="Avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
         </div>
         <div class="sidebar-user-meta">
             <span class="sidebar-user-name"><%= usuarioActivo.getNombreCompleto() %></span>
@@ -63,7 +67,7 @@
 </aside>
 
 <header>
-    <button class="menu-btn">
+    <button class="menu-btn" style="color: #FFFFFF;">
         <i class="fa-solid fa-bars"></i>
     </button>
 
@@ -78,9 +82,9 @@
             </div>
         </div>
 
-        <div class="user-profile" onclick="window.location.href='${pageContext.request.contextPath}/PerfilServlet';">
-            <div class="user-avatar" aria-label="Avatar del cliente">
-                <i class="fa-solid fa-circle-user"></i>
+        <div class="user-profile" onclick="window.location.href='${pageContext.request.contextPath}/PerfilServlet';" style="cursor: pointer;">
+            <div class="user-avatar" aria-label="Avatar del cliente" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                <img src="<%= fotoSrc %>" alt="Avatar" style="width:100%; height:100%; object-fit:cover;">
             </div>
             <div class="user-meta">
                 <span class="user-name"><%= usuarioActivo.getNombreCompleto() %></span>

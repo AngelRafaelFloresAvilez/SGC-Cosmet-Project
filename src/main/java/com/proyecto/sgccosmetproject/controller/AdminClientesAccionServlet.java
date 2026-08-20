@@ -29,49 +29,46 @@ public class AdminClientesAccionServlet extends HttpServlet {
         String idStr = request.getParameter("id");
         String accion = request.getParameter("accion");
 
-        if (idStr != null && !idStr.trim().isEmpty() && accion != null) {
+        if (idStr != null && accion != null) {
             try (Connection conexion = ConexionBD.obtenerConexion(getServletContext())) {
-                int idCliente = Integer.parseInt(idStr);
+                int idUsuario = Integer.parseInt(idStr);
 
                 switch (accion) {
-                    case "quitar-bloqueo":
-                        String sqlFaltas = "UPDATE usuarios SET faltas_consecutivas = 0 WHERE id_usuario = ?";
-                        try (PreparedStatement ps = conexion.prepareStatement(sqlFaltas)) {
-                            ps.setInt(1, idCliente);
-                            ps.executeUpdate();
-                        }
-                        session.setAttribute("mensajeExito", "Faltas restablecidas a cero.");
-                        break;
-
                     case "vetar":
-                        String sqlVetar = "UPDATE usuarios SET estado_veto = 'SI' WHERE id_usuario = ?";
-                        try (PreparedStatement ps = conexion.prepareStatement(sqlVetar)) {
-                            ps.setInt(1, idCliente);
-                            ps.executeUpdate();
-                        }
-                        session.setAttribute("mensajeExito", "Cliente vetado correctamente.");
+                        // CORREGIDO: Guarda 'TRUE' explícitamente para cumplir CHK_ESTADO_VETO
+                        actualizarEstadoVeto(conexion, idUsuario, "TRUE");
                         break;
-
                     case "activar":
-                        String sqlActivar = "UPDATE usuarios SET estado_veto = 'NO' WHERE id_usuario = ?";
-                        try (PreparedStatement ps = conexion.prepareStatement(sqlActivar)) {
-                            ps.setInt(1, idCliente);
-                            ps.executeUpdate();
-                        }
-                        session.setAttribute("mensajeExito", "Cliente reactivado correctamente.");
+                        // CORREGIDO: Guarda 'FALSE' explícitamente para cumplir CHK_ESTADO_VETO
+                        actualizarEstadoVeto(conexion, idUsuario, "FALSE");
                         break;
-
-                    default:
-                        session.setAttribute("mensajeError", "Acción no válida.");
+                    case "quitar-bloqueo":
+                        limpiarFaltasYDesbloquear(conexion, idUsuario);
                         break;
                 }
 
             } catch (Exception e) {
                 e.printStackTrace();
-                session.setAttribute("mensajeError", "Error al realizar la acción: " + e.getMessage());
             }
         }
 
         response.sendRedirect(request.getContextPath() + "/admin/clientes");
+    }
+
+    private void actualizarEstadoVeto(Connection conexion, int idUsuario, String nuevoEstado) throws Exception {
+        String sql = "UPDATE usuarios SET estado_veto = ? WHERE id_usuario = ?";
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+            ps.setString(1, nuevoEstado); // 'TRUE' o 'FALSE'
+            ps.setInt(2, idUsuario);
+            ps.executeUpdate();
+        }
+    }
+
+    private void limpiarFaltasYDesbloquear(Connection conexion, int idUsuario) throws Exception {
+        String sql = "UPDATE usuarios SET faltas_consecutivas = 0, estado_veto = 'FALSE' WHERE id_usuario = ?";
+        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+            ps.setInt(1, idUsuario);
+            ps.executeUpdate();
+        }
     }
 }

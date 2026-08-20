@@ -44,13 +44,14 @@
             <div class="col-md-3">
                 <div class="sgc-card sgc-stat-admin h-100">
                     <span class="icono icono-amarillo"><i class="bi bi-clock"></i></span>
-                    <div><div class="valor"><c:out value="${duracionPromedio}" /> min</div><div class="etiqueta">Duracion promedio</div></div>
+                    <!-- Ajustado si la duración promedio se calcula en el backend -->
+                    <div><div class="valor"><c:out value="${duracionPromedio}" /></div><div class="etiqueta">Promedio estimado</div></div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="sgc-card sgc-stat-admin h-100">
                     <span class="icono icono-verde"><i class="bi bi-currency-dollar"></i></span>
-                    <div><div class="valor">$<fmt:formatNumber value="${precioPromedio}" pattern="#,##0.00" /></div><div class="etiqueta">Precio promedio</div></div>
+                    <div><div class="valor">$<fmt:formatNumber value="${precioPromedio}" pattern="#,##0.00" /></div><div class="etiqueta">Costo promedio</div></div>
                 </div>
             </div>
         </div>
@@ -64,7 +65,7 @@
             <div class="table-responsive">
                 <table class="sgc-tabla-admin">
                     <thead>
-                    <tr><th>Servicios</th><th>Descripcion</th><th>Duracion</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr>
+                    <tr><th>Servicio</th><th>Categoría</th><th>Duración</th><th>Costo</th><th>Estado</th><th>Acciones</th></tr>
                     </thead>
                     <tbody>
                     <c:forEach var="s" items="${servicios}">
@@ -75,24 +76,26 @@
                                     <strong><c:out value="${s.nombre}" /></strong>
                                 </div>
                             </td>
-                            <td class="small text-muted" style="max-width:260px;"><c:out value="${s.descripcion}" /></td>
-                            <td><c:out value="${s.duracionMinutos}" /> min</td>
-                            <td><c:out value="${s.precioFormateado}" /></td>
+                            <td><c:out value="${s.categoria}" default="Sin categoría" /></td>
+                            <td><c:out value="${s.duracionEstimada}" /></td>
+                            <td>$<fmt:formatNumber value="${s.costo}" pattern="#,##0.00" /></td>
                             <td>
-                                <span class="badge-estado ${s.disponible ? 'badge-confirmada' : 'badge-cancelada'}"><c:out value="${s.estadoTexto}" /></span>
+                                <!-- Se asume que getEstado() retorna "Activo" o "Inactivo" -->
+                                <span class="badge-estado ${s.estado == 'Activo' ? 'badge-confirmada' : 'badge-cancelada'}"><c:out value="${s.estado}" /></span>
                             </td>
                             <td>
                                 <div class="d-flex gap-1">
                                     <button type="button" class="sgc-btn-editar" title="Editar"
                                             data-id="${s.idServicio}" data-nombre="${s.nombre}"
-                                            data-precio="${s.precio}" data-duracion="${s.duracionMinutos}"
-                                            data-descripcion="${s.descripcion}" data-activo="${s.disponible}"
-                                            data-foto="${s.rutaFoto}">
+                                            data-costo="${s.costo}" data-duracion="${s.duracionEstimada}"
+                                            data-descripcion="${s.descripcion}" data-estado="${s.estado}"
+                                            data-foto="${s.fotoUrl}" data-categoria="${s.categoria}"
+                                            data-incluye="${s.incluye}">
                                         <i class="bi bi-pen"></i>
                                     </button>
-                                    <form method="post" action="${ctx}/admin/servicios/eliminar" onsubmit="return confirm('¿Eliminar este servicio?');">
+                                    <form method="post" action="${ctx}/admin/servicios/desactivar" onsubmit="return confirm('¿Estás seguro de que deseas desactivar este servicio?');">
                                         <input type="hidden" name="id" value="${s.idServicio}">
-                                        <button type="submit" class="sgc-btn-eliminar" title="Eliminar"><i class="bi bi-trash"></i></button>
+                                        <button type="submit" class="sgc-btn-eliminar" title="Desactivar"><i class="bi bi-ban"></i></button>
                                     </form>
                                 </div>
                             </td>
@@ -114,12 +117,12 @@
 
 <!-- Modal: Nuevo / Editar servicio -->
 <div class="modal fade" id="modalServicio" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content sgc-modal-content">
             <div class="modal-header">
                 <div>
                     <h3 class="fuente-titulo h5 mb-1" id="tituloModalServicio">Nuevo servicio</h3>
-                    <p class="text-muted small mb-0">Agrega un servicio nuevo.</p>
+                    <p class="text-muted small mb-0">Agrega un servicio nuevo al catálogo.</p>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
@@ -129,31 +132,40 @@
                     <div class="row">
                         <div class="col-sm-6">
                             <label class="form-label-sgc">Nombre del servicio</label>
-                            <input type="text" name="nombre" id="servicioNombre" class="form-control mb-3" placeholder="Ej. Masaje" required>
+                            <input type="text" name="nombre" id="servicioNombre" class="form-control mb-3" placeholder="Ej. Masaje Facial" required>
                         </div>
                         <div class="col-sm-6">
-                            <label class="form-label-sgc">Precio del servicio (MXN)</label>
-                            <input type="number" step="0.01" min="1" name="precio" id="servicioPrecio" class="form-control mb-3" placeholder="Ingresa el costo" required>
+                            <label class="form-label-sgc">Categoría</label>
+                            <input type="text" name="categoria" id="servicioCategoria" class="form-control mb-3" placeholder="Ej. Rostro">
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-sm-6">
-                            <label class="form-label-sgc">Duracion aproximada (minutos)</label>
-                            <input type="number" min="10" max="480" name="duracion" id="servicioDuracion" class="form-control mb-3" placeholder="60" required>
+                        <div class="col-sm-4">
+                            <label class="form-label-sgc">Costo (MXN)</label>
+                            <input type="number" step="0.01" min="1" name="costo" id="servicioCosto" class="form-control mb-3" placeholder="Ingresa el costo" required>
                         </div>
-                        <div class="col-sm-6">
+                        <div class="col-sm-4">
+                            <label class="form-label-sgc">Duración estimada</label>
+                            <input type="text" name="duracion_estimada" id="servicioDuracion" class="form-control mb-3" placeholder="Ej. 60 minutos" required>
+                        </div>
+                        <div class="col-sm-4">
                             <label class="form-label-sgc">Estado</label>
                             <select name="estado" id="servicioEstado" class="form-select mb-3">
-                                <option value="activo">Activo</option>
-                                <option value="inactivo">Inactivo</option>
+                                <option value="Activo">Activo</option>
+                                <option value="Inactivo">Inactivo</option>
                             </select>
                         </div>
                     </div>
-                    <label class="form-label-sgc">Descripcion del servicio</label>
-                    <textarea name="descripcion" id="servicioDescripcion" class="form-control mb-3" rows="3"
-                              placeholder="Ingresa una breve descripcion del servicio."></textarea>
 
-                    <label class="form-label-sgc">Foto del servicio</label>
+                    <label class="form-label-sgc">¿Qué incluye el servicio?</label>
+                    <textarea name="incluye" id="servicioIncluye" class="form-control mb-3" rows="2"
+                              placeholder="Detalla los procedimientos incluidos."></textarea>
+
+                    <label class="form-label-sgc">Descripción amplia</label>
+                    <textarea name="descripcion" id="servicioDescripcion" class="form-control mb-3" rows="3"
+                              placeholder="Ingresa una descripción amplia del procedimiento."></textarea>
+
+                    <label class="form-label-sgc">Foto del servicio (URL)</label>
                     <div class="sgc-foto-servicio-preview mb-2" id="servicioFotoPreviewWrapper">
                         <img id="servicioFotoPreview" src="" alt="Vista previa" class="d-none">
                         <span id="servicioFotoPlaceholder" class="text-muted small"><i class="bi bi-image me-1"></i>Sin foto</span>
@@ -169,10 +181,10 @@
                     <div class="tab-content mb-3">
                         <div class="tab-pane fade show active" id="tabSubirArchivo">
                             <input type="file" name="fotoArchivo" id="servicioFotoArchivo" class="form-control" accept="image/png, image/jpeg, image/webp">
-                            <div class="small text-muted mt-1">Solo formato JPG, PNG o WEBP. Maximo 2 MB.</div>
+                            <div class="small text-muted mt-1">Solo formato JPG, PNG o WEBP. Máximo 2 MB.</div>
                         </div>
                         <div class="tab-pane fade" id="tabUrlFoto">
-                            <input type="url" name="fotoUrl" id="servicioFotoUrl" class="form-control"
+                            <input type="url" name="foto_url" id="servicioFotoUrl" class="form-control"
                                    placeholder="https://ejemplo.com/imagen.jpg">
                             <div class="small text-muted mt-1">Pega el enlace directo a una imagen ya publicada en internet.</div>
                         </div>
@@ -190,12 +202,13 @@
 
 <script>window.SGC_CTX = "${ctx}";</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="${ctx}/js/appAdmin.js"></script>
+<script src="${ctx}/assets/js/appAdmin.js"></script>
 <script>
     const AdminServicios = (function () {
         function abrirNuevo() {
             document.getElementById('formServicio').reset();
             document.getElementById('servicioId').value = '';
+            document.getElementById('servicioEstado').value = 'Activo';
             document.getElementById('tituloModalServicio').textContent = 'Nuevo servicio';
             document.getElementById('btnGuardarServicio').textContent = 'Crear servicio';
             limpiarPreviewFoto();
@@ -205,14 +218,18 @@
             const d = boton.dataset;
             document.getElementById('servicioId').value = d.id;
             document.getElementById('servicioNombre').value = d.nombre;
-            document.getElementById('servicioPrecio').value = d.precio;
+            document.getElementById('servicioCosto').value = d.costo;
             document.getElementById('servicioDuracion').value = d.duracion;
             document.getElementById('servicioDescripcion').value = d.descripcion;
-            document.getElementById('servicioEstado').value = d.activo === 'true' ? 'activo' : 'inactivo';
+            document.getElementById('servicioCategoria').value = d.categoria;
+            document.getElementById('servicioIncluye').value = d.incluye;
+            document.getElementById('servicioEstado').value = d.estado === 'Activo' ? 'Activo' : 'Inactivo';
+
             document.getElementById('tituloModalServicio').textContent = 'Editar servicio';
             document.getElementById('btnGuardarServicio').textContent = 'Guardar cambios';
             document.getElementById('servicioFotoArchivo').value = '';
             document.getElementById('servicioFotoUrl').value = '';
+
             if (d.foto && d.foto !== 'null' && d.foto !== '') {
                 mostrarPreviewFoto(d.foto.startsWith('http') ? d.foto : (window.SGC_CTX || '') + d.foto);
             } else {

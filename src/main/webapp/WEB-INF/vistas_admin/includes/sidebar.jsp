@@ -14,7 +14,7 @@
 
     <div class="nav-section-title">General</div>
     <nav class="nav flex-column mb-2">
-        <a class="nav-link ${paginaActiva == 'dashboard' ? 'activo' : ''}" href="${pageContext.request.contextPath}/admin/dashboard">
+        <a class="nav-link ${paginaActiva == 'dashboard' ? 'activo' : ''}" href="${pageContext.request.contextPath}/admin-dashboard">
             <i class="bi bi-house"></i> Dashboard
         </a>
         <a class="nav-link ${paginaActiva == 'citas' ? 'activo' : ''}" href="${pageContext.request.contextPath}/admin/citas">
@@ -38,7 +38,7 @@
         <div class="nav-section-title">Cuenta</div>
         <nav class="nav flex-column mb-2">
             <a class="btn btn-cerrar-sesion d-flex align-items-center justify-content-center gap-2 mt-2"
-               href="${pageContext.request.contextPath}/cerrar-sesion">
+               href="${pageContext.request.contextPath}/logout">
                 <i class="bi bi-box-arrow-right"></i> Cerrar sesion
             </a>
         </nav>

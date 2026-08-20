@@ -8,10 +8,8 @@
     }
 
     String estadoRaw = usuarioActivo.getEstadoVeto();
-    String estadoTexto = "Activo";
-    if (estadoRaw != null && ("false".equalsIgnoreCase(estadoRaw) || "0".equals(estadoRaw) || "Inactivo".equalsIgnoreCase(estadoRaw))) {
-        estadoTexto = "Inactivo";
-    }
+    boolean estaVetado = estadoRaw != null && ("TRUE".equalsIgnoreCase(estadoRaw) || "1".equals(estadoRaw) || "true".equalsIgnoreCase(estadoRaw));
+    String estadoTexto = estaVetado ? "Inactivo" : "Activo";
 
     String correo = usuarioActivo.getCorreo() != null ? usuarioActivo.getCorreo() : "";
     String telefono = usuarioActivo.getTelefono() != null ? usuarioActivo.getTelefono() : "";
@@ -39,8 +37,9 @@
     </script>
     <script src="${pageContext.request.contextPath}/js/perfil.js" defer></script>
 </head>
-<body>
+<body class="profile-page">
 <div class="main-wrapper">
+    <div class="bg-overlay"></div>
     <div class="menu-overlay" id="menuOverlay"></div>
 
     <aside class="sidebar-menu" id="sidebarMenu">
@@ -77,7 +76,7 @@
     </aside>
 
     <header>
-        <button class="menu-btn">
+        <button class="menu-btn" style="color: #FFFFFF;">
             <i class="fa-solid fa-bars"></i>
         </button>
 
@@ -93,8 +92,8 @@
             </div>
 
             <div class="user-profile">
-                <div class="user-avatar" aria-label="Avatar del cliente">
-                    <i class="fa-solid fa-circle-user"></i>
+                <div class="user-avatar" aria-label="Avatar del cliente" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                    <img src="<%= fotoSrc %>" alt="Avatar" style="width:100%; height:100%; object-fit:cover;">
                 </div>
                 <div class="user-meta">
                     <span class="user-name profile-name-display"><%= usuarioActivo.getNombreCompleto() %></span>
@@ -105,6 +104,18 @@
     </header>
 
     <main class="profile-shell">
+        <!-- Espacio y Bienvenida -->
+        <div style="padding-top: 30px; margin-bottom: 20px;">
+            <div style="background: rgba(255, 255, 255, 0.9); padding: 18px 24px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 5px solid #526B4A;">
+                <h1 style="margin: 0; font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; color: #2c3e50;">
+                    Bienvenido a tu perfil
+                </h1>
+                <p style="margin: 4px 0 0 0; color: #666; font-size: 0.95rem;">
+                    Gestiona tu información personal y revisa tu historial de citas.
+                </p>
+            </div>
+        </div>
+
         <section class="profile-hero">
             <div class="hero-card">
                 <div class="profile-top">
@@ -120,13 +131,17 @@
                         <input id="inputNombre" type="text" value="<%= usuarioActivo.getNombreCompleto() %>" style="display:none; font-size:1.1rem; margin-bottom:8px; padding:6px 10px; border-radius:6px; border:1px solid #526B4A; width:100%; max-width:320px; box-sizing:border-box; background:#ffffff; color:#333333; position:relative; z-index:20;">
                         <p class="profile-role">Rol ID: <%= usuarioActivo.getIdRol() %></p>
 
-                        <div class="profile-status-pill <%= "Inactivo".equalsIgnoreCase(estadoTexto) ? "alert" : "" %>">
-                            <i class="fa-solid <%= "Activo".equalsIgnoreCase(estadoTexto) ? "fa-circle-check" : "fa-circle-exclamation" %>"></i>
+                        <div class="profile-status-pill <%= estaVetado ? "alert" : "" %>">
+                            <i class="fa-solid <%= !estaVetado ? "fa-circle-check" : "fa-circle-exclamation" %>"></i>
                             <span class="profile-status"><%= estadoTexto %></span>
                         </div>
                     </div>
                 </div>
-                <p class="profile-status-message">Tu acceso sigue activo y puedes seguir disfrutando de tratamientos y promociones.</p>
+                <p class="profile-status-message">
+                    <%= !estaVetado
+                            ? "Tu acceso sigue activo y puedes seguir disfrutando de tratamientos y promociones."
+                            : "Tu cuenta se encuentra inactiva o suspendida. Ponte en contacto con soporte." %>
+                </p>
 
                 <div class="profile-grid">
                     <div class="info-box">
@@ -155,7 +170,10 @@
                         <strong>Próxima cita</strong>
                         <p id="profileNextAppointment">Cargando...</p>
                     </div>
-                    <div class="mini-pill"><i class="fa-regular fa-calendar-check"></i> Estado activo</div>
+                    <div class="mini-pill">
+                        <i class="fa-regular <%= !estaVetado ? "fa-calendar-check" : "fa-circle-xmark" %>"></i>
+                        Estado <%= estadoTexto.toLowerCase() %>
+                    </div>
                 </div>
 
                 <div style="margin-top:16px; display:flex; gap:10px;">
@@ -183,7 +201,9 @@
                 </div>
                 <div class="stat-card">
                     <span>Estado de cuenta</span>
-                    <div id="activePromotionBox" style="margin-top: 8px; font-size: 14px; color: #526B4A; font-weight: 600;"><%= estadoTexto %></div>
+                    <div id="activePromotionBox" style="margin-top: 8px; font-size: 14px; color: <%= !estaVetado ? "#526B4A" : "#c0392b" %>; font-weight: 600;">
+                        <%= estadoTexto %>
+                    </div>
                 </div>
             </div>
         </section>
@@ -230,7 +250,6 @@
             </button>
         </div>
     </div>
-
 </div>
 </body>
 </html>

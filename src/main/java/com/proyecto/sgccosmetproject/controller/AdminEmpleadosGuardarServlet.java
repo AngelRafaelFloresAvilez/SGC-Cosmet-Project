@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 @WebServlet("/admin/empleados/guardar")
 public class AdminEmpleadosGuardarServlet extends HttpServlet {
@@ -26,6 +27,8 @@ public class AdminEmpleadosGuardarServlet extends HttpServlet {
             return;
         }
 
+        request.setCharacterEncoding("UTF-8");
+
         String idStr = request.getParameter("id");
         String nombre = request.getParameter("nombre");
         String especialidad = request.getParameter("especialidad");
@@ -33,45 +36,100 @@ public class AdminEmpleadosGuardarServlet extends HttpServlet {
         String telefono = request.getParameter("telefono");
         String horaInicio = request.getParameter("horaInicio");
         String horaFin = request.getParameter("horaFin");
-        String[] diasArr = request.getParameterValues("dias");
+        String[] dias = request.getParameterValues("dias");
 
-        String diasLaborales = (diasArr != null && diasArr.length > 0)
-                ? String.join(",", diasArr)
-                : "LUNES,MARTES,MIERCOLES,JUEVES,VIERNES";
+        // Formatear horas a HH24:MI:SS si vienen en formato HH:MM
+        if (horaInicio != null && horaInicio.length() == 5) {
+            horaInicio += ":00";
+        }
+        if (horaFin != null && horaFin.length() == 5) {
+            horaFin += ":00";
+        }
 
         try (Connection conexion = ConexionBD.obtenerConexion(getServletContext())) {
+            conexion.setAutoCommit(false); // Transacción para asegurar la inserción múltiple
 
             if (idStr == null || idStr.trim().isEmpty()) {
-                String sql = "INSERT INTO empleados (nombre, especialidad, email, telefono, hora_inicio, hora_fin, dias_laborales, estado) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVO')";
-                try (PreparedStatement ps = conexion.prepareStatement(sql)) {
-                    ps.setString(1, nombre);
-                    ps.setString(2, especialidad);
-                    ps.setString(3, correo);
-                    ps.setString(4, telefono);
-                    ps.setString(5, horaInicio);
-                    ps.setString(6, horaFin);
-                    ps.setString(7, diasLaborales);
-                    ps.executeUpdate();
+                // --- 1. CREAR NUEVO EMPLEADO ---
+
+                // A. Insertar en tabla USUARIOS
+                String sqlUsuario = "INSERT INTO usuarios (nombre_completo, correo, telefono, fecha_nacimiento, contrasena, id_rol, estado_veto, faltas_consecutivas) "
+                        + "VALUES (?, ?, ?, SYSDATE, '123456', (SELECT id_rol FROM roles WHERE UPPER(nombre_rol) LIKE '%EMPLEADO%' AND ROWNUM = 1), 'FALSE', 0)";
+
+                int idUsuarioGenerado = 0;
+                try (PreparedStatement psUser = conexion.prepareStatement(sqlUsuario, new String[]{"ID_USUARIO"})) {
+                    psUser.setString(1, nombre);
+                    psUser.setString(2, correo);
+                    psUser.setString(3, telefono);
+                    psUser.executeUpdate();
+
+                    try (ResultSet rs = psUser.getGeneratedKeys()) {
+                        if (rs.next()) {
+                            idUsuarioGenerado = rs.getInt(1);
+                        }
+                    }
                 }
-                session.setAttribute("mensajeExito", "Empleado registrado con éxito.");
+
+                // B. Insertar en tabla EMPLEADOS
+                String sqlEmpleado = "INSERT INTO empleados (id_usuario, especialidad) VALUES (?, ?)";
+                int idEmpleadoGenerado = 0;
+                try (PreparedStatement psEmp = conexion.prepareStatement(sqlEmpleado, new String[]{"ID_EMPLEADO"})) {
+                    psEmp.setInt(1, idUsuarioGenerado);
+                    psEmp.setString(2, especialidad);
+                    psEmp.executeUpdate();
+
+                    try (ResultSet rs = psEmp.getGeneratedKeys()) {
+                        if (rs.next()) {
+                            idEmpleadoGenerado = rs.getInt(1);
+                        }
+                    }
+                }
+
+                // C. Insertar en HORARIOS_LABORALES
+                if (dias != null && idEmpleadoGenerado > 0) {
+                    insertarHorarios(conexion, idEmpleadoGenerado, dias, horaInicio, horaFin);
+                }
+
+                session.setAttribute("mensajeExito", "Empleado registrado correctamente.");
+
             } else {
+                // --- 2. EDITAR EMPLEADO EXISTENTE ---
                 int idEmpleado = Integer.parseInt(idStr);
-                String sql = "UPDATE empleados SET nombre=?, especialidad=?, email=?, telefono=?, hora_inicio=?, hora_fin=?, dias_laborales=? "
-                        + "WHERE id_empleado=?";
-                try (PreparedStatement ps = conexion.prepareStatement(sql)) {
-                    ps.setString(1, nombre);
-                    ps.setString(2, especialidad);
-                    ps.setString(3, correo);
-                    ps.setString(4, telefono);
-                    ps.setString(5, horaInicio);
-                    ps.setString(6, horaFin);
-                    ps.setString(7, diasLaborales);
-                    ps.setInt(8, idEmpleado);
-                    ps.executeUpdate();
+
+                // A. Actualizar USUARIOS
+                String sqlUpdateUser = "UPDATE usuarios SET nombre_completo = ?, correo = ?, telefono = ? "
+                        + "WHERE id_usuario = (SELECT id_usuario FROM empleados WHERE id_empleado = ?)";
+                try (PreparedStatement psUpUser = conexion.prepareStatement(sqlUpdateUser)) {
+                    psUpUser.setString(1, nombre);
+                    psUpUser.setString(2, correo);
+                    psUpUser.setString(3, telefono);
+                    psUpUser.setInt(4, idEmpleado);
+                    psUpUser.executeUpdate();
                 }
+
+                // B. Actualizar EMPLEADOS
+                String sqlUpdateEmp = "UPDATE empleados SET especialidad = ? WHERE id_empleado = ?";
+                try (PreparedStatement psUpEmp = conexion.prepareStatement(sqlUpdateEmp)) {
+                    psUpEmp.setString(1, especialidad);
+                    psUpEmp.setInt(2, idEmpleado);
+                    psUpEmp.executeUpdate();
+                }
+
+                // C. Reemplazar HORARIOS_LABORALES
+                String sqlDeleteHorarios = "DELETE FROM horarios_laborales WHERE id_empleado = ?";
+                try (PreparedStatement psDel = conexion.prepareStatement(sqlDeleteHorarios)) {
+                    psDel.setInt(1, idEmpleado);
+                    psDel.executeUpdate();
+                }
+
+                if (dias != null) {
+                    insertarHorarios(conexion, idEmpleado, dias, horaInicio, horaFin);
+                }
+
                 session.setAttribute("mensajeExito", "Empleado actualizado correctamente.");
             }
+
+            conexion.commit(); // Confirmar cambios en la BD
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -79,5 +137,35 @@ public class AdminEmpleadosGuardarServlet extends HttpServlet {
         }
 
         response.sendRedirect(request.getContextPath() + "/admin/empleados");
+    }
+
+    private void insertarHorarios(Connection conexion, int idEmpleado, String[] dias, String horaInicio, String horaFin) throws Exception {
+        String sqlHorario = "INSERT INTO horarios_laborales (id_empleado, dia_semana, hora_inicio, hora_fin) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement psHorario = conexion.prepareStatement(sqlHorario)) {
+            for (String dia : dias) {
+                int numDia = mapearDiaANumero(dia);
+                if (numDia > 0) {
+                    psHorario.setInt(1, idEmpleado);
+                    psHorario.setInt(2, numDia);
+                    psHorario.setString(3, horaInicio);
+                    psHorario.setString(4, horaFin);
+                    psHorario.addBatch();
+                }
+            }
+            psHorario.executeBatch();
+        }
+    }
+
+    private int mapearDiaANumero(String dia) {
+        switch (dia.toUpperCase()) {
+            case "LUNES": return 1;
+            case "MARTES": return 2;
+            case "MIERCOLES": return 3;
+            case "JUEVES": return 4;
+            case "VIERNES": return 5;
+            case "SABADO": return 6;
+            case "DOMINGO": return 7;
+            default: return 0;
+        }
     }
 }

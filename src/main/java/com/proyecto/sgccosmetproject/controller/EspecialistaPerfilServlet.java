@@ -36,7 +36,7 @@ public class EspecialistaPerfilServlet extends HttpServlet {
             Map<String, Object> empleado = cargarDatosPerfil(conexion, usuario.getIdUsuario());
 
             if (empleado == null) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "El perfil de especialista no fue encontrado.");
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "El usuario no existe en el sistema.");
                 return;
             }
 
@@ -64,9 +64,7 @@ public class EspecialistaPerfilServlet extends HttpServlet {
 
         String nombreCompleto = request.getParameter("nombreCompleto");
         String fechaNacimiento = request.getParameter("fechaNacimiento");
-        String genero = request.getParameter("genero");
         String especialidad = request.getParameter("especialidad");
-        String experienciaStr = request.getParameter("experienciaAnios");
         String telefono = request.getParameter("telefono");
         String correo = request.getParameter("correo");
 
@@ -79,22 +77,11 @@ public class EspecialistaPerfilServlet extends HttpServlet {
             errores.put("correo", "El correo electrónico es requerido.");
         }
 
-        int experienciaAnios = 0;
-        try {
-            if (experienciaStr != null && !experienciaStr.trim().isEmpty()) {
-                experienciaAnios = Integer.parseInt(experienciaStr);
-            }
-        } catch (NumberFormatException e) {
-            errores.put("experienciaAnios", "Ingresa un número válido de años.");
-        }
-
         if (!errores.isEmpty()) {
             Map<String, Object> valores = new HashMap<>();
             valores.put("nombreCompleto", nombreCompleto);
             valores.put("fechaNacimiento", fechaNacimiento);
-            valores.put("genero", genero);
             valores.put("especialidad", especialidad);
-            valores.put("experienciaAnios", experienciaStr);
             valores.put("telefono", telefono);
             valores.put("correo", correo);
 
@@ -105,8 +92,14 @@ public class EspecialistaPerfilServlet extends HttpServlet {
             return;
         }
 
-        String sqlUsuario = "UPDATE usuarios SET nombre_completo = ?, correo = ?, telefono = ?, fecha_nacimiento = TO_DATE(?, 'YYYY-MM-DD'), genero = ? WHERE id_usuario = ?";
-        String sqlEmpleado = "UPDATE empleados SET especialidad = ?, experiencia_anios = ? WHERE id_usuario = ?";
+        String sqlUsuario = "UPDATE usuarios SET nombre_completo = ?, correo = ?, telefono = ?, fecha_nacimiento = TO_DATE(?, 'YYYY-MM-DD') WHERE id_usuario = ?";
+
+        // Se usa MERGE para insertar en 'empleados' si no existía el registro previo
+        String sqlEmpleado = "MERGE INTO empleados e "
+                + "USING (SELECT ? AS id_u, ? AS esp FROM DUAL) src "
+                + "ON (e.id_usuario = src.id_u) "
+                + "WHEN MATCHED THEN UPDATE SET e.especialidad = src.esp "
+                + "WHEN NOT MATCHED THEN INSERT (id_usuario, especialidad) VALUES (src.id_u, src.esp)";
 
         try (Connection conexion = ConexionBD.obtenerConexion(getServletContext())) {
             conexion.setAutoCommit(false);
@@ -118,13 +111,11 @@ public class EspecialistaPerfilServlet extends HttpServlet {
                 psU.setString(2, correo);
                 psU.setString(3, telefono);
                 psU.setString(4, (fechaNacimiento != null && !fechaNacimiento.trim().isEmpty()) ? fechaNacimiento : null);
-                psU.setString(5, genero);
-                psU.setInt(6, usuario.getIdUsuario());
+                psU.setInt(5, usuario.getIdUsuario());
                 psU.executeUpdate();
 
-                psE.setString(1, especialidad);
-                psE.setInt(2, experienciaAnios);
-                psE.setInt(3, usuario.getIdUsuario());
+                psE.setInt(1, usuario.getIdUsuario());
+                psE.setString(2, (especialidad != null && !especialidad.trim().isEmpty()) ? especialidad : "General");
                 psE.executeUpdate();
 
                 conexion.commit();
@@ -150,11 +141,11 @@ public class EspecialistaPerfilServlet extends HttpServlet {
     private Map<String, Object> cargarDatosPerfil(Connection conexion, int idUsuario) throws Exception {
         Map<String, Object> emp = new HashMap<>();
 
-        String sql = "SELECT e.id_empleado, e.especialidad, e.experiencia_anios, "
-                + "u.nombre_completo, u.correo, u.telefono, TO_CHAR(u.fecha_nacimiento, 'YYYY-MM-DD') AS fecha_nac, "
-                + "u.genero, u.ruta_foto "
-                + "FROM empleados e "
-                + "JOIN usuarios u ON e.id_usuario = u.id_usuario "
+        // LEFT JOIN para permitir usuarios sin fila previa en 'empleados'
+        String sql = "SELECT e.id_empleado, e.especialidad, "
+                + "u.nombre_completo, u.correo, u.telefono, TO_CHAR(u.fecha_nacimiento, 'YYYY-MM-DD') AS fecha_nac "
+                + "FROM usuarios u "
+                + "LEFT JOIN empleados e ON e.id_usuario = u.id_usuario "
                 + "WHERE u.id_usuario = ?";
 
         int idEmpleado = 0;
@@ -164,15 +155,20 @@ public class EspecialistaPerfilServlet extends HttpServlet {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     idEmpleado = rs.getInt("id_empleado");
+
+                    // Si el usuario no tiene registro en 'empleados', lo creamos dinámicamente
+                    if (rs.wasNull() || idEmpleado == 0) {
+                        idEmpleado = crearEmpleadoSiNoExiste(conexion, idUsuario);
+                        emp.put("especialidad", "General");
+                    } else {
+                        emp.put("especialidad", rs.getString("especialidad"));
+                    }
+
                     emp.put("idEmpleado", idEmpleado);
                     emp.put("nombreCompleto", rs.getString("nombre_completo"));
                     emp.put("correo", rs.getString("correo"));
                     emp.put("telefono", rs.getString("telefono"));
                     emp.put("fechaNacimientoIso", rs.getString("fecha_nac"));
-                    emp.put("genero", rs.getString("genero"));
-                    emp.put("especialidad", rs.getString("especialidad"));
-                    emp.put("experienciaAnios", rs.getInt("experiencia_anios"));
-                    emp.put("rutaFoto", rs.getString("ruta_foto"));
 
                     String nombre = rs.getString("nombre_completo");
                     emp.put("iniciales", generarIniciales(nombre));
@@ -182,40 +178,45 @@ public class EspecialistaPerfilServlet extends HttpServlet {
             }
         }
 
-        // Cargar Servicios asignados
-        List<String> servicios = new ArrayList<>();
-        String sqlServicios = "SELECT s.nombre FROM servicios s "
-                + "JOIN empleados_servicios es ON s.id_servicio = es.id_servicio "
-                + "WHERE es.id_empleado = ?";
-        try (PreparedStatement psS = conexion.prepareStatement(sqlServicios)) {
-            psS.setInt(1, idEmpleado);
-            try (ResultSet rsS = psS.executeQuery()) {
-                while (rsS.next()) {
-                    servicios.add(rsS.getString("nombre"));
-                }
-            }
-        }
-        emp.put("servicios", servicios);
-
-        // Cargar Horarios laborales
+        // Días de la semana
+        String[] nombresDias = {"", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"};
         Map<String, String> horario = new LinkedHashMap<>();
-        String[] dias = {"Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"};
-        for (String d : dias) horario.put(d, null);
+        for (int i = 1; i <= 7; i++) {
+            horario.put(nombresDias[i], null);
+        }
 
-        String sqlHorario = "SELECT dia_semana, hora_inicio, hora_fin FROM horarios_laborales WHERE id_empleado = ?";
-        try (PreparedStatement psH = conexion.prepareStatement(sqlHorario)) {
-            psH.setInt(1, idEmpleado);
-            try (ResultSet rsH = psH.executeQuery()) {
-                while (rsH.next()) {
-                    String dia = rsH.getString("dia_semana");
-                    String rango = rsH.getString("hora_inicio") + " - " + rsH.getString("hora_fin");
-                    horario.put(dia, rango);
+        if (idEmpleado > 0) {
+            String sqlHorario = "SELECT dia_semana, hora_inicio, hora_fin FROM horarios_laborales WHERE id_empleado = ?";
+            try (PreparedStatement psH = conexion.prepareStatement(sqlHorario)) {
+                psH.setInt(1, idEmpleado);
+                try (ResultSet rsH = psH.executeQuery()) {
+                    while (rsH.next()) {
+                        int numDia = rsH.getInt("dia_semana");
+                        if (numDia >= 1 && numDia <= 7) {
+                            String rango = rsH.getString("hora_inicio") + " - " + rsH.getString("hora_fin");
+                            horario.put(nombresDias[numDia], rango);
+                        }
+                    }
                 }
             }
         }
         emp.put("horario", horario);
 
         return emp;
+    }
+
+    private int crearEmpleadoSiNoExiste(Connection conexion, int idUsuario) throws Exception {
+        String sql = "INSERT INTO empleados (id_usuario, especialidad) VALUES (?, 'General')";
+        try (PreparedStatement ps = conexion.prepareStatement(sql, new String[]{"ID_EMPLEADO"})) {
+            ps.setInt(1, idUsuario);
+            ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return 0;
     }
 
     private String generarIniciales(String nombre) {
