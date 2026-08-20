@@ -34,6 +34,7 @@ let selectedBookingTime = '11:30 AM';
 let selectedBookingDuration = 60;
 let lastCreatedAppointmentId = null;
 let pendingBookingDraft = null;
+let modifyingAppointmentId = null;
 let bookingCalendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
 function getMinimumBookingDate() {
@@ -419,6 +420,39 @@ window.addEventListener('DOMContentLoaded', () => {
       card.classList.toggle('hidden-card', !visibleIndexes.has(index));
     });
   }
+
+  const modificationId = sessionStorage.getItem('sgc_modify_appointment_id');
+  if (modificationId && window.appointmentsSystem?.readState) {
+    setTimeout(() => {
+      const appointment = window.appointmentsSystem.readState().appointments.find((item) => item.id === modificationId && item.status === 'pending');
+      const serviceFromState = appointment && window.appointmentsSystem.getServices?.().find((item) => item.title?.toLowerCase() === appointment.serviceName?.toLowerCase());
+      const card = appointment && [...document.querySelectorAll('.service-card')].find((item) => (item.dataset.title || item.querySelector('.service-title')?.innerText || '').trim().toLowerCase() === appointment.serviceName.toLowerCase());
+      const metaValue = (label) => {
+        const row = [...(card?.querySelectorAll('.service-meta-row') || [])].find((item) => item.querySelector('.service-meta-label')?.innerText.trim() === label);
+        return row?.querySelector('.service-meta-value')?.innerText.trim() || '';
+      };
+      const service = serviceFromState || (card && {
+        title: appointment.serviceName,
+        category: card.dataset.category || '',
+        description: card.dataset.desc || '',
+        includes: card.dataset.includes || '',
+        duration: card.dataset.duration || metaValue('Duración') || `${appointment.duration || 60} minutos`,
+        price: card.dataset.price || metaValue('Precio') || appointment.price,
+        image: card.dataset.image || card.querySelector('.service-img')?.src || ''
+      });
+      if (!appointment || !service) return;
+      modifyingAppointmentId = modificationId;
+      abrirModal(service.title, service.category || '', service.description || '', service.includes || '', service.duration, service.price, service.image);
+      abrirModalAgendamiento();
+      selectedBookingTime = appointment.time;
+      if (appointment.iso) {
+        selectedBookingDate = new Date(appointment.iso);
+        bookingCalendarMonth = new Date(selectedBookingDate.getFullYear(), selectedBookingDate.getMonth(), 1);
+      }
+      renderSmallBookingCalendar();
+      renderBookingSchedule();
+    }, 0);
+  }
 });
 
 window.addEventListener('storage', (event) => {
@@ -585,9 +619,17 @@ document.addEventListener('click', (e) => {
       const time = selectedTimeBtn?.dataset.time || (selectedTimeBtn ? selectedTimeBtn.textContent.trim() : '');
       const specialist = document.getElementById('bookingSpecialistSelect')?.value || 'Cualquiera. Mejor disponible';
 
-      const result = window.appointmentsSystem && typeof window.appointmentsSystem.createAppointment === 'function'
-        ? window.appointmentsSystem.createAppointment(serviceName, price, date, time, '', { duration: selectedBookingDuration, specialist, draft: true })
-        : { allowed: false, reason: 'missing_system' };
+      let result;
+      if (modifyingAppointmentId) {
+        const existingAppointment = window.appointmentsSystem?.readState?.().appointments?.find((appointment) => appointment.id === modifyingAppointmentId);
+        result = existingAppointment
+          ? { allowed: true, appointment: { ...existingAppointment, date, time, duration: selectedBookingDuration, specialist } }
+          : { allowed: false, reason: 'missing_datetime' };
+      } else {
+        result = window.appointmentsSystem && typeof window.appointmentsSystem.createAppointment === 'function'
+          ? window.appointmentsSystem.createAppointment(serviceName, price, date, time, '', { duration: selectedBookingDuration, specialist, draft: true })
+          : { allowed: false, reason: 'missing_system' };
+      }
 
       if (!result.allowed) {
         if (result.reason === 'slot_taken') {
@@ -608,7 +650,7 @@ document.addEventListener('click', (e) => {
         return;
       }
 
-      pendingBookingDraft = { serviceName, price, date, time, specialist, duration: selectedBookingDuration };
+      pendingBookingDraft = { serviceName, price, date, time, specialist, duration: selectedBookingDuration, modifyingAppointmentId };
       renderConfirmationDetails(result.appointment);
       document.getElementById('bookingModal').classList.remove('active');
       document.getElementById('confirmationModal').classList.add('active');
@@ -640,11 +682,10 @@ document.addEventListener('click', (e) => {
       return;
     }
     const draft = pendingBookingDraft;
-    const result = window.appointmentsSystem && typeof window.appointmentsSystem.createAppointment === 'function'
-      ? window.appointmentsSystem.createAppointment(draft.serviceName, draft.price, draft.date, draft.time, '', {
-        duration: draft.duration,
-        specialist: draft.specialist
-      })
+    const result = modifyingAppointmentId && window.appointmentsSystem && typeof window.appointmentsSystem.updateAppointment === 'function'
+      ? window.appointmentsSystem.updateAppointment(modifyingAppointmentId, draft.date, draft.time, { duration: draft.duration, specialist: draft.specialist })
+      : window.appointmentsSystem && typeof window.appointmentsSystem.createAppointment === 'function'
+        ? window.appointmentsSystem.createAppointment(draft.serviceName, draft.price, draft.date, draft.time, '', { duration: draft.duration, specialist: draft.specialist })
       : { allowed: false, reason: 'missing_system' };
     if (!result.allowed) {
       document.getElementById('confirmationModal').classList.remove('active');
@@ -655,12 +696,18 @@ document.addEventListener('click', (e) => {
       return;
     }
     pendingBookingDraft = null;
+    sessionStorage.removeItem('sgc_modify_appointment_id');
     lastCreatedAppointmentId = result.appointment.id;
     document.getElementById('confirmationTitle').style.display = 'none';
     document.querySelector('.confirmation-details').style.display = 'none';
     document.querySelector('.confirmation-primary').style.display = 'none';
     document.querySelector('.confirmation-secondary').style.display = 'none';
     document.getElementById('confirmationSuccess').hidden = false;
+    document.getElementById('confirmationSuccessTitle').textContent = modifyingAppointmentId ? 'Cita modificada' : 'Cita confirmada';
+    document.getElementById('confirmationSuccessMessage').innerHTML = modifyingAppointmentId
+      ? 'Tu cita se modificó con éxito.<br>Te esperamos en la nueva fecha y hora seleccionadas'
+      : 'Se agendó tu cita con éxito.<br>Te esperamos en la fecha y hora seleccionados';
+    modifyingAppointmentId = null;
     return;
   }
 

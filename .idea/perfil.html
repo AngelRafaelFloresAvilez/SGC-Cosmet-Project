@@ -9,155 +9,85 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="appointments-system.js"></script>
-    <link rel="stylesheet" href="StylesPerfil.css">
-
+  <link rel="stylesheet" href="StylesPerfil.css">
 </head>
 <body>
-   <!-- OVERLAY MENÚ LATERAL -->
-    <div class="menu-overlay" id="menuOverlay"></div>
 
-    <!-- MENÚ LATERAL -->
-    <aside class="sidebar-menu" id="sidebarMenu">
-        <div class="sidebar-user-box">
-            <div class="sidebar-user-avatar" id="sidebarUserAvatar">
-                <i class="fa-solid fa-circle-user"></i>
-            </div>
-            <div class="sidebar-user-meta">
-                <span class="sidebar-user-name">Ana López</span>
-                <span class="sidebar-user-role">Cliente</span>
-            </div>
-        </div>
+  <div class="menu-overlay" id="menuOverlay"></div>
+  <aside class="sidebar-menu" id="sidebarMenu">
+    <div class="sidebar-user-box">
+      <div class="sidebar-user-avatar" id="sidebarUserAvatar">
+        <i class="fa-solid fa-circle-user"></i>
+      </div>
+      <div class="sidebar-user-meta">
+        <span class="sidebar-user-name">Ana López</span>
+        <span class="sidebar-user-role">Cliente</span>
+      </div>
+    </div>
 
-        <div class="sidebar-header">
-            <hr class="sidebar-divider">
-        </div>
+    <div class="sidebar-header">
+      <hr class="sidebar-divider">
+    </div>
 
-        <div class="sidebar-section-label">General</div>
+    <div class="sidebar-section-label">General</div>
 
-        <nav class="sidebar-nav">
-            <a href="dashboard.html"><i class="fa-solid fa-house"></i> Inicio</a>
-            <a href="catalogo.html"><i class="fa-solid fa-border-all"></i> Catálogo</a>
-            <a href="citas.html"><i class="fa-regular fa-calendar-check"></i> Mis citas</a>
-            <hr class="sidebar-divider">
-            <a href="perfil.html" class="nav-profile-link active"><i class="fa-regular fa-user"></i> Mi perfil</a>
-        </nav>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html"><i class="fa-solid fa-house"></i> Inicio</a>
+      <a href="catalogo.html"><i class="fa-solid fa-border-all"></i> Catálogo</a>
+      <a href="citas.html"><i class="fa-regular fa-calendar-check"></i> Mis citas</a>
+      <hr class="sidebar-divider">
+      <a href="perfil.html" class="nav-profile-link active"><i class="fa-regular fa-user"></i> Mi perfil</a>
+    </nav>
 
-        <button class="sidebar-logout" type="button" onclick="window.location.href='../index.html'">
-            <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+    <button class="sidebar-logout" type="button" onclick="window.location.href='../index.html'">
+      <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+    </button>
+
+    <hr class="sidebar-divider">
+    <div class="sidebar-brand">SGC COSMETICS</div>
+  </aside>
+
+  <header>
+    <button class="menu-btn">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <div class="header-actions">
+      <div style="position:relative;">
+        <button class="btn-notification" type="button" data-notification-toggle>
+          <i class="fa-regular fa-bell"></i>
+          <span class="notification-badge"></span>
         </button>
-
-        <hr class="sidebar-divider">
-        <div class="sidebar-brand">SGC COSMETICS</div>
-    </aside>
-
-    <header>
-            <button class="menu-btn">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-            
-            <div class="header-actions">
-                <div style="position:relative;">
-                    <button class="btn-notification" type="button" data-notification-toggle>
-                        <i class="fa-regular fa-bell"></i>
-                        <span class="notification-badge"></span>
-                    </button>
-                    <div class="notification-panel" id="notificationPanel">
-                        <div id="notificationList"></div>
-                    </div>
-                </div>
-
-                <div class="user-profile">
-                    <div class="user-avatar" aria-label="Avatar del cliente">
-                        <i class="fa-solid fa-circle-user"></i>
-                    </div>
-                    <div class="user-meta">
-                        <span class="user-name">Ana López</span>
-                        <span class="user-role">Cliente</span>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-
-
-    <main class="profile-shell">
-      <section class="profile-hero">
-        <div class="hero-card">
-          <div class="profile-top">
-            <div style="position:relative">
-            <img id="profileAvatarImg" class="profile-avatar" src="https://www.gravatar.com/avatar/?d=mp&s=150" alt="Ana López">
-            <input id="profileAvatarInput" type="file" accept="image/*" title="Cambiar foto de perfil" style="position:absolute;right:6px;bottom:6px;opacity:0;width:40px;height:40px;cursor:pointer">
-            </div>
-            <div class="profile-meta">
-              <h2 class="profile-name">Ana López</h2>
-              <p class="profile-role">Cliente</p>
-              <div class="profile-status-pill"><i class="fa-solid fa-circle-check"></i><span class="profile-status">Normal</span></div>
-            </div>
-          </div>
-          <p class="profile-status-message">Tu acceso sigue activo y puedes seguir disfrutando de tratamientos y promociones.</p>
-          <div class="profile-grid">
-            <div class="info-box">
-              <label>Correo</label>
-              <span class="profile-email">ana.lopez@sgc.com</span>
-            </div>
-            <div class="info-box">
-              <label>Teléfono</label>
-              <span class="profile-phone">+52 55 1234 5678</span>
-            </div>
-            <div class="info-box">
-              <label>Fecha de nacimiento</label>
-              <span class="profile-birth">14/08/1997</span>
-            </div>
-            <div class="info-box">
-              <label>Miembro desde</label>
-              <span class="profile-member">Miembro desde 2024</span>
-            </div>
-          </div>
-          <div class="profile-summary">
-            <div>
-              <strong>Próxima cita</strong>
-              <p id="profileNextAppointment">Sin citas próximas</p>
-            </div>
-            <div class="mini-pill"><i class="fa-regular fa-calendar-check"></i> Estado activo</div>
-          </div>
-          <div style="margin-top:12px; display:flex; gap:8px;">
-            <button id="editProfileBtn" class="btn-primary" style="width:auto; padding:8px 12px; border-radius:10px;">Editar perfil</button>
-            <button id="saveProfileBtn" class="btn-primary" style="width:auto; padding:8px 12px; border-radius:10px; display:none; background:#6ea57a;">Guardar</button>
-            <button id="cancelProfileBtn" class="btn-register" style="width:auto; padding:8px 12px; border-radius:10px; display:none;">Cancelar</button>
-          </div>
+        <div class="notification-panel" id="notificationPanel">
+          <div id="notificationList"></div>
         </div>
+      </div>
 
-        <div class="side-card">
-          <h3>Resumen de tu experiencia</h3>
-          <div class="stat-card" id="cancelledSummaryCard">
-            <span>Cancelaciones acumuladas</span>
-            <strong id="profileCancelledCount">0</strong>
-          </div>
-          <div class="stat-card">
-            <span>Próxima reserva</span>
-            <strong id="profileNextAppointmentCompact">Sin reservas</strong>
-          </div>
-          <div class="stat-card">
-            <span>Promoción activa</span>
-            <div id="activePromotionBox" style="margin-top: 8px;"></div>
-          </div>
-          <button id="restoreAccessBtn" type="button" style="margin-top: 12px; width: 100%; border: none; border-radius: 999px; padding: 10px 12px; background: #526B4A; color: #fff; font-weight: 700; cursor: pointer;">Quitar cancelaciones y recuperar acceso</button>
+      <div class="user-profile">
+        <div class="user-avatar" aria-label="Avatar del cliente">
+          <i class="fa-solid fa-circle-user"></i>
         </div>
-      </section>
-
-      <section class="profile-hero" style="margin-top: 24px;">
-        <div class="hero-card">
-          <h3 style="margin-bottom: 14px;">Historial de citas</h3>
-          <div id="historyList"></div>
+        <div class="user-meta">
+          <span class="user-name">Ana López</span>
+          <span class="user-role">Cliente</span>
         </div>
-        <div class="side-card">
-          <h3>Pagos y promociones</h3>
-          <div id="paymentsList" style="margin-bottom: 18px;"></div>
-          <div id="promotionsList"></div>
-        </div>
-      </section>
-    </main>
-  </div>
+      </div>
+    </div>
+  </header>
+  <main class="profile-shell profile-dashboard">
+    <div class="profile-welcome"><h1>Hola, bienvenida<br>a tu perfil</h1><p>edita tu perfil y consulta datos.</p></div>
+    <section class="profile-dashboard-grid">
+      <aside class="profile-card-dashboard">
+        <div class="dashboard-profile-heading"><div class="dashboard-avatar-wrap"><div style="position:relative"><img id="profileAvatarImg" class="profile-avatar" src="https://www.gravatar.com/avatar/?d=mp&s=150" alt="Ana López"><input id="profileAvatarInput" type="file" accept="image/*" title="Cambiar foto de perfil" style="position:absolute;right:0;bottom:0;opacity:0;width:40px;height:40px;cursor:pointer"></div></div><div class="profile-meta dashboard-profile-meta"><h2 class="profile-name">Ana López</h2><p class="profile-role">Cliente</p><div class="profile-status-pill"><i class="fa-solid fa-circle-check"></i><span id="profileStatus" class="profile-status">Normal</span></div></div></div>
+        <div class="dashboard-profile-facts"><div><i class="fa-regular fa-phone"></i><span class="profile-phone">+52 55 1234 5678</span></div><div><i class="fa-regular fa-envelope"></i><span class="profile-email">ana.lopez@sgc.com</span></div><div><i class="fa-regular fa-calendar"></i><span class="profile-birth">14/08/1997</span></div></div>
+        <div class="dashboard-absence-card"><div class="absence-heading"><strong>Ausencias<br>Consecutivas</strong><span><b id="profileCancelledCount">0</b>/3</span></div><div class="absence-bar"><span></span></div><div class="absence-status"><i class="fa-solid fa-circle"></i> Estado: <span class="profile-status">Normal</span></div><p id="profileStatusMessage"><i class="fa-solid fa-circle-exclamation"></i> Nota: Por cada 3 ausencias sin previo aviso resultará en un bloqueo automático de 30 días.</p></div>
+        <div class="profile-edit-actions"><button id="editProfileBtn" class="btn-primary">Editar perfil</button><button id="saveProfileBtn" class="btn-primary" style="display:none">Guardar</button><button id="cancelProfileBtn" class="btn-register" style="display:none">Cancelar</button></div>
+      </aside>
+      <section class="dashboard-center-column"><article class="dashboard-panel history-dashboard-panel"><div class="dashboard-panel-heading"><h2>Historial de Citas</h2><span>→</span></div><div id="historyList"></div><div class="profile-history-pagination" id="profileHistoryPagination" aria-label="Paginación del historial"></div></article><article class="dashboard-panel payments-dashboard-panel"><div class="dashboard-panel-heading"><h2>Historial de pagos</h2><span>→</span></div><div id="paymentsList"></div><div class="profile-payments-pagination" id="profilePaymentsPagination" aria-label="Paginación del historial de pagos"></div></article></section>
+      <aside class="dashboard-right-column"><article class="dashboard-panel promotions-dashboard-panel"><div class="promotion-cover"></div><div class="dashboard-panel-body"><h2>Promociones</h2><div id="promotionsList"></div><div id="activePromotionBox" hidden></div></div></article></aside>
+    </section>
+    <div id="profileNextAppointment" hidden>Sin citas próximas</div><div id="profileNextAppointmentCompact" hidden>Sin reservas</div><div id="cancelledSummaryCard" hidden></div><button id="restoreAccessBtn" hidden type="button">Restaurar acceso</button>
+  </main>
   <script src="perfil.js"></script>
 </body>
 </html>

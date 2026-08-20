@@ -36,7 +36,6 @@ window.addEventListener('DOMContentLoaded', () => {
   const sidebarAvatar = document.getElementById('sidebarUserAvatar');
   const menuBtn = document.querySelector('.menu-btn');
   const overlay = document.getElementById('menuOverlay');
-  const notificationToggle = document.querySelector('[data-notification-toggle]');
 
   function updateImgs(url) {
     if (img) img.src = url;
@@ -58,16 +57,12 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  if (menuBtn) {
-    menuBtn.addEventListener('click', toggleMenu);
-  }
-
   if (overlay) {
-    overlay.addEventListener('click', cerrarMenu);
-  }
-
-  if (notificationToggle) {
-    notificationToggle.addEventListener('click', mostrarNotificaciones);
+    overlay.addEventListener('click', () => {
+      document.getElementById('sidebarMenu')?.classList.remove('active');
+      overlay.classList.remove('active');
+      menuBtn?.classList.remove('active');
+    });
   }
 
   try {

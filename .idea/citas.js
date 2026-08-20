@@ -33,7 +33,6 @@ function mostrarNotificaciones() {
 window.addEventListener('DOMContentLoaded', () => {
   const menuBtn = document.querySelector('.menu-btn');
   const overlay = document.getElementById('menuOverlay');
-  const notificationToggle = document.querySelector('[data-notification-toggle]');
 
   if (menuBtn) {
     menuBtn.addEventListener('click', toggleMenu);
@@ -41,10 +40,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
   if (overlay) {
     overlay.addEventListener('click', cerrarMenu);
-  }
-
-  if (notificationToggle) {
-    notificationToggle.addEventListener('click', mostrarNotificaciones);
   }
 
   if (window.appointmentsSystem && typeof window.appointmentsSystem.init === 'function') {

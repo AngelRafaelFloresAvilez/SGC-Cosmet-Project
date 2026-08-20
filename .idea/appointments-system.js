@@ -437,17 +437,58 @@
     return { allowed: true, appointment };
   }
 
-  function cancelAppointment(id) {
+  function cancelAppointment(id, reason = '') {
     const state = readState();
     const target = state.appointments.find((item) => item.id === id);
     if (!target) return { allowed: false };
 
     target.status = 'cancelled';
     target.summary = 'Cita cancelada por el usuario.';
+    target.cancellationReason = reason || 'Otro';
     saveState(state);
     addNotification('Cita cancelada', `Se canceló la cita de ${target.serviceName}.`, 'cancelled');
     syncProfileUI();
     return { allowed: true, state };
+  }
+
+  function updateAppointment(id, date, time, options = {}) {
+    const state = readState();
+    const target = state.appointments.find((appointment) => appointment.id === id);
+    if (!target || target.status !== 'pending') return { allowed: false, reason: 'not_editable' };
+    const appointmentDate = parseDisplayedDateTime(date, time);
+    const duration = Number(options.duration) || Number(target.duration) || 60;
+    if (!appointmentDate) return { allowed: false, reason: 'missing_datetime' };
+    const now = new Date();
+    const minimumDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    if (appointmentDate < minimumDate) return { allowed: false, reason: 'too_soon' };
+    if (!isWithinSpecialistSchedule(appointmentDate, duration, options.specialist || target.specialist || '')) {
+      return { allowed: false, reason: 'outside_working_hours' };
+    }
+    const stateWithoutTarget = { ...state, appointments: state.appointments.filter((appointment) => appointment.id !== id) };
+    if (isTimeSlotTaken(date, time, stateWithoutTarget, duration, options.specialist || target.specialist || '')) {
+      return { allowed: false, reason: 'slot_taken' };
+    }
+    target.date = date;
+    target.time = time;
+    target.iso = appointmentDate.toISOString();
+    target.duration = duration;
+    target.specialist = options.specialist || target.specialist || 'Cualquiera. Mejor disponible';
+    target.summary = 'Tu cita fue modificada y está pendiente de confirmación.';
+    saveState(state);
+    addNotification('Cita modificada', `Tu cita de ${target.serviceName} fue modificada para el ${date} a las ${time}.`, 'appointment');
+    syncProfileUI();
+    return { allowed: true, appointment: target };
+  }
+
+  function rateAppointment(id, rating, comment = '') {
+    const state = readState();
+    const target = state.appointments.find((appointment) => appointment.id === id);
+    if (!target || !['previous', 'completed'].includes(target.status)) return { allowed: false };
+    target.rating = Number(rating);
+    target.ratingComment = comment;
+    saveState(state);
+    addNotification('Gracias por tu calificación', `Tu experiencia con ${target.serviceName} fue registrada.`, 'appointment');
+    return { allowed: true, appointment: target };
   }
 
   function removeAppointment(id) {
@@ -968,6 +1009,11 @@
       element.textContent = cancelledCount;
     });
 
+    document.querySelectorAll('.absence-bar span').forEach((element) => {
+      element.style.width = `${Math.min(cancelledCount, 3) / 3 * 100}%`;
+      element.style.background = cancelledCount >= 3 ? '#c95c5c' : '#93b575';
+    });
+
     document.querySelectorAll('.profile-absence-progress').forEach((element) => {
       element.style.width = `${Math.min(cancelledCount, 3) / 3 * 100}%`;
       element.style.background = cancelledCount >= 3 ? '#c95c5c' : '#93b575';
@@ -996,6 +1042,7 @@
     const paymentsListEl = document.getElementById('paymentsList');
     const promotionsListEl = document.getElementById('promotionsList');
     const activePromotionEl = document.getElementById('activePromotionBox');
+    const historyPaginationEl = document.getElementById('profileHistoryPagination');
 
     if (profileStatusEl) profileStatusEl.textContent = status;
     if (profileStatusMessageEl) profileStatusMessageEl.textContent = cancelledCount >= 3 ? 'Tienes varias cancelaciones registradas y se requiere revisión para volver a reservar.' : 'Tu acceso sigue activo y puedes seguir disfrutando de tratamientos y promociones.';
@@ -1017,9 +1064,13 @@
     }
 
     if (historyListEl) {
-      const appointments = getCurrentUserAppointments(state);
+      const appointments = getCurrentUserAppointments(state).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const pageSize = 4;
+      const pageCount = Math.max(1, Math.ceil(appointments.length / pageSize));
+      const currentPage = Math.min(Math.max(Number(localStorage.getItem('sgc_profile_history_page') || 1), 1), pageCount);
+      const visibleAppointments = appointments.slice((currentPage - 1) * pageSize, currentPage * pageSize);
       const historyMarkup = appointments.length
-        ? appointments.map((appointment) => `
+        ? visibleAppointments.map((appointment) => `
             <div class="history-item">
               <div>
                 <strong>${appointment.serviceName}</strong>
@@ -1030,10 +1081,27 @@
           `).join('')
         : '<div class="empty-state">Aún no tienes historial de citas.</div>';
       historyListEl.innerHTML = historyMarkup;
+        if (historyPaginationEl) {
+          historyPaginationEl.innerHTML = [
+            `<button type="button" data-page="${Math.max(1, currentPage - 1)}">‹</button>`,
+            ...Array.from({ length: pageCount }, (_, index) => `<button type="button" data-page="${index + 1}" class="${index + 1 === currentPage ? 'active' : ''}">${index + 1}</button>`),
+            `<button type="button" data-page="${Math.min(pageCount, currentPage + 1)}">›</button>`
+          ].join('');
+          historyPaginationEl.querySelectorAll('button').forEach((button) => {
+            button.onclick = () => {
+              localStorage.setItem('sgc_profile_history_page', button.dataset.page);
+              renderProfilePage();
+            };
+          });
+        }
     }
 
     if (paymentsListEl) {
-      paymentsListEl.innerHTML = state.payments.map((payment) => `
+      const paymentPageSize = 3;
+      const paymentPageCount = Math.max(1, Math.ceil(state.payments.length / paymentPageSize));
+      const currentPaymentPage = Math.min(Math.max(Number(localStorage.getItem('sgc_profile_payments_page') || 1), 1), paymentPageCount);
+      const visiblePayments = state.payments.slice((currentPaymentPage - 1) * paymentPageSize, currentPaymentPage * paymentPageSize);
+      paymentsListEl.innerHTML = visiblePayments.map((payment) => `
         <div class="payment-item">
           <div>
             <strong>${payment.description}</strong>
@@ -1042,6 +1110,19 @@
           <span class="payment-status">${payment.status}</span>
         </div>
       `).join('');
+      const paymentPaginationEl = document.getElementById('profilePaymentsPagination');
+      if (paymentPaginationEl) {
+        paymentPaginationEl.innerHTML = [
+          `<button type="button" data-payment-page="${Math.max(1, currentPaymentPage - 1)}">‹</button>`,
+          `<button type="button" data-payment-page="${Math.min(paymentPageCount, currentPaymentPage + 1)}">›</button>`
+        ].join('');
+        paymentPaginationEl.querySelectorAll('button').forEach((button) => {
+          button.onclick = () => {
+            localStorage.setItem('sgc_profile_payments_page', button.dataset.paymentPage);
+            renderProfilePage();
+          };
+        });
+      }
     }
 
     if (promotionsListEl) {
@@ -1170,7 +1251,6 @@
       images[service.title?.toLowerCase()] = service.image;
       return images;
     }, {});
-    const currentProfile = getProfileForCurrentSession(state);
     list.innerHTML = pageItems.map((appointment) => `
       <button class="appointment-item" data-appointment-id="${appointment.id}">
         <img class="appointment-item-image" src="${serviceImages[appointment.serviceName?.toLowerCase()] || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=160'}" alt="">
@@ -1181,37 +1261,58 @@
           </div>
           <div class="appointment-item-meta"><span><i class="fa-regular fa-calendar"></i> Fecha<br>${appointment.date}</span><span><i class="fa-regular fa-clock"></i> Hora<br>${appointment.time}</span><span><i class="fa-regular fa-user"></i> Profesional<br>${appointment.specialist || 'Disponible'}</span></div>
         </div>
-        <span class="appointment-item-actions"><i class="fa-regular fa-eye"></i><i class="fa-solid fa-xmark"></i></span>
+        <span class="appointment-item-actions appointment-actions-${appointment.status}"><i class="fa-regular fa-eye"></i>${appointment.status === 'pending' ? '<span class="appointment-cancel-trigger" role="button" tabindex="0" data-cancel-id="' + appointment.id + '" aria-label="Cancelar cita"><i class="fa-solid fa-xmark"></i></span>' : appointment.status === 'previous' || appointment.status === 'completed' ? '<span class="appointment-favorite-trigger" role="button" tabindex="0" aria-label="Favorito"><i class="fa-solid fa-star"></i></span>' : ''}</span>
       </button>
     `).join('');
 
     list.querySelectorAll('.appointment-item').forEach((button) => {
+      button.querySelector('.appointment-cancel-trigger')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        openCancelModal(event.currentTarget.dataset.cancelId);
+      });
+      button.querySelector('.appointment-favorite-trigger')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        openRatingModal(button.dataset.appointmentId);
+      });
+      button.querySelector('.appointment-cancel-trigger')?.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        event.stopPropagation();
+        openCancelModal(event.currentTarget.dataset.cancelId);
+      });
       button.addEventListener('click', () => {
         const current = getAppointmentById(button.dataset.appointmentId);
         if (!current) return;
         detailPanel?.classList.add('is-open');
         detailPanel?.setAttribute('aria-hidden', 'false');
         document.body.classList.add('detail-open');
+        const service = (window.appointmentsSystem.getServices?.() || []).find((item) => item.title?.toLowerCase() === current.serviceName?.toLowerCase());
+        const currentStatusLabel = current.status === 'pending' ? 'Pendiente' : current.status === 'confirmed' ? 'Confirmada' : current.status === 'cancelled' ? 'Cancelada' : 'Completada';
+        const currentStatusClass = current.status === 'cancelled' ? 'appointment-status-cancelled' : 'appointment-status-confirmed';
+        const detailImage = service?.image || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=260';
+        const detailDuration = current.duration ? `${current.duration} min` : (service?.duration || '60 minutos');
         detail.innerHTML = `
           <div class="detail-card">
             <div class="detail-card-head">
-              <h3>${current.serviceName}</h3>
-              <div class="detail-card-actions"><span class="appointment-badge appointment-status-${current.status}">${current.status === 'pending' ? 'Pendiente' : current.status === 'confirmed' ? 'Confirmada' : current.status === 'cancelled' ? 'Cancelada' : 'Completada'}</span><button type="button" class="detail-close" aria-label="Cerrar información"><i class="fa-solid fa-xmark"></i></button></div>
+              <h3>Resumen de la cita</h3>
+              <button type="button" class="detail-close" aria-label="Cerrar información"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="client-info" style="display:flex;gap:12px;align-items:center;margin-top:10px">
-              <img src="${(current.createdBy && current.createdBy.avatar) || currentProfile.avatar}" alt="${(current.createdBy && current.createdBy.name) || currentProfile.name || 'Cliente'}" class="detail-client-avatar">
-              <div>
-                <div><strong>${(current.createdBy && current.createdBy.name) || 'Cliente SGC'}</strong></div>
-                <div class="meta">${(current.createdBy && current.createdBy.email) || ''} ${current.createdBy && current.createdBy.phone ? '· ' + current.createdBy.phone : ''}</div>
-              </div>
+            <div class="appointment-summary-service">
+              <img src="${detailImage}" alt="${current.serviceName}" class="appointment-summary-image">
+              <div class="appointment-summary-copy"><h4>${current.serviceName}</h4><p>${service?.category || 'Relajante y liberador'}</p><span class="appointment-badge ${currentStatusClass}">${currentStatusLabel}</span></div>
             </div>
-            <div class="detail-grid">
-              <div><span>Fecha</span><strong>${current.date}</strong></div>
-              <div><span>Hora</span><strong>${current.time}</strong></div>
-              <div><span>Precio</span><strong>${current.price}</strong></div>
-              <div><span>Estado</span><strong>${current.summary}</strong></div>
+            <div class="appointment-summary-meta">
+              <div><i class="fa-regular fa-calendar"></i><span>Fecha<strong>${current.date}</strong></span></div>
+              <div><i class="fa-regular fa-clock"></i><span>Hora<strong>${current.time}</strong></span></div>
+              <div><i class="fa-regular fa-user"></i><span>Profesional<strong>${current.specialist || 'Disponible'}</strong></span></div>
             </div>
-            ${current.status === 'pending' ? `<div style="display:flex;gap:8px;flex-wrap:wrap">` + (getSession() && getSession().role === 'specialist' ? `<button class="btn-confirm" data-confirm-id="${current.id}">Confirmar</button>` : '') + `<button class="btn-cancel" data-cancel-id="${current.id}">Cancelar cita</button></div>` : (getSession() && getSession().role === 'specialist' ? `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-complete" data-complete-id="${current.id}">Marcar como atendida</button><button class="btn-delete" data-delete-id="${current.id}">Eliminar cita</button></div>` : '')}
+            <div class="appointment-summary-info">
+              <h4>Información de la cita</h4>
+              <div><span>Estado</span><strong class="appointment-badge ${currentStatusClass}">${currentStatusLabel}</strong></div>
+              <div><span>Duración</span><strong>${detailDuration}</strong></div>
+              <div><span>Precio</span><strong>${current.price || '--'}</strong></div>
+            </div>
+            ${current.status === 'pending' ? `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-modify" data-modify-id="${current.id}">Modificar cita</button>` + (getSession() && getSession().role === 'specialist' ? `<button class="btn-confirm" data-confirm-id="${current.id}">Confirmar</button>` : '') + `<button class="btn-cancel" data-cancel-id="${current.id}">Cancelar cita</button></div>` : (getSession() && getSession().role === 'specialist' ? `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-complete" data-complete-id="${current.id}">Marcar como atendida</button><button class="btn-delete" data-delete-id="${current.id}">Eliminar cita</button></div>` : '')}
           </div>
         `;
         const detailClose = detail.querySelector('.detail-close');
@@ -1225,6 +1326,13 @@
           });
         }
             const cancelButton = detail.querySelector('.btn-cancel');
+            const modifyButton = detail.querySelector('.btn-modify');
+            if (modifyButton) {
+              modifyButton.addEventListener('click', () => {
+                sessionStorage.setItem('sgc_modify_appointment_id', modifyButton.dataset.modifyId);
+                window.location.href = 'catalogo.html';
+              });
+            }
         if (cancelButton) {
           cancelButton.addEventListener('click', () => {
             openCancelModal(cancelButton.dataset.cancelId);
@@ -1276,7 +1384,28 @@
     const modal = document.getElementById('cancelAppointmentModal');
     if (!modal) return;
     modal.dataset.appointmentId = id;
+    const reasonSelect = document.getElementById('cancelReason');
+    if (reasonSelect) reasonSelect.value = '';
     modal.classList.add('active');
+  }
+
+  function openRatingModal(id) {
+    const modal = document.getElementById('ratingModal');
+    if (!modal) return;
+    modal.dataset.appointmentId = id;
+    modal.setAttribute('aria-hidden', 'false');
+    modal.classList.add('active');
+    modal.querySelectorAll('[data-rating]').forEach((button) => button.classList.remove('selected'));
+    const comment = document.getElementById('ratingComment');
+    if (comment) comment.value = '';
+  }
+
+  function closeRatingModal() {
+    const modal = document.getElementById('ratingModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+    modal.removeAttribute('data-appointment-id');
   }
 
   function closeCancelModal() {
@@ -1284,6 +1413,8 @@
     if (modal) {
       modal.classList.remove('active');
       modal.removeAttribute('data-appointment-id');
+      const reasonSelect = document.getElementById('cancelReason');
+      if (reasonSelect) reasonSelect.value = '';
     }
   }
 
@@ -1297,7 +1428,7 @@
     const overlay = document.getElementById('menuOverlay') || document.querySelector('.menu-overlay');
     const menu = document.getElementById('sidebarMenu') || document.querySelector('.sidebar-menu');
 
-    if (menuButton) menuButton.addEventListener('click', openSidebar);
+    if (menuButton && !document.querySelector('.profile-dashboard')) menuButton.addEventListener('click', openSidebar);
     if (closeButton) closeButton.addEventListener('click', closeSidebar);
     if (overlay) overlay.addEventListener('click', closeSidebar);
     if (menu) {
@@ -1337,17 +1468,56 @@
       cancelModal.querySelector('.cancel-confirm-btn')?.addEventListener('click', () => {
         const id = cancelModal.dataset.appointmentId;
         if (id) {
-          cancelAppointment(id);
+          const reason = document.getElementById('cancelReason')?.value || '';
+          if (!reason) {
+            showSiteAlert('Selecciona un motivo para cancelar la cita.', 'info');
+            return;
+          }
+          cancelAppointment(id, reason);
           renderNotifications();
           renderAppointmentsPage();
           closeCancelModal();
         }
       });
       cancelModal.querySelector('.cancel-cancel-btn')?.addEventListener('click', closeCancelModal);
+      cancelModal.querySelector('.cancel-modal-close')?.addEventListener('click', closeCancelModal);
       cancelModal.addEventListener('click', (event) => {
         if (event.target.id === 'cancelAppointmentModal') {
           closeCancelModal();
         }
+      });
+    }
+
+    const ratingModal = document.getElementById('ratingModal');
+    if (ratingModal) {
+      ratingModal.querySelectorAll('[data-rating]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const value = Number(button.dataset.rating);
+          ratingModal.dataset.rating = String(value);
+          ratingModal.querySelectorAll('[data-rating]').forEach((star) => star.classList.toggle('selected', Number(star.dataset.rating) <= value));
+        });
+      });
+      ratingModal.querySelector('.rating-submit-btn')?.addEventListener('click', () => {
+        const id = ratingModal.dataset.appointmentId;
+        const rating = Number(ratingModal.dataset.rating || 0);
+        if (!rating) {
+          showSiteAlert('Selecciona una calificación antes de enviar.', 'info');
+          return;
+        }
+        const result = rateAppointment(id, rating, document.getElementById('ratingComment')?.value || '');
+        if (!result.allowed) return;
+        closeRatingModal();
+        renderAppointmentsPage();
+        const thankYou = document.createElement('div');
+        thankYou.className = 'rating-thank-you';
+        thankYou.textContent = 'Gracias por tus comentarios';
+        document.body.appendChild(thankYou);
+        setTimeout(() => thankYou.remove(), 3200);
+      });
+      ratingModal.querySelector('.rating-cancel-btn')?.addEventListener('click', closeRatingModal);
+      ratingModal.querySelector('.rating-close')?.addEventListener('click', closeRatingModal);
+      ratingModal.addEventListener('click', (event) => {
+        if (event.target === ratingModal) closeRatingModal();
       });
     }
 
@@ -1386,6 +1556,8 @@
 
   window.appointmentsSystem = {
     createAppointment,
+    updateAppointment,
+    rateAppointment,
     cancelAppointment: function (id) {
       const result = cancelAppointment(id);
       renderNotifications();

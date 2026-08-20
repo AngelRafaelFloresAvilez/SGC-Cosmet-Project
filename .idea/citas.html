@@ -134,13 +134,43 @@
     <div id="appointmentDetail"></div>
   </div>
 
-  <div class="modal-backdrop" id="cancelAppointmentModal">
-    <div class="modal-card">
-      <h3>Cancelar cita</h3>
-      <p>¿Deseas cancelar esta cita? Esta acción contará como una falta y aparecerá en tu historial.</p>
+  <div class="modal-backdrop rating-modal-backdrop" id="ratingModal" aria-hidden="true">
+    <div class="modal-card rating-card">
+      <button type="button" class="rating-close" aria-label="Cerrar">&times;</button>
+      <div class="rating-icon"><i class="fa-solid fa-star"></i></div>
+      <h3>Califica tu experiencia</h3>
+      <p>Cuéntanos cómo fue tu experiencia con este servicio.</p>
+      <div class="rating-stars" role="radiogroup" aria-label="Calificación">
+        <button type="button" data-rating="1" aria-label="1 estrella"><i class="fa-solid fa-star"></i></button>
+        <button type="button" data-rating="2" aria-label="2 estrellas"><i class="fa-solid fa-star"></i></button>
+        <button type="button" data-rating="3" aria-label="3 estrellas"><i class="fa-solid fa-star"></i></button>
+        <button type="button" data-rating="4" aria-label="4 estrellas"><i class="fa-solid fa-star"></i></button>
+        <button type="button" data-rating="5" aria-label="5 estrellas"><i class="fa-solid fa-star"></i></button>
+      </div>
+      <textarea id="ratingComment" rows="3" placeholder="Escribe un comentario (opcional)"></textarea>
       <div class="modal-actions">
-        <button class="btn-secondary cancel-cancel-btn">No, mantener</button>
-        <button class="btn-primary cancel-confirm-btn">Sí, cancelar</button>
+        <button type="button" class="btn-secondary rating-cancel-btn">Cancelar</button>
+        <button type="button" class="btn-primary rating-submit-btn">Enviar calificación</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="cancelAppointmentModal">
+    <div class="modal-card cancel-appointment-card">
+      <button type="button" class="cancel-modal-close" aria-label="Cerrar">&times;</button>
+      <div class="cancel-modal-icon"><i class="fa-regular fa-trash-can"></i></div>
+      <h3>¿Estas seguro de querer cancelar tu cita?</h3>
+      <p>Si cancelas, tu cita será eliminada y el horario quedará disponible para otro cliente.</p>
+      <label class="cancel-reason-label" for="cancelReason">¿Por qué deseas cancelar tu cita?</label>
+      <select id="cancelReason" class="cancel-reason-select">
+        <option value="">Seleccione el motivo</option>
+        <option value="Problemas de salud">Problemas de salud</option>
+        <option value="Ya no necesito el servicio">Ya no necesito el servicio</option>
+        <option value="Otro">Otro</option>
+      </select>
+      <div class="modal-actions">
+        <button class="btn-secondary cancel-cancel-btn">No, cancelar</button>
+        <button class="btn-primary cancel-confirm-btn">Sí, cancelar cita</button>
       </div>
     </div>
   </div>
