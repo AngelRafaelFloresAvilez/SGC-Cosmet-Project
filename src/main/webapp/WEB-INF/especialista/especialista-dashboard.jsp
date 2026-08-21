@@ -1,150 +1,147 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
-<c:set var="tituloPagina" value="Dashboard Especialista - SGC Cosmetic" scope="request" />
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
+<c:set var="avatar" value="${not empty sessionScope.usuarioSesion.fotoPerfil ? sessionScope.usuarioSesion.fotoPerfil : 'https://www.gravatar.com/avatar/?d=mp&s=150'}" />
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <jsp:include page="/WEB-INF/vistas_esp/includes/head.jsp" />
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/styles.css">
-
-    <style>
-        body {
-            background-image:
-            url('${pageContext.request.contextPath}/assets/img/fondo-especialista.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel del especialista - SGC Cosmetic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="${ctx}/assets/css/stylesSpecialistDashboard.css">
 </head>
 <body>
+  <div class="menu-overlay" id="menuOverlay"></div>
+  <aside class="sidebar-menu" id="sidebarMenu">
+    <div class="sidebar-user-box">
+      <div class="sidebar-user-avatar" id="sidebarUserAvatar"><img src="${avatar}" alt="Especialista" style="width:100%;height:100%;border-radius:50%;object-fit:cover"></div>
+      <div class="sidebar-user-meta">
+        <span class="sidebar-user-name" id="sidebarUserName"><c:out value="${empleado.nombreCompleto}" /></span>
+        <span class="sidebar-user-role" id="sidebarUserRole">Especialista</span>
+      </div>
+    </div>
+    <div class="sidebar-header"><hr class="sidebar-divider"></div>
+    <div class="sidebar-section-label">General</div>
+    <nav class="sidebar-nav">
+      <a href="${ctx}/especialista/dashboard" class="active"><i class="fa-solid fa-house"></i> Inicio</a>
+      <a href="${ctx}/especialista/agenda"><i class="fa-regular fa-calendar"></i> Agenda</a>
+      <hr class="sidebar-divider">
+      <a href="${ctx}/especialista/perfil" class="nav-profile-link"><i class="fa-regular fa-user"></i> Perfil</a>
+    </nav>
+    <button class="sidebar-logout" type="button" onclick="window.location.href='${ctx}/logout'"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
+    <hr class="sidebar-divider">
+    <div class="sidebar-brand">SGC COSMETICS</div>
+  </aside>
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="menu-trigger" type="button" aria-label="Abrir menú"><i class="fa-solid fa-bars"></i></button>
+      <div class="topbar-actions">
+        <div class="specialist-notification-wrap"><button class="notification-trigger" type="button" aria-label="Notificaciones" data-notification-toggle><i class="fa-regular fa-bell"></i><span class="notification-badge"></span></button><div class="notification-panel" id="notificationPanel"><div id="notificationList">Sin notificaciones nuevas</div></div></div>
+        <a class="specialist-chip" href="${ctx}/especialista/perfil" aria-label="Abrir perfil del especialista">
+          <img class="chip-avatar" id="specialistAvatar" src="${avatar}" alt="Especialista">
+          <span><strong id="specialistName"><c:out value="${empleado.nombreCompleto}" /></strong><small id="specialistRole">Especialista</small></span>
+        </a>
+      </div>
+    </header>
 
-<jsp:include page="/WEB-INF/vistas_esp/includes/sidebar.jsp" />
+    <main class="specialist-dashboard">
+      <section class="welcome-block">
+        <h1>Hola de nuevo, <span id="welcomeName"><c:out value="${empleado.nombreCompleto}" /></span></h1>
+        <p id="todayLabel"><c:out value="${fechaHoyTexto}" /></p>
+      </section>
 
-<div class="sgc-app-shell">
-    <jsp:include page="/WEB-INF/vistas_esp/includes/topbar.jsp" />
+      <section class="stats">
+        <div class="stat stat-calendar"><i class="fa-regular fa-calendar"></i><span><strong id="todayCount">${not empty totalCitasHoy ? totalCitasHoy : 0}</strong><small>Citas hoy</small></span></div>
+        <div class="stat stat-clock"><i class="fa-regular fa-clock"></i><span><strong id="upcomingCount">${not empty pendientesHoy ? pendientesHoy : 0}</strong><small>Pendiente</small></span></div>
+        <div class="stat stat-check"><i class="fa-regular fa-circle-check"></i><span><strong id="completedCount">${not empty completadasHoy ? completadasHoy : 0}</strong><small>Citas completadas</small></span></div>
+        <div class="stat stat-star"><i class="fa-regular fa-star"></i><span><strong id="averageRating">${not empty empleado.calificacionPromedio ? empleado.calificacionPromedio : '0'}</strong><small>Calificación promedio</small></span></div>
+      </section>
 
-    <main class="sgc-contenido flex-grow-1">
-        <jsp:include page="/WEB-INF/vistas_esp/includes/alertas.jsp" />
-
-        <div class="sgc-encabezado-hero mb-3">
-            <h1 class="fuente-titulo mb-1">Hola de nuevo, <c:out value="${empleado.nombreCompleto}" /></h1>
-            <p class="sgc-subtitulo mb-0">
-                Hoy: <c:out value="${fechaHoyTexto}" />, aquí tienes un resumen de tu jornada.
-            </p>
+      <section class="dashboard-columns">
+        <div class="dashboard-panel agenda-panel" id="agenda">
+          <div class="section-title">Agenda hoy</div>
+          <div class="filters">
+            <span class="filter-btn active">Día</span>
+            <a class="filter-btn" href="${ctx}/especialista/agenda?vista=semana">Semana</a>
+            <a class="filter-btn" href="${ctx}/especialista/agenda?vista=mes">Mes</a>
+          </div>
+          <div class="appointment-list" id="appointmentList">
+            <c:choose>
+              <c:when test="${not empty agendaHoy}">
+                <c:forEach var="cita" items="${agendaHoy}">
+                  <a class="appointment-item" href="${ctx}/especialista/cita?id=${cita.idCita}" data-id="${cita.idCita}">
+                    <i class="appointment-avatar fa-regular fa-user" aria-hidden="true"></i>
+                    <div style="flex:1;text-align:left">
+                      <strong class="appointment-client-name"><c:out value="${cita.cliente.nombreCompleto}" /></strong>
+                      <strong class="appointment-service-title"><c:out value="${cita.servicio}" /></strong>
+                      <div class="meta appointment-date-line"><time><c:out value="${cita.horaInicioFormateada}" /></time></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <span class="pill"><c:out value="${cita.etiquetaEstado}" /></span>
+                    </div>
+                  </a>
+                </c:forEach>
+              </c:when>
+              <c:otherwise>
+                <p class="empty-agenda">No hay citas para hoy.</p>
+              </c:otherwise>
+            </c:choose>
+          </div>
+          <div class="dashboard-pager" id="agendaPager" aria-label="Paginación de agenda"></div>
         </div>
 
-        <!-- Tarjetas de estadísticas -->
-        <div class="row g-3 mb-3">
-            <div class="col-6 col-lg-3">
-                <div class="sgc-card sgc-stat h-100">
-                    <div class="sgc-stat-icono"><i class="bi bi-calendar2-check"></i></div>
-                    <div class="sgc-stat-valor"><c:out value="${totalCitasHoy}" /></div>
-                    <div class="sgc-subtitulo">Citas hoy</div>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="sgc-card sgc-stat h-100">
-                    <div class="sgc-stat-icono"><i class="bi bi-clock"></i></div>
-                    <div class="sgc-stat-valor"><c:out value="${pendientesHoy}" /></div>
-                    <div class="sgc-subtitulo">Pendientes</div>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="sgc-card sgc-stat h-100">
-                    <div class="sgc-stat-icono"><i class="bi bi-check2-circle"></i></div>
-                    <div class="sgc-stat-valor"><c:out value="${completadasHoy}" /></div>
-                    <div class="sgc-subtitulo">Completadas</div>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="sgc-card sgc-stat h-100">
-                    <div class="sgc-stat-icono"><i class="bi bi-star"></i></div>
-                    <div class="sgc-stat-valor">
-                        <fmt:formatNumber value="${empleado.calificacionPromedio}" maxFractionDigits="1" minFractionDigits="1" />
+        <div class="dashboard-panel upcoming-panel">
+          <div class="section-title">Próximas citas</div>
+          <div id="upcomingAppointmentsList" class="upcoming-list">
+            <c:choose>
+              <c:when test="${not empty proximasCitas}">
+                <c:forEach var="cita" items="${proximasCitas}">
+                  <a class="upcoming-item" href="${ctx}/especialista/cita?id=${cita.idCita}">
+                    <i class="upcoming-avatar fa-regular fa-user" aria-hidden="true"></i>
+                    <div>
+                      <strong class="upcoming-service-title"><c:out value="${cita.servicio}" /></strong>
+                      <small><c:out value="${cita.fechaFormateadaCorta}" /> · <c:out value="${cita.horaInicioFormateada}" /></small>
+                      <small><c:out value="${cita.cliente.nombreCompleto}" /></small>
                     </div>
-                    <div class="sgc-subtitulo">Calificación promedio</div>
-                </div>
-            </div>
+                  </a>
+                </c:forEach>
+              </c:when>
+              <c:otherwise>
+                <p class="empty-agenda">No tienes próximas citas.</p>
+              </c:otherwise>
+            </c:choose>
+          </div>
+          <div class="dashboard-pager" id="upcomingPager" aria-label="Paginación de próximas citas"></div>
         </div>
 
-        <div class="row g-3 flex-grow-1" style="min-height:0;">
-            <!-- Agenda de hoy -->
-            <div class="col-lg-5 d-flex" style="min-height:0;">
-                <div class="sgc-card sgc-card-alta h-100 w-100">
-                    <div class="card-header-plano">
-                        <h2 class="h6 mb-0">Agenda hoy</h2>
-                    </div>
-                    <div class="pt-2 sgc-lista-scroll">
-                        <c:choose>
-                            <c:when test="${empty agendaHoy}">
-                                <p class="text-center text-muted py-4 mb-0">No tienes citas programadas para hoy.</p>
-                            </c:when>
-                            <c:otherwise>
-                                <c:forEach var="cita" items="${agendaHoy}">
-                                    <div class="sgc-fila-cita d-flex align-items-center justify-content-between p-2 border-bottom">
-                                        <div class="sgc-hora me-2 fw-bold"><c:out value="${cita.horaInicioFormateada}" /></div>
-                                        <div class="flex-grow-1">
-                                            <div class="fw-semibold"><c:out value="${cita.cliente.nombreCompleto}" /></div>
-                                            <div class="small text-muted"><c:out value="${cita.servicio}" /></div>
-                                        </div>
-                                        <span class="badge ${cita.claseBadge}"><c:out value="${cita.etiquetaEstado}" /></span>
-                                    </div>
-                                </c:forEach>
-                            </c:otherwise>
-                        </c:choose>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Próximas citas -->
-            <div class="col-lg-4 d-flex" style="min-height:0;">
-                <div class="sgc-card sgc-card-alta h-100 w-100">
-                    <div class="card-header-plano">
-                        <h2 class="h6 mb-0">Próximas citas</h2>
-                    </div>
-                    <div class="pt-2 sgc-lista-scroll">
-                        <c:choose>
-                            <c:when test="${empty proximasCitas}">
-                                <p class="text-center text-muted py-4 mb-0">No hay próximas citas registradas.</p>
-                            </c:when>
-                            <c:otherwise>
-                                <c:forEach var="cita" items="${proximasCitas}">
-                                    <div class="sgc-fila-cita p-2 border-bottom">
-                                        <div class="fw-semibold">
-                                            <c:out value="${cita.fechaFormateadaCorta}" /> - <c:out value="${cita.horaInicioFormateada}" />
-                                        </div>
-                                        <div class="small text-primary"><c:out value="${cita.servicio}" /></div>
-                                        <div class="small text-muted"><c:out value="${cita.cliente.nombreCompleto}" /></div>
-                                    </div>
-                                </c:forEach>
-                            </c:otherwise>
-                        </c:choose>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recordatorios -->
-            <div class="col-lg-3 d-flex" style="min-height:0;">
-                <div class="sgc-card sgc-card-alta h-100 w-100 p-3">
-                    <h2 class="h6 mb-3">Recordatorios</h2>
-                    <div class="sgc-lista-scroll">
-                        <c:forEach var="rec" items="${recordatorios}">
-                            <div class="sgc-recordatorio d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
-                                <span><i class="bi ${rec.icono} me-2"></i><c:out value="${rec.texto}" /></span>
-                                <i class="bi bi-chevron-right"></i>
-                            </div>
-                        </c:forEach>
-                    </div>
-                </div>
-            </div>
+        <div class="dashboard-panel reminders-panel">
+          <div class="section-title">Recordatorios</div>
+          <div id="remindersList" class="reminder-list">
+            <div class="reminder-item"><i class="fa-regular fa-calendar"></i><span>Tienes ${not empty pendientesHoy ? pendientesHoy : 0} citas pendientes por confirmar</span></div>
+            <div class="reminder-item"><i class="fa-regular fa-circle-check"></i><span>${not empty completadasHoy ? completadasHoy : 0} citas completadas hoy</span></div>
+            <div class="reminder-item"><i class="fa-regular fa-star"></i><span>Recuerda revisar tu agenda de la semana</span></div>
+          </div>
         </div>
+      </section>
     </main>
-</div>
+  </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="${pageContext.request.contextPath}/js/app.js"></script>
+  <script>
+    (function () {
+      function toggle(open) {
+        document.getElementById('sidebarMenu')?.classList.toggle('active', open);
+        document.getElementById('menuOverlay')?.classList.toggle('active', open);
+      }
+      document.querySelector('.menu-trigger')?.addEventListener('click', () => toggle(true));
+      document.getElementById('menuOverlay')?.addEventListener('click', () => toggle(false));
+      document.querySelector('[data-notification-toggle]')?.addEventListener('click', () => {
+        document.getElementById('notificationPanel')?.classList.toggle('active');
+      });
+    })();
+  </script>
 </body>
 </html>

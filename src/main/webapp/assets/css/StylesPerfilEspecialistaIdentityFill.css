@@ -1,0 +1,8 @@
+.professional-identity { display: flex; flex-direction: column; justify-content: flex-start; height: 100%; }
+.professional-identity .identity-avatar { flex: 0 0 auto; }
+.professional-identity h2 { margin-top: 4px; }
+.professional-identity .identity-role { margin-bottom: 10px; }
+.professional-identity .identity-contact { flex: 1; width: 100%; align-content: end; margin-top: auto; padding-top: 20px; }
+@media (max-width: 700px) {
+  .professional-identity .identity-contact { padding-top: 8px; }
+}

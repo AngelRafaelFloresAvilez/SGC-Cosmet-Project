@@ -1,626 +1,416 @@
 // ==========================================
-// ESTADO GLOBAL DE LA RESERVA Y RESEÑAS
+//  Catálogo y agendado — diseño de copia sobre servlets de demo
 // ==========================================
+
 let reservaActual = {
-    idServicio: 1,
-    nombreServicio: '',
-    precio: 0,
-    duracion: '60 min',
-    idEmpleado: 1,
-    nombreEmpleado: 'Ana Torres',
-    fecha: '2026-08-09',
-    hora: '14:00:00',
-    metodoPago: 'Efectivo'
+  idServicio: 1,
+  nombreServicio: '',
+  precio: 0,
+  duracion: '01:00:00',
+  idEmpleado: 1,
+  metodoPago: 'Efectivo'
 };
 
-let totalNotificaciones = 0;
-let resenasActuales = [];
+// ---------- Calendario ----------
+const bookingTimes = Array.from({ length: 24 }, (_, index) => {
+  const totalMinutes = 8 * 60 + index * 30;
+  const hour = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const suffix = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${String(displayHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${suffix}`;
+});
+const bookingDayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+let selectedBookingDate = new Date();
+let bookingWeekOffset = 0;
+let selectedBookingTime = null;
+let bookingCalendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
-// ==========================================
-// FUNCIONES DE UI Y NAVEGACIÓN
-// ==========================================
+function getMinimumBookingDate() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 1);
+  return d;
+}
+selectedBookingDate = getMinimumBookingDate();
 
+function formatBookingDate(date) { return `${bookingDayNames[date.getDay()]} ${date.getDate()}`; }
+function localDateIso(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+function formatMonthLabel(date) {
+  return date.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }).replace(/^./, (l) => l.toUpperCase());
+}
+function isDateBeforeMinimum(date) {
+  const c = new Date(date); c.setHours(0, 0, 0, 0);
+  return c < getMinimumBookingDate();
+}
+function timeInMinutes(time) {
+  const m = String(time || '').match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!m) return null;
+  let hour = Number(m[1]) % 12;
+  if (m[3].toUpperCase() === 'PM') hour += 12;
+  return hour * 60 + Number(m[2]);
+}
+function timeTo24h(time) {
+  const mins = timeInMinutes(time);
+  if (mins === null) return '12:00:00';
+  return `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}:00`;
+}
+
+function renderSmallBookingCalendar() {
+  const calendar = document.getElementById('bookingCalendarDays');
+  const monthLabel = document.getElementById('bookingMonthLabel');
+  if (!calendar) return;
+  const firstDay = new Date(bookingCalendarMonth.getFullYear(), bookingCalendarMonth.getMonth(), 1);
+  const firstCell = new Date(firstDay);
+  firstCell.setDate(firstDay.getDate() - firstDay.getDay());
+  calendar.innerHTML = Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(firstCell);
+    date.setDate(firstCell.getDate() + index);
+    const outsideMonth = date.getMonth() !== bookingCalendarMonth.getMonth();
+    const beforeMinimum = isDateBeforeMinimum(date);
+    const selected = date.toDateString() === selectedBookingDate.toDateString();
+    return `<span class="${outsideMonth ? 'calendar-muted' : 'calendar-date'} ${beforeMinimum ? 'calendar-disabled' : ''} ${selected ? 'active' : ''}" data-iso-date="${localDateIso(date)}" ${beforeMinimum ? 'aria-disabled="true"' : ''}>${date.getDate()}</span>`;
+  }).join('');
+  if (monthLabel) monthLabel.textContent = formatMonthLabel(bookingCalendarMonth);
+}
+
+function renderBookingSchedule() {
+  const dayHeader = document.getElementById('bookingScheduleDays');
+  const slots = document.getElementById('bookingScheduleSlots');
+  const todayButton = document.querySelector('.schedule-today');
+  const timeColumn = document.querySelector('.schedule-time-column');
+  if (!dayHeader || !slots) return;
+
+  const weekStart = new Date(selectedBookingDate);
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7) + bookingWeekOffset * 7);
+  const weekDates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart); d.setDate(weekStart.getDate() + i); return d;
+  });
+
+  dayHeader.innerHTML = weekDates.map((date) =>
+    `<span class="${date.toDateString() === selectedBookingDate.toDateString() ? 'selected' : ''}">${bookingDayNames[date.getDay()]}<b>${date.getDate()}</b></span>`).join('');
+  if (timeColumn) timeColumn.innerHTML = `<span></span>${bookingTimes.map((t) => `<span>${t}</span>`).join('')}`;
+
+  slots.innerHTML = weekDates.map((date) => `
+    <div class="schedule-column ${date.toDateString() === selectedBookingDate.toDateString() ? 'selected' : ''}">
+      ${bookingTimes.map((time) => {
+        const unavailable = isDateBeforeMinimum(date);
+        const active = date.toDateString() === selectedBookingDate.toDateString() && time === selectedBookingTime;
+        return `<button type="button" class="time-btn schedule-block ${unavailable ? 'unavailable' : ''} ${active ? 'active' : ''}" data-time="${time}" data-date-iso="${localDateIso(date)}" ${unavailable ? 'disabled' : ''}>${unavailable ? '<i class="fa-solid fa-lock"></i>' : active ? '<i class="fa-solid fa-check"></i> ' + time : time}</button>`;
+      }).join('')}
+    </div>`).join('');
+
+  if (todayButton) todayButton.textContent = `Hoy · ${formatBookingDate(new Date())}`;
+}
+
+function syncBookingDate(date) {
+  selectedBookingDate = new Date(date);
+  selectedBookingDate.setHours(0, 0, 0, 0);
+  bookingWeekOffset = 0;
+  bookingCalendarMonth = new Date(selectedBookingDate.getFullYear(), selectedBookingDate.getMonth(), 1);
+  renderSmallBookingCalendar();
+  renderBookingSchedule();
+}
+
+function setupBookingCalendar() {
+  selectedBookingDate = getMinimumBookingDate();
+  selectedBookingTime = null;
+  bookingCalendarMonth = new Date(selectedBookingDate.getFullYear(), selectedBookingDate.getMonth(), 1);
+  renderSmallBookingCalendar();
+  renderBookingSchedule();
+}
+
+// ---------- Menú / notificaciones ----------
 function abrirMenu() {
-    const sidebar = document.getElementById('sidebarMenu');
-    const overlay = document.getElementById('menuOverlay');
-    if (sidebar) sidebar.classList.add('active');
-    if (overlay) overlay.classList.add('active');
+  document.getElementById('sidebarMenu')?.classList.add('active');
+  document.getElementById('menuOverlay')?.classList.add('active');
+  document.querySelector('.menu-btn')?.classList.add('active');
 }
-
 function cerrarMenu() {
-    const sidebar = document.getElementById('sidebarMenu');
-    const overlay = document.getElementById('menuOverlay');
-    if (sidebar) sidebar.classList.remove('active');
-    if (overlay) overlay.classList.remove('active');
+  document.getElementById('sidebarMenu')?.classList.remove('active');
+  document.getElementById('menuOverlay')?.classList.remove('active');
+  document.querySelector('.menu-btn')?.classList.remove('active');
 }
 
+// ---------- Catálogo (paginación de tarjetas) ----------
 function cambiarCatalogo(direction) {
-    const container = document.querySelector('.services-grid');
-    if (container) {
-        const scrollAmount = 300;
-        if (direction === 'next') container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-        else container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-    }
+  const cards = Array.from(document.querySelectorAll('.service-card'));
+  if (!cards.length) return;
+  const pageSize = 6;
+  const total = cards.length;
+  let startIndex = Number(document.body.dataset.catalogStart || 0);
+  startIndex = (startIndex + (direction === 'next' ? pageSize : -pageSize) + total) % total;
+  document.body.dataset.catalogStart = String(startIndex);
+  const visible = new Set();
+  for (let i = 0; i < Math.min(pageSize, total); i += 1) visible.add((startIndex + i) % total);
+  cards.forEach((card, index) => card.classList.toggle('hidden-card', !visible.has(index)));
 }
 
-// ==========================================
-// SISTEMA DE NOTIFICACIONES (CON PERSISTENCIA LOCAL)
-// ==========================================
-
-function obtenerNotificacionesGuardadas() {
-    try {
-        return JSON.parse(localStorage.getItem('sgc_notificaciones')) || [];
-    } catch (e) {
-        return [];
-    }
+// ---------- Reseñas ----------
+function renderResena(item) {
+  let estrellas = '';
+  for (let i = 1; i <= 5; i++) {
+    estrellas += (i <= item.calificacion)
+      ? '<i class="fa-solid fa-star" style="color:#f39c12"></i>'
+      : '<i class="fa-regular fa-star" style="color:#ccc"></i>';
+  }
+  const inicial = item.nombreCliente ? item.nombreCliente.charAt(0).toUpperCase() : 'U';
+  return `
+    <div class="review-body" style="margin-bottom:10px;">
+      <div class="review-avatar">${inicial}</div>
+      <div class="review-content">
+        <div class="review-meta"><strong>${item.nombreCliente || 'Cliente'}</strong> <span class="stars">${estrellas}</span></div>
+        <div class="review-text">${(item.comentario || '').replace(/</g, '&lt;')}</div>
+      </div>
+    </div>`;
 }
 
-function guardarNotificacionEnStorage(titulo, mensaje) {
-    const notis = obtenerNotificacionesGuardadas();
-    notis.unshift({ titulo, mensaje, fecha: 'Justo ahora' });
-    localStorage.setItem('sgc_notificaciones', JSON.stringify(notis.slice(0, 15)));
-}
-
-function cargarNotificacionesDeStorage() {
-    const notis = obtenerNotificacionesGuardadas();
-    const list = document.getElementById('notificationList');
-    const badge = document.querySelector('.notification-badge');
-
-    if (!list) return;
-
-    if (notis.length === 0) {
-        list.innerHTML = `<div class="notification-empty" style="padding: 24px; text-align: center; color: #888; font-size: 13px;">No tienes notificaciones pendientes</div>`;
-        if (badge) badge.style.display = 'none';
-        totalNotificaciones = 0;
+function cargarResenas(idServicio) {
+  const container = document.getElementById('reviewsListContainer');
+  const ratingEl = document.getElementById('modalRating');
+  const ratingCountEl = document.getElementById('modalRatingCount');
+  if (!container) return;
+  container.innerHTML = '<div class="review-content"><div class="review-text muted">Cargando reseñas...</div></div>';
+  fetch(`${window.contextPath || ''}/obtenerResenas?idServicio=${idServicio}`)
+    .then(r => r.json())
+    .then(data => {
+      const list = data || [];
+      if (!list.length) {
+        container.innerHTML = '<div class="review-content"><div class="review-text muted">Aún no hay reseñas para este servicio.</div></div>';
+        if (ratingEl) ratingEl.innerText = '0.0';
+        if (ratingCountEl) ratingCountEl.innerText = '(0 opiniones)';
         return;
-    }
-
-    list.innerHTML = '';
-    notis.forEach(item => {
-        const itemEl = document.createElement('div');
-        itemEl.className = 'notification-item';
-        itemEl.style.padding = '12px 16px';
-        itemEl.style.borderBottom = '1px solid #f5f5f5';
-
-        itemEl.innerHTML = `
-            <div style="display:flex; align-items:flex-start; gap:10px;">
-                <i class="fa-solid fa-circle-check" style="color: #4A5D4E; font-size:16px; margin-top:2px;"></i>
-                <div style="flex:1;">
-                    <strong style="display:block; font-size:13px; color:#2c3e50; margin-bottom:2px;">${item.titulo}</strong>
-                    <span style="display:block; font-size:12px; color:#666; line-height:1.3;">${item.mensaje}</span>
-                    <small style="display:block; font-size:10px; color:#999; margin-top:4px;">${item.fecha || 'Justo ahora'}</small>
-                </div>
-            </div>
-        `;
-        list.appendChild(itemEl);
-    });
-
-    totalNotificaciones = notis.length;
-    if (badge) {
-        badge.innerText = totalNotificaciones;
-        badge.style.display = 'flex';
-    }
-}
-
-function agregarNotificacion(titulo, mensaje) {
-    guardarNotificacionEnStorage(titulo, mensaje);
-    cargarNotificacionesDeStorage();
-}
-
-// ==========================================
-// SISTEMA DE RESEÑAS (AJAX & COMPARTIMENTACIÓN POR SERVICIO)
-// ==========================================
-
-function renderizarCardResena(item) {
-    let estrellas = '';
-    for (let i = 1; i <= 5; i++) {
-        estrellas += (i <= item.calificacion)
-            ? '<i class="fa-solid fa-star" style="color:#f39c12; margin-right:2px;"></i>'
-            : '<i class="fa-regular fa-star" style="color:#ccc; margin-right:2px;"></i>';
-    }
-    const inicial = item.nombreCliente ? item.nombreCliente.charAt(0).toUpperCase() : 'U';
-
-    return `
-        <div class="review-card" style="display:flex; gap:12px; margin-bottom:12px; padding:10px; background:#f9f9f9; border-radius:8px;">
-            <div class="review-avatar" style="width:36px; height:36px; background:#5f6757; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">${inicial}</div>
-            <div class="review-content" style="flex:1;">
-                <h5 style="margin:0 0 4px 0; font-size:14px; color:#333;">${item.nombreCliente}</h5>
-                <div class="review-stars" style="font-size:12px; margin-bottom:4px;">${estrellas}</div>
-                <p class="review-text" style="margin:0; font-size:13px; color:#555; word-break:break-word;">${item.comentario || ''}</p>
-            </div>
-        </div>
-    `;
-}
-
-function cargarResenas(serviceId) {
-    const container = document.getElementById('reviewsListContainer');
-    const ratingAvgText = document.getElementById('modalRatingAvg');
-    const btnOpenAll = document.getElementById('btnOpenAllReviews');
-    const totalCountEl = document.getElementById('totalReviewsCount');
-
-    if (!container) return;
-    container.innerHTML = '<div style="font-size:13px; color:#777;">Cargando reseñas...</div>';
-
-    const basePath = window.contextPath || '';
-    fetch(`${basePath}/obtenerResenas?idServicio=${serviceId}`)
-        .then(res => res.json())
-        .then(data => {
-            resenasActuales = data || [];
-
-            if (resenasActuales.length === 0) {
-                container.innerHTML = '<p style="font-size:13px; color:#777; margin:10px 0;">Aún no hay reseñas para este servicio. ¡Sé el primero en calificar!</p>';
-                if (ratingAvgText) ratingAvgText.textContent = '0.0 (0)';
-                if (btnOpenAll) btnOpenAll.style.display = 'none';
-                return;
-            }
-
-            let totalScore = 0;
-            resenasActuales.forEach(r => totalScore += r.calificacion);
-            const promedio = (totalScore / resenasActuales.length).toFixed(1);
-
-            if (ratingAvgText) {
-                ratingAvgText.textContent = `${promedio} (${resenasActuales.length} opiniones)`;
-            }
-
-            const limitePreview = resenasActuales.slice(0, 3);
-            let htmlPreview = '';
-            limitePreview.forEach(item => {
-                htmlPreview += renderizarCardResena(item);
-            });
-            container.innerHTML = htmlPreview;
-
-            if (btnOpenAll && totalCountEl) {
-                totalCountEl.textContent = resenasActuales.length;
-                btnOpenAll.style.display = (resenasActuales.length > 3) ? 'inline-block' : 'none';
-            }
-        })
-        .catch(err => {
-            console.error("Error al cargar reseñas:", err);
-            container.innerHTML = '<p style="font-size:13px; color:red;">Error al cargar las reseñas.</p>';
-        });
-}
-
-function mostrarTodasLasResenasModal() {
-    const allContainer = document.getElementById('allReviewsListContainer');
-    const modalTitle = document.getElementById('allReviewsModalTitle');
-    const allModal = document.getElementById('allReviewsModal');
-
-    if (!allContainer) return;
-
-    if (modalTitle) modalTitle.textContent = `Reseñas: ${reservaActual.nombreServicio}`;
-
-    let htmlFull = '';
-    resenasActuales.forEach(item => {
-        htmlFull += renderizarCardResena(item);
-    });
-    allContainer.innerHTML = htmlFull;
-
-    if (allModal) {
-        allModal.style.display = 'flex';
-        allModal.classList.add('active');
-    }
-}
-
-function setRating(val) {
-    const reviewRatingInput = document.getElementById('reviewRating');
-    if (reviewRatingInput) reviewRatingInput.value = val;
-
-    const starBtns = document.querySelectorAll('#starRatingInput .star-btn');
-    starBtns.forEach(star => {
-        const starVal = parseInt(star.getAttribute('data-value'));
-        star.style.color = (starVal <= val) ? '#f39c12' : '#ddd';
+      }
+      const prom = (list.reduce((s, r) => s + r.calificacion, 0) / list.length).toFixed(1);
+      if (ratingEl) ratingEl.innerText = prom;
+      if (ratingCountEl) ratingCountEl.innerText = `(${list.length} opiniones)`;
+      container.innerHTML = list.slice(0, 3).map(renderResena).join('');
+    })
+    .catch(() => {
+      container.innerHTML = '<div class="review-content"><div class="review-text muted">No se pudieron cargar las reseñas.</div></div>';
     });
 }
 
-// ==========================================
-// FUNCIONES DE MODALES
-// ==========================================
+// ---------- Modal de servicio ----------
+function abrirModalServicio(card) {
+  reservaActual.idServicio = parseInt(card.dataset.id || '1', 10);
+  reservaActual.nombreServicio = card.dataset.title || '';
+  reservaActual.precio = parseFloat(card.dataset.price || '0');
+  reservaActual.duracion = card.dataset.duration || '01:00:00';
 
-function cerrarModal() {
-    const modal = document.getElementById('serviceModal');
-    if (modal) modal.classList.remove('active');
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+  set('modalTitle', reservaActual.nombreServicio);
+  set('modalCategory', card.dataset.category || 'Servicio');
+  set('modalDesc', card.dataset.desc || 'Tratamiento profesional adaptado a tus necesidades.');
+  set('modalDuration', card.dataset.duration || '1 h');
+  set('modalPrice', `$${reservaActual.precio} MXN`);
+  const img = document.getElementById('modalImg');
+  if (img) img.src = card.dataset.image || '';
+
+  const grid = document.getElementById('modalIncludesGrid');
+  if (grid) {
+    const parts = String(card.dataset.includes || '').split(/[,;|•]/).map(s => s.trim()).filter(Boolean);
+    grid.innerHTML = (parts.length ? parts : ['Servicio estándar']).map(p =>
+      `<div class="include-item"><i class="fa-solid fa-circle-check"></i><div>${p}</div></div>`).join('');
+  }
+
+  cargarResenas(reservaActual.idServicio);
+  document.getElementById('serviceModal')?.classList.add('active');
 }
+function cerrarModalServicio() { document.getElementById('serviceModal')?.classList.remove('active'); }
 
-function abrirModal(titulo, categoria, desc, incluye, duracion, precio, img, idServicio) {
-    const modal = document.getElementById('serviceModal');
-    if (modal) {
-        modal.dataset.serviceId = idServicio;
-        modal.classList.add('active');
-    }
-
-    const titleEl = document.getElementById('modalTitle');
-    if (titleEl) titleEl.innerText = titulo;
-
-    const descEl = document.getElementById('modalDesc');
-    if (descEl) descEl.innerText = desc;
-
-    const incContainer = document.getElementById('modalIncludes');
-    if (incContainer) {
-        incContainer.innerHTML = '';
-        const items = incluye ? incluye.split(',') : [];
-        items.forEach(item => {
-            if (item.trim() !== '') {
-                const div = document.createElement('div');
-                div.className = 'include-item';
-                div.innerText = item.trim();
-                incContainer.appendChild(div);
-            }
-        });
-        if (incContainer.innerHTML === '') {
-            incContainer.innerHTML = '<div class="include-item">Servicio estándar</div>';
-        }
-    }
-
-    const durEl = document.getElementById('modalDuration');
-    if (durEl) durEl.innerText = duracion;
-
-    document.body.dataset.currentPrice = precio;
-
-    const priceEl = document.getElementById('modalPrice');
-    if (priceEl) priceEl.innerText = `$${precio} MXN`;
-
-    const imgEl = document.getElementById('modalImg');
-    if (imgEl) imgEl.src = img;
-
-    if (idServicio) {
-        cargarResenas(idServicio);
-    }
-}
-
+// ---------- Modal de agendado ----------
 function abrirModalAgendamiento() {
-    cerrarModal();
-    const calendarModal = document.getElementById('calendarModal');
-    if (calendarModal) calendarModal.classList.add('active');
+  document.getElementById('bookingServiceName').innerText = reservaActual.nombreServicio;
+  document.getElementById('bookingPrice').innerText = `$${reservaActual.precio} MXN`;
+
+  const confirmationSuccess = document.getElementById('confirmationSuccess');
+  if (confirmationSuccess) confirmationSuccess.hidden = true;
+
+  setupBookingCalendar();
+  cerrarModalServicio();
+  document.getElementById('bookingModal')?.classList.add('active');
+}
+function volverAModalServicio() {
+  document.getElementById('bookingModal')?.classList.remove('active');
+  document.getElementById('serviceModal')?.classList.add('active');
 }
 
-function volverAModalServicio() {
-    const calendarModal = document.getElementById('calendarModal');
-    const serviceModal = document.getElementById('serviceModal');
-    if (calendarModal) calendarModal.classList.remove('active');
-    if (serviceModal) serviceModal.classList.add('active');
+// ---------- Confirmación / registro ----------
+function prepararConfirmacion() {
+  if (!selectedBookingTime) {
+    alert('Selecciona una fecha y una hora antes de continuar.');
+    return false;
+  }
+  const especialista = document.getElementById('bookingSpecialistSelect');
+  reservaActual.idEmpleado = parseInt(especialista?.value || '1', 10) || 1;
+  const especialistaTexto = especialista ? especialista.options[especialista.selectedIndex].text : 'Cualquiera. Mejor disponible';
+  const dateText = selectedBookingDate.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
+  set('confirmationService', reservaActual.nombreServicio || 'Servicio');
+  set('confirmationSpecialist', especialistaTexto);
+  set('confirmationDate', dateText);
+  set('confirmationTime', selectedBookingTime);
+
+  document.getElementById('bookingModal')?.classList.remove('active');
+  document.getElementById('confirmationModal')?.classList.add('active');
+  return true;
+}
+
+async function registrarCita() {
+  const btn = document.querySelector('.confirmation-primary');
+  if (btn) { btn.disabled = true; btn.innerText = 'Procesando...'; }
+
+  const params = new URLSearchParams();
+  params.append('idServicio', reservaActual.idServicio);
+  params.append('idEmpleado', reservaActual.idEmpleado || 1);
+  params.append('fecha', localDateIso(selectedBookingDate));
+  params.append('hora', timeTo24h(selectedBookingTime));
+  params.append('monto', reservaActual.precio);
+  params.append('duracion', reservaActual.duracion || '01:00:00');
+  params.append('metodoPago', reservaActual.metodoPago);
+
+  try {
+    const res = await fetch(`${window.contextPath || ''}/agendarCitaServlet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+      body: params.toString()
+    });
+    const data = await res.json();
+    if (res.ok && data.status === 'success') {
+      document.getElementById('confirmationTitle').style.display = 'none';
+      document.querySelector('.confirmation-details').style.display = 'none';
+      document.querySelector('.confirmation-primary').style.display = 'none';
+      document.querySelector('.confirmation-secondary').style.display = 'none';
+      const success = document.getElementById('confirmationSuccess');
+      if (success) success.hidden = false;
+    } else {
+      alert(`Error: ${data.message || 'No se pudo registrar la cita'}`);
+    }
+  } catch (e) {
+    console.error('Error al agendar:', e);
+    alert('Ocurrió un error de red al intentar agendar la cita.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerText = 'Confirmar cita'; }
+  }
 }
 
 function volverAlCatalogo() {
-    const modals = document.querySelectorAll('.modal-backdrop');
-    modals.forEach(m => {
-        m.classList.remove('active');
-        m.style.display = 'none';
-    });
+  document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('active'));
+  // Restaurar la vista de confirmación por si se reabre
+  const restore = (sel) => { const el = document.querySelector(sel); if (el) el.style.display = ''; };
+  restore('#confirmationTitle');
+  restore('.confirmation-details');
+  restore('.confirmation-primary');
+  restore('.confirmation-secondary');
+  const success = document.getElementById('confirmationSuccess');
+  if (success) success.hidden = true;
 }
 
-// ==========================================
-// INICIALIZACIÓN
-// ==========================================
-
+// ---------- Init + delegación ----------
 document.addEventListener('DOMContentLoaded', () => {
-    // Cargar notificaciones almacenadas
-    cargarNotificacionesDeStorage();
-
-    const catalogGrid = document.querySelector('.services-grid');
-    if (catalogGrid) catalogGrid.style.gridTemplateColumns = 'repeat(3, minmax(210px, 1fr))';
-
-    const reviewComment = document.getElementById('reviewComment');
-    const charCount = document.getElementById('charCount');
-    if (reviewComment && charCount) {
-        reviewComment.addEventListener('input', function() {
-            charCount.textContent = `${this.value.length} / 4000`;
-        });
-    }
-
-    const formAddReview = document.getElementById('formAddReview');
-    if (formAddReview) {
-        formAddReview.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const params = new URLSearchParams(new FormData(formAddReview));
-            const basePath = window.contextPath || '';
-
-            fetch(`${basePath}/guardarResena`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-                body: params
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        const addReviewModal = document.getElementById('addReviewModal');
-                        if (addReviewModal) {
-                            addReviewModal.style.display = 'none';
-                            addReviewModal.classList.remove('active');
-                        }
-                        const serviceModal = document.getElementById('serviceModal');
-                        const activeServiceId = serviceModal ? serviceModal.dataset.serviceId : null;
-                        if (activeServiceId) cargarResenas(activeServiceId);
-                    } else {
-                        alert('Error: ' + data.message);
-                    }
-                })
-                .catch(err => {
-                    console.error("Error al guardar reseña:", err);
-                    alert('No se pudo procesar la solicitud.');
-                });
-        });
-    }
+  const cards = document.querySelectorAll('.service-card');
+  if (cards.length) {
+    document.body.dataset.catalogStart = '0';
+    cards.forEach((card, index) => card.classList.toggle('hidden-card', index >= 6));
+  }
 });
-
-// ==========================================
-// LISTENER GLOBAL DE EVENTOS
-// ==========================================
 
 document.addEventListener('click', (e) => {
-    const target = e.target;
-    const panel = document.getElementById('notificationPanel');
+  const target = e.target;
 
-    if (target.closest('[data-notification-toggle]') || target.closest('.btn-notification')) {
-        e.stopPropagation();
-        if (panel) {
-            panel.classList.toggle('active');
-            if (panel.classList.contains('active')) {
-                totalNotificaciones = 0;
-                const badge = document.querySelector('.notification-badge');
-                if (badge) badge.style.display = 'none';
-            }
-        }
-        return;
+  // Notificaciones
+  if (target.closest('[data-notification-toggle]')) {
+    document.getElementById('notificationPanel')?.classList.toggle('active');
+    return;
+  }
+
+  // Perfil
+  if (target.closest('.user-profile') || target.closest('.nav-profile-link') || target.closest('#sidebarUserAvatar')) {
+    window.location.href = `${window.contextPath || ''}/PerfilServlet`;
+    return;
+  }
+
+  if (target.closest('#menuOverlay')) { cerrarMenu(); return; }
+  if (target.closest('.menu-btn')) { abrirMenu(); return; }
+  if (target.closest('.sidebar-logout')) { window.location.href = (window.contextPath || '') + '/logout'; return; }
+
+  if (target.closest('.catalog-nav-btn')) {
+    cambiarCatalogo(target.closest('.catalog-nav-btn').dataset.direction || 'next');
+    return;
+  }
+
+  // Tarjeta de servicio
+  const card = target.closest('.service-card');
+  if (card) { e.stopPropagation(); abrirModalServicio(card); return; }
+
+  // Modal de servicio: cerrar
+  const serviceModal = document.getElementById('serviceModal');
+  if (target === serviceModal) { cerrarModalServicio(); return; }
+  if (target.closest('.modal-close') && !target.closest('.modal-back')) { cerrarModalServicio(); return; }
+
+  // Agendar
+  if (target.closest('.btn-agendar')) { abrirModalAgendamiento(); return; }
+  if (target.closest('.modal-back')) { volverAModalServicio(); return; }
+
+  // Interacciones dentro del modal de agendado
+  const bookingModal = document.getElementById('bookingModal');
+  if (target === bookingModal) { bookingModal.classList.remove('active'); return; }
+  if (bookingModal && bookingModal.contains(target)) {
+    const dateBtn = target.closest('.calendar-date');
+    if (dateBtn) {
+      if (dateBtn.classList.contains('calendar-disabled')) return;
+      syncBookingDate(new Date(`${dateBtn.dataset.isoDate}T00:00:00`));
+      return;
     }
-
-    if (panel && panel.classList.contains('active') && !target.closest('#notificationPanel')) {
-        panel.classList.remove('active');
+    const timeBtn = target.closest('.time-btn');
+    if (timeBtn) {
+      if (timeBtn.classList.contains('unavailable')) return;
+      if (timeBtn.dataset.dateIso) {
+        selectedBookingDate = new Date(`${timeBtn.dataset.dateIso}T00:00:00`);
+        bookingCalendarMonth = new Date(selectedBookingDate.getFullYear(), selectedBookingDate.getMonth(), 1);
+        renderSmallBookingCalendar();
+      }
+      selectedBookingTime = timeBtn.dataset.time;
+      renderBookingSchedule();
+      return;
     }
-
-    if (target.closest('.user-profile') || target.closest('.nav-profile-link') || target.closest('#sidebarUserAvatar')) {
-        window.location.href = `${window.contextPath || ''}/PerfilServlet`;
-        return;
+    if (target.closest('.schedule-arrow')) {
+      const dir = target.closest('.schedule-arrow').getAttribute('aria-label') === 'Semana siguiente' ? 7 : -7;
+      const next = new Date(selectedBookingDate);
+      next.setDate(next.getDate() + dir);
+      if (next < getMinimumBookingDate()) next.setTime(getMinimumBookingDate().getTime());
+      syncBookingDate(next);
+      return;
     }
-
-    if (target.closest('#menuOverlay') || target.closest('.close-btn')) { cerrarMenu(); return; }
-    if (target.closest('.menu-btn')) { abrirMenu(); return; }
-    if (target.closest('.catalog-nav-btn')) {
-        const btn = target.closest('.catalog-nav-btn');
-        cambiarCatalogo(btn.dataset.direction || 'next');
-        return;
+    if (target.closest('.schedule-today')) { syncBookingDate(getMinimumBookingDate()); return; }
+    if (target.closest('.calendar-today')) { syncBookingDate(getMinimumBookingDate()); return; }
+    if (target.closest('.calendar-nav')) {
+      const dir = target.closest('.calendar-nav').getAttribute('aria-label') === 'Mes siguiente' ? 1 : -1;
+      const currentMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const monthDate = new Date(bookingCalendarMonth);
+      monthDate.setMonth(monthDate.getMonth() + dir);
+      if (monthDate < currentMonth) return;
+      bookingCalendarMonth = monthDate;
+      renderSmallBookingCalendar();
+      return;
     }
-    if (target.closest('.sidebar-logout')) {
-        window.location.href = (window.contextPath || '') + '/logout';
-        return;
-    }
+    if (target.closest('.promo-catalog-btn')) { bookingModal.classList.remove('active'); return; }
+    if (target.closest('.btn-pay')) { prepararConfirmacion(); return; }
+  }
 
-    // Tarjeta del catálogo -> Abrir detalles
-    const card = target.closest('.service-card');
-    if (card && (target.closest('.btn-book') || target === card || target.closest('.service-card'))) {
-        e.stopPropagation();
-
-        const cardServiceId = parseInt(card.dataset.id || '1');
-        reservaActual.idServicio = cardServiceId;
-        reservaActual.nombreServicio = card.dataset.title || '';
-        reservaActual.precio = parseFloat(card.dataset.price || '0');
-        reservaActual.duracion = card.dataset.duration || '60 min';
-
-        abrirModal(
-            reservaActual.nombreServicio,
-            card.dataset.category || '',
-            card.dataset.desc || '',
-            card.dataset.includes || '',
-            reservaActual.duracion,
-            reservaActual.precio,
-            card.dataset.image || '',
-            cardServiceId
-        );
-        return;
-    }
-
-    // Botón "Ver todas las reseñas"
-    if (target.closest('#btnOpenAllReviews')) {
-        e.stopPropagation();
-        mostrarTodasLasResenasModal();
-        return;
-    }
-
-    // Cerrar modal de todas las reseñas
-    if (target.closest('#btnCloseAllReviews')) {
-        const allModal = document.getElementById('allReviewsModal');
-        if (allModal) {
-            allModal.style.display = 'none';
-            allModal.classList.remove('active');
-        }
-        return;
-    }
-
-    // Abrir "Añadir Reseña"
-    if (target.closest('#btnOpenAddReview') || target.closest('#btnOpenAddReviewFromAll')) {
-        e.stopPropagation();
-        const serviceModal = document.getElementById('serviceModal');
-        const activeServiceId = serviceModal ? serviceModal.dataset.serviceId : reservaActual.idServicio;
-
-        if (!activeServiceId) {
-            alert("No se pudo identificar el servicio activo.");
-            return;
-        }
-
-        const reviewServiceIdInput = document.getElementById('reviewServiceId');
-        const reviewComment = document.getElementById('reviewComment');
-        const charCount = document.getElementById('charCount');
-        const addReviewModal = document.getElementById('addReviewModal');
-
-        if (reviewServiceIdInput) reviewServiceIdInput.value = activeServiceId;
-        if (reviewComment) reviewComment.value = '';
-        setRating(5);
-        if (charCount) charCount.textContent = '0 / 4000';
-
-        if (addReviewModal) {
-            addReviewModal.style.display = 'flex';
-            addReviewModal.classList.add('active');
-        }
-        return;
-    }
-
-    // Cerrar modal de añadir reseña
-    if (target.closest('#btnCloseAddReview')) {
-        const addReviewModal = document.getElementById('addReviewModal');
-        if (addReviewModal) {
-            addReviewModal.style.display = 'none';
-            addReviewModal.classList.remove('active');
-        }
-        return;
-    }
-
-    // Selección de estrellas
-    if (target.closest('#starRatingInput .star-btn')) {
-        const star = target.closest('.star-btn');
-        const val = parseInt(star.getAttribute('data-value'));
-        setRating(val);
-        return;
-    }
-
-    if (target.closest('#serviceModal') && e.target.id === 'serviceModal') { cerrarModal(); return; }
-    if (target.closest('.modal-close') && !target.closest('.modal-back-calendar')) { cerrarModal(); return; }
-
-    if (target.closest('.btn-agendar')) { abrirModalAgendamiento(); return; }
-    if (target.closest('.modal-back-calendar')) { volverAModalServicio(); return; }
-
-    if (target.closest('.mini-cal-date')) {
-        const dateElement = target.closest('.mini-cal-date');
-        document.querySelectorAll('.mini-cal-date').forEach(el => el.classList.remove('active'));
-        dateElement.classList.add('active');
-
-        const dayNumber = dateElement.innerText.padStart(2, '0');
-        reservaActual.fecha = `2026-08-${dayNumber}`;
-        return;
-    }
-
-    if (target.closest('#btnVerCatalogo')) {
-        const calendarModal = document.getElementById('calendarModal');
-        if (calendarModal) calendarModal.classList.remove('active');
-        return;
-    }
-
-    const slotBlanco = target.closest('.slot-white');
-    if (slotBlanco) {
-        const timeText = slotBlanco.querySelector('strong') ? slotBlanco.querySelector('strong').innerText : '14:00 PM';
-        const horaExacta = slotBlanco.getAttribute('data-hora') || '14:00:00';
-
-        const selectEspecialista = document.querySelector('.specialist-select');
-        const specialistText = selectEspecialista ? selectEspecialista.value : 'Ana Torres';
-
-        reservaActual.hora = horaExacta;
-        reservaActual.nombreEmpleado = specialistText;
-
-        const activeDateEl = document.querySelector('.mini-cal-date.active');
-        const dayNumber = activeDateEl ? activeDateEl.innerText : '09';
-        const dateText = `${dayNumber} de Agosto, 2026`;
-
-        if (document.getElementById('confirmServiceName')) document.getElementById('confirmServiceName').innerText = reservaActual.nombreServicio || 'Servicio Estético';
-        if (document.getElementById('confirmSpecialist')) document.getElementById('confirmSpecialist').innerText = specialistText;
-        if (document.getElementById('confirmTime')) document.getElementById('confirmTime').innerText = timeText;
-        if (document.getElementById('confirmDate')) document.getElementById('confirmDate').innerText = dateText;
-
-        const calendarModal = document.getElementById('calendarModal');
-        if (calendarModal) calendarModal.classList.remove('active');
-        const newApptModal = document.getElementById('newAppointmentModal');
-        if (newApptModal) newApptModal.classList.add('active');
-        return;
-    }
-
-    if (target.closest('#btnGoBackAppt')) {
-        const newApptModal = document.getElementById('newAppointmentModal');
-        if (newApptModal) newApptModal.classList.remove('active');
-        const calendarModal = document.getElementById('calendarModal');
-        if (calendarModal) calendarModal.classList.add('active');
-        return;
-    }
-
-    if (target.closest('#btnProceedPay')) {
-        const basePrice = reservaActual.precio || 500;
-
-        if (document.getElementById('payServiceName')) document.getElementById('payServiceName').innerText = reservaActual.nombreServicio;
-        if (document.getElementById('paySpecialist')) document.getElementById('paySpecialist').innerText = reservaActual.nombreEmpleado;
-        if (document.getElementById('payDateTime')) document.getElementById('payDateTime').innerText = reservaActual.fecha;
-        if (document.getElementById('paySubtotal')) document.getElementById('paySubtotal').innerText = `$${basePrice} MXN`;
-        if (document.getElementById('payTotal')) document.getElementById('payTotal').innerText = `$${basePrice} MXN`;
-
-        const newApptModal = document.getElementById('newAppointmentModal');
-        if (newApptModal) newApptModal.classList.remove('active');
-        const paymentModal = document.getElementById('paymentModal');
-        if (paymentModal) paymentModal.classList.add('active');
-        return;
-    }
-
-    if (target.closest('.payment-option')) {
-        const option = target.closest('.payment-option');
-        document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('active'));
-        option.classList.add('active');
-
-        const metodoText = option.querySelector('.payment-info strong') ? option.querySelector('.payment-info strong').innerText : 'Efectivo';
-        reservaActual.metodoPago = metodoText;
-        return;
-    }
-
-    if (target.closest('#btnGoBackPayment')) {
-        const paymentModal = document.getElementById('paymentModal');
-        if (paymentModal) paymentModal.classList.remove('active');
-        const newApptModal = document.getElementById('newAppointmentModal');
-        if (newApptModal) newApptModal.classList.add('active');
-        return;
-    }
-
-    if (target.closest('#btnConfirmFinal')) {
-        e.preventDefault();
-        registrarCitaEnServidor();
-        return;
-    }
-
-    if (target.closest('#confirmationModal') && target.closest('.btn-confirm')) {
-        volverAlCatalogo();
-        return;
-    }
+  // Modal de confirmación
+  const confirmationModal = document.getElementById('confirmationModal');
+  if (target === confirmationModal) { confirmationModal.classList.remove('active'); return; }
+  if (target.closest('.return-to-catalog')) { volverAlCatalogo(); return; }
+  if (target.closest('.confirmation-secondary')) {
+    confirmationModal.classList.remove('active');
+    document.getElementById('bookingModal')?.classList.add('active');
+    renderBookingSchedule();
+    return;
+  }
+  if (target.closest('.confirmation-primary')) { registrarCita(); return; }
 });
-
-async function registrarCitaEnServidor() {
-    const btnConfirmFinal = document.getElementById('btnConfirmFinal');
-    if (btnConfirmFinal) {
-        btnConfirmFinal.disabled = true;
-        btnConfirmFinal.innerText = 'Procesando...';
-    }
-
-    const params = new URLSearchParams();
-    params.append('idServicio', reservaActual.idServicio);
-    params.append('idEmpleado', reservaActual.idEmpleado);
-    params.append('fecha', reservaActual.fecha);
-    params.append('hora', reservaActual.hora);
-    params.append('monto', reservaActual.precio);
-    params.append('duracion', reservaActual.duracion || '01:00:00');
-    params.append('metodoPago', reservaActual.metodoPago);
-
-    try {
-        const response = await fetch(`${window.contextPath || ''}/agendarCitaServlet`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-            body: params.toString()
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.status === 'success') {
-            const paymentModal = document.getElementById('paymentModal');
-            if (paymentModal) paymentModal.classList.remove('active');
-
-            agregarNotificacion(
-                '¡Cita Agendada con Éxito!',
-                `Servicio: ${reservaActual.nombreServicio} el ${reservaActual.fecha} a las ${reservaActual.hora}.`
-            );
-
-            const confirmationModal = document.getElementById('confirmationModal');
-            if (confirmationModal) confirmationModal.classList.add('active');
-        } else {
-            alert(`Error: ${data.message || 'No se pudo registrar la cita'}`);
-        }
-    } catch (error) {
-        console.error('Error al conectar con la base de datos:', error);
-        alert('Ocurrió un error de red al intentar agendar la cita.');
-    } finally {
-        if (btnConfirmFinal) {
-            btnConfirmFinal.disabled = false;
-            btnConfirmFinal.innerText = 'Confirmar cita';
-        }
-    }
-}

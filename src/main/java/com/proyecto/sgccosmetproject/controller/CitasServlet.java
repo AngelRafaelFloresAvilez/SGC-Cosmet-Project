@@ -73,10 +73,12 @@ public class CitasServlet extends HttpServlet {
 
         // Mapeo exacto según tu esquema Oracle: id_cliente, s.nombre, costo_pactado, estado_cita
         String sql = "SELECT c.id_cita, "
+                + "c.id_servicio, "
                 + "NVL(s.nombre, 'Servicio Estetico') AS servicio, "
                 + "TO_CHAR(c.fecha, 'DD/MM/YYYY') AS fecha, "
                 + "c.hora, "
                 + "c.costo_pactado AS costo, "
+                + "c.duracion_pactada AS duracion, "
                 + "c.estado_cita AS estado "
                 + "FROM citas c "
                 + "LEFT JOIN servicios s ON c.id_servicio = s.id_servicio "
@@ -95,18 +97,22 @@ public class CitasServlet extends HttpServlet {
                     if (!primero) json.append(",");
 
                     int id = rs.getInt("id_cita");
+                    int idServicio = rs.getInt("id_servicio");
                     String servicio = escapeJson(rs.getString("servicio"));
                     String fecha = escapeJson(rs.getString("fecha"));
                     String hora = escapeJson(rs.getString("hora"));
                     double costo = rs.getDouble("costo");
+                    String duracion = rs.getString("duracion") != null ? escapeJson(rs.getString("duracion")) : "";
                     String estado = escapeJson(rs.getString("estado"));
 
                     json.append("{")
                             .append("\"id\":").append(id).append(",")
+                            .append("\"idServicio\":").append(idServicio).append(",")
                             .append("\"servicio\":\"").append(servicio).append("\",")
                             .append("\"fecha\":\"").append(fecha).append("\",")
                             .append("\"hora\":\"").append(hora).append("\",")
                             .append("\"precio\":\"$").append(String.format("%.2f", costo)).append(" MXN\",")
+                            .append("\"duracion\":\"").append(duracion).append("\",")
                             .append("\"estado\":\"").append(estado).append("\"")
                             .append("}");
 

@@ -1,71 +1,58 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<c:set var="tituloPagina" value="Configuracion - SGC Cosmetic" scope="request" />
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
+<c:set var="u" value="${sessionScope.usuarioSesion}" />
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <jsp:include page="/WEB-INF/vistas/includes/head.jsp" />
-    <link rel="stylesheet" href="${ctx}/assets/css/admin.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuracion - SGC Cosmetic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="${ctx}/assets/css/stylesAdmin.css">
 </head>
-<body>
+<body data-admin-page="configuracion">
+  <jsp:include page="/WEB-INF/administrador/includes/shell.jsp" />
 
-<jsp:include page="/WEB-INF/vistas/admin/includes/sidebar.jsp" />
+  <div class="main-wrapper">
+    <section class="page-head">
+      <div><h1>Configuracion</h1><p>Datos de tu cuenta y reglas generales del sistema</p></div>
+    </section>
 
-<div class="sgc-app-shell">
-    <jsp:include page="/WEB-INF/vistas/admin/includes/topbar.jsp" />
+    <section class="config-grid">
+      <article class="panel">
+        <div class="panel-head"><span class="panel-title">Mi cuenta</span></div>
+        <div class="config-row"><div><b>Nombre</b><small><c:out value="${u.nombreCompleto}" /></small></div></div>
+        <div class="config-row"><div><b>Correo</b><small><c:out value="${u.correo}" /></small></div></div>
+        <div class="config-row"><div><b>Telefono</b><small><c:out value="${not empty u.telefono ? u.telefono : '—'}" /></small></div></div>
+        <div class="config-row"><div><b>Rol</b><small>Administrador</small></div></div>
+      </article>
 
-    <main class="sgc-contenido flex-grow-1">
-        <jsp:include page="/WEB-INF/vistas/includes/alertas.jsp" />
+      <article class="panel">
+        <div class="panel-head"><span class="panel-title">Reglas de inasistencias</span></div>
+        <div class="config-row"><div><b>Faltas para vetar automaticamente</b><small>Al alcanzar este numero el cliente queda vetado</small></div><span class="tag tag-neutral">3</span></div>
+        <div class="config-row"><div><b>Clientes vetados</b><small>Actualmente sin poder agendar</small></div><span class="tag tag-danger">${not empty ruleBanned ? ruleBanned : 0}</span></div>
+      </article>
 
-        <div class="sgc-encabezado-hero mb-3">
-            <h1 class="fuente-titulo mb-0">Configuracion</h1>
-        </div>
+      <article class="panel">
+        <div class="panel-head"><span class="panel-title">Resumen del sistema</span></div>
+        <div class="config-row"><div><b>Clientes registrados</b></div><span>${sumClients}</span></div>
+        <div class="config-row"><div><b>Especialistas</b></div><span>${sumSpecialists}</span></div>
+        <div class="config-row"><div><b>Servicios en catalogo</b></div><span>${sumServices}</span></div>
+        <div class="config-row"><div><b>Promociones</b></div><span>${sumPromos}</span></div>
+        <div class="config-row"><div><b>Citas totales</b></div><span>${sumAppointments}</span></div>
+      </article>
 
-        <div class="row g-3">
-            <div class="col-lg-6">
-                <div class="sgc-card p-4">
-                    <h2 class="h6 mb-1">Cuenta de administrador</h2>
-                    <p class="text-muted small mb-3">Correo de acceso: <c:out value="${correoAdmin}" /></p>
-
-                    <form method="post" action="${ctx}/admin/configuracion">
-                        <label class="form-label-sgc">Contrasena actual</label>
-                        <input type="password" name="contrasenaActual" class="form-control mb-3" required>
-
-                        <label class="form-label-sgc">Nueva contrasena</label>
-                        <input type="password" name="contrasenaNueva" class="form-control mb-3" required>
-
-                        <label class="form-label-sgc">Confirmar nueva contrasena</label>
-                        <input type="password" name="confirmarContrasena" class="form-control mb-3" required>
-
-                        <button type="submit" class="btn btn-sgc w-100">Actualizar contrasena</button>
-                    </form>
-                </div>
-            </div>
-
-            <div class="col-lg-6">
-                <div class="sgc-card p-4">
-                    <h2 class="h6 mb-1">Informacion del negocio</h2>
-                    <p class="text-muted small mb-3">Estos datos aparecen en la landing publica y en el pie de pagina.</p>
-                    <dl class="row mb-0">
-                        <dt class="col-5 text-muted fw-normal">Nombre</dt>
-                        <dd class="col-7">SGC Cosmetic</dd>
-                        <dt class="col-5 text-muted fw-normal">Correo</dt>
-                        <dd class="col-7">contacto@sgccosmetic.com</dd>
-                        <dt class="col-5 text-muted fw-normal">Telefono</dt>
-                        <dd class="col-7">+52 567 850 4567</dd>
-                    </dl>
-                    <p class="small text-muted mt-3 mb-0">
-                        La edicion de estos datos generales todavia no esta disponible; se agregara cuando
-                        se comparta el diseno correspondiente.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </main>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="${ctx}/assets/js/app.js"></script>
+      <article class="panel">
+        <div class="panel-head"><span class="panel-title">Accesos rapidos</span></div>
+        <div class="config-row"><div><b>Horario de atencion</b><small>Define los dias y horas del negocio</small></div><a class="btn-ghost" href="${ctx}/admin/horarios">Abrir</a></div>
+        <div class="config-row"><div><b>Catalogo de servicios</b><small>Lo que ven los clientes al agendar</small></div><a class="btn-ghost" href="${ctx}/admin/servicios">Abrir</a></div>
+        <div class="config-row"><div><b>Reportes</b><small>Rendimiento e ingresos</small></div><a class="btn-ghost" href="${ctx}/admin/reportes">Abrir</a></div>
+      </article>
+    </section>
+  </div>
 </body>
 </html>

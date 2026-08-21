@@ -1,247 +1,121 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<c:set var="tituloPagina" value="Gestion de empleados - SGC Cosmetic" scope="request" />
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <jsp:include page="/WEB-INF/vistas_admin/includes/head.jsp" />
-    <link rel="stylesheet" href="${ctx}/assets/css/admin.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion de empleados - SGC Cosmetic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="${ctx}/assets/css/stylesAdmin.css">
 </head>
-<body>
+<body data-admin-page="empleados">
+  <jsp:include page="/WEB-INF/administrador/includes/shell.jsp" />
 
-<jsp:include page="/WEB-INF/vistas_admin/includes/sidebar.jsp" />
+  <div class="main-wrapper">
+    <section class="page-head">
+      <div><h1>Gestion de empleados</h1></div>
+      <button class="btn-primary" type="button" onclick="abrirEmpleado()">+ Nuevo empleado</button>
+    </section>
 
-<div class="sgc-app-shell">
-    <jsp:include page="/WEB-INF/vistas_admin/includes/topbar.jsp" />
+    <section class="stat-row cols-4">
+      <article class="stat-icon tone-grey"><i class="fa-solid fa-users"></i><div><strong>${totalEmpleados}</strong><small>Empleados registrados<span class="stat-sub">Total en el sistema</span></small></div></article>
+      <article class="stat-icon"><i class="fa-regular fa-user"></i><div><strong>${empleadosActivos}</strong><small>Empleados activos<span class="stat-sub">Actualmente trabajando</span></small></div></article>
+      <article class="stat-icon tone-red"><i class="fa-regular fa-calendar"></i><div><strong>${totalPaginas}</strong><small>Páginas<span class="stat-sub">De resultados</span></small></div></article>
+      <article class="stat-icon tone-purple"><i class="fa-regular fa-clock"></i><div><strong>8 hrs</strong><small>Jornada laboral<span class="stat-sub">Horas por día</span></small></div></article>
+    </section>
 
-    <main class="sgc-contenido flex-grow-1">
-        <jsp:include page="/WEB-INF/vistas_admin/includes/alertas.jsp" />
+    <form class="toolbar" method="get" action="${ctx}/admin/empleados">
+      <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="search" name="q" value="<c:out value='${busqueda}'/>" placeholder="Buscar empleado..."></div>
+      <button class="btn-primary" type="submit">Buscar</button>
+    </form>
 
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-            <div class="sgc-encabezado-hero mb-0">
-                <h1 class="fuente-titulo mb-0">Gestion de empleados</h1>
-            </div>
-            <button type="button" class="btn btn-sgc" onclick="AdminEmpleados.abrirNuevo()">
-                <i class="bi bi-plus-lg"></i> Nuevo empleado
-            </button>
-        </div>
-
-        <div class="row g-3 mb-3">
-            <div class="col-6 col-lg-3">
-                <div class="sgc-card sgc-stat-admin h-100">
-                    <span class="icono icono-gris"><i class="bi bi-people"></i></span>
-                    <div><div class="valor"><c:out value="${totalEmpleados}" /></div><div class="etiqueta">Empleados registrados</div><div class="subetiqueta">Total en el sistema</div></div>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="sgc-card sgc-stat-admin h-100">
-                    <span class="icono icono-verde"><i class="bi bi-person"></i></span>
-                    <div><div class="valor"><c:out value="${empleadosActivos}" /></div><div class="etiqueta">Empleados activos</div><div class="subetiqueta">Actualmente trabajando</div></div>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="sgc-card sgc-stat-admin h-100">
-                    <span class="icono icono-rojo"><i class="bi bi-calendar-x"></i></span>
-                    <div><div class="valor">2</div><div class="etiqueta">Dias no laborales</div><div class="subetiqueta">Configurados</div></div>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="sgc-card sgc-stat-admin h-100">
-                    <span class="icono icono-morado"><i class="bi bi-clock"></i></span>
-                    <div><div class="valor">9 hrs</div><div class="etiqueta">Jornada laboral</div><div class="subetiqueta">Horas por dia</div></div>
-                </div>
-            </div>
-        </div>
-
-        <form method="get" action="${ctx}/admin/empleados" class="sgc-buscador mb-3">
-            <i class="bi bi-search"></i>
-            <input type="text" name="q" placeholder="Buscar empleado..." value="${busqueda}">
-        </form>
-
-        <div class="sgc-card">
-            <div class="table-responsive">
-                <table class="sgc-tabla-admin">
-                    <thead>
-                    <tr><th>Empleado</th><th>Especialidad</th><th>Horario laboral</th><th>Dias no laborales</th><th>Estado</th><th>Acciones</th></tr>
-                    </thead>
-                    <tbody>
-                    <c:forEach var="e" items="${empleados}">
-                        <tr>
-                            <td>
-                                <div class="sgc-nombre-fila">
-                                    <div class="sgc-avatar-tabla"></div>
-                                    <div>
-                                        <div class="fw-semibold"><c:out value="${e.nombreCompleto}" /></div>
-                                        <div class="small text-muted"><c:out value="${e.correo}" /></div>
-                                        <div class="small text-muted"><c:out value="${e.telefono}" /></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><c:out value="${e.especialidad}" /></td>
-                            <td><c:out value="${e.horarioResumen}" /><br><span class="small text-muted"><c:out value="${e.rangoDiasLaborales}" /></span></td>
-                            <td class="small"><c:out value="${e.diasNoLaboralesTexto}" /></td>
-                            <td>
-                                <span class="badge-estado ${e.activo ? 'badge-confirmada' : 'badge-cancelada'}"><c:out value="${e.activo ? 'Activo' : 'Inactivo'}" /></span>
-                            </td>
-                            <td>
-                                <div class="d-flex gap-1">
-                                    <button type="button" class="sgc-btn-editar" title="Editar"
-                                            data-id="${e.idEmpleado}" data-nombre="${e.nombreCompleto}"
-                                            data-correo="${e.correo}" data-telefono="${e.telefono}"
-                                            data-especialidad="${e.especialidad}">
-                                        <i class="bi bi-pen"></i>
-                                    </button>
-                                    <form method="post" action="${ctx}/admin/empleados/estado" class="d-inline">
-                                        <input type="hidden" name="id" value="${e.idEmpleado}">
-                                        <input type="hidden" name="accion" value="${e.activo ? 'desactivar' : 'activar'}">
-                                        <button type="submit" class="sgc-btn-editar" title="${e.activo ? 'Desactivar' : 'Activar'}">
-                                            <i class="bi ${e.activo ? 'bi-toggle-on' : 'bi-toggle-off'}"></i>
-                                        </button>
-                                    </form>
-                                    <form method="post" action="${ctx}/admin/empleados/estado" onsubmit="return confirm('¿Eliminar este empleado?');">
-                                        <input type="hidden" name="id" value="${e.idEmpleado}">
-                                        <input type="hidden" name="accion" value="eliminar">
-                                        <button type="submit" class="sgc-btn-eliminar" title="Eliminar"><i class="bi bi-trash"></i></button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    </c:forEach>
-                    <c:if test="${empty empleados}">
-                        <tr><td colspan="6" class="text-center text-muted py-4">No se encontraron empleados.</td></tr>
-                    </c:if>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <jsp:include page="/WEB-INF/vistas_admin/includes/paginador.jsp">
-            <jsp:param name="rutaBase" value="/admin/empleados" />
-        </jsp:include>
-    </main>
-</div>
-
-<!-- Modal: Nuevo / Editar empleado -->
-<div class="modal fade" id="modalEmpleado" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content sgc-modal-content">
-            <div class="modal-header">
-                <div>
-                    <h3 class="fuente-titulo h5 mb-1" id="tituloModalEmpleado">Nuevo empleado</h3>
-                    <p class="text-muted small mb-0">Agrega un miembro nuevo al equipo.</p>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body">
-                <form method="post" action="${ctx}/admin/empleados/guardar" id="formEmpleado">
-                    <input type="hidden" name="id" id="empleadoId">
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <label class="form-label-sgc">Nombre completo</label>
-                            <input type="text" name="nombre" id="empleadoNombre" class="form-control mb-3" placeholder="Ej. Ana Torres" required>
-                        </div>
-                        <div class="col-sm-6">
-                            <label class="form-label-sgc">Especialidad</label>
-                            <select name="especialidad" id="empleadoEspecialidad" class="form-select mb-3" required>
-                                <option value="">Selecciona...</option>
-                                <option value="Masajista">Masajista</option>
-                                <option value="Facialista">Facialista</option>
-                                <option value="Manicurista">Manicurista</option>
-                                <option value="Cosmetologo">Cosmetologo</option>
-                            </select>
-                        </div>
+    <div class="table-card">
+      <table class="data">
+        <thead><tr><th>Empleado</th><th>Especialidad</th><th>Horario laboral</th><th>Días no laborales</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody id="rows">
+          <c:choose>
+            <c:when test="${not empty empleados}">
+              <c:forEach var="e" items="${empleados}">
+                <tr data-id="${e.idEmpleado}" data-nombre="<c:out value='${e.nombreCompleto}'/>" data-especialidad="<c:out value='${e.especialidad}'/>" data-correo="<c:out value='${e.correo}'/>" data-telefono="<c:out value='${e.telefono}'/>">
+                  <td><div class="cell-person"><span class="avatar round"><i class="fa-regular fa-user"></i></span><span><b><c:out value="${e.nombreCompleto}" /></b><span><c:out value="${e.correo}" /></span><span><c:out value="${e.telefono}" /></span></span></div></td>
+                  <td><c:out value="${e.especialidad}" /></td>
+                  <td><c:out value="${e.horarioResumen}" /></td>
+                  <td><c:out value="${e.diasNoLaboralesTexto}" /></td>
+                  <td><span class="tag ${e.activo ? 'tag-ok' : 'tag-neutral'}">${e.activo ? 'Activo' : 'Inactivo'}</span></td>
+                  <td>
+                    <div class="row-actions" style="display:flex;gap:6px">
+                      <button class="icon-btn" type="button" aria-label="Editar" onclick="editarEmpleado(this)"><i class="fa-solid fa-pen-to-square"></i></button>
+                      <form method="post" action="${ctx}/admin/empleados/estado"><input type="hidden" name="id" value="${e.idEmpleado}"><input type="hidden" name="accion" value="${e.activo ? 'desactivar' : 'activar'}"><button class="icon-btn" type="submit" aria-label="Cambiar estado"><i class="fa-solid fa-power-off"></i></button></form>
+                      <form method="post" action="${ctx}/admin/empleados/estado" onsubmit="return confirm('¿Eliminar este empleado?')"><input type="hidden" name="id" value="${e.idEmpleado}"><input type="hidden" name="accion" value="eliminar"><button class="icon-btn danger" type="submit" aria-label="Eliminar"><i class="fa-regular fa-trash-can"></i></button></form>
                     </div>
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <label class="form-label-sgc">Correo</label>
-                            <input type="email" name="correo" id="empleadoCorreo" class="form-control mb-3" placeholder="correo@ejemplo.com" required>
-                        </div>
-                        <div class="col-sm-6">
-                            <label class="form-label-sgc">Telefono</label>
-                            <input type="tel" name="telefono" id="empleadoTelefono" class="form-control mb-3" placeholder="+52 55 0000 0000" required>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <label class="form-label-sgc">Hora de inicio</label>
-                            <input type="time" name="horaInicio" id="empleadoHoraInicio" class="form-control mb-3" value="09:00" required>
-                        </div>
-                        <div class="col-sm-6">
-                            <label class="form-label-sgc">Hora de fin</label>
-                            <input type="time" name="horaFin" id="empleadoHoraFin" class="form-control mb-3" value="18:00" required>
-                        </div>
-                    </div>
-                    <label class="form-label-sgc">Dias laborales</label>
-                    <div class="d-flex flex-wrap gap-3 mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="dias" value="LUNES" id="diaLUNES" checked>
-                            <label class="form-check-label small" for="diaLUNES">Lunes</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="dias" value="MARTES" id="diaMARTES" checked>
-                            <label class="form-check-label small" for="diaMARTES">Martes</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="dias" value="MIERCOLES" id="diaMIERCOLES" checked>
-                            <label class="form-check-label small" for="diaMIERCOLES">Miercoles</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="dias" value="JUEVES" id="diaJUEVES" checked>
-                            <label class="form-check-label small" for="diaJUEVES">Jueves</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="dias" value="VIERNES" id="diaVIERNES" checked>
-                            <label class="form-check-label small" for="diaVIERNES">Viernes</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="dias" value="SABADO" id="diaSABADO">
-                            <label class="form-check-label small" for="diaSABADO">Sabado</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="dias" value="DOMINGO" id="diaDOMINGO">
-                            <label class="form-check-label small" for="diaDOMINGO">Domingo</label>
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2 mt-2">
-                        <button type="button" class="btn btn-outline-sgc flex-grow-1" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-sgc flex-grow-1" id="btnGuardarEmpleado">Crear empleado</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                  </td>
+                </tr>
+              </c:forEach>
+            </c:when>
+            <c:otherwise><tr class="empty-row"><td colspan="6">No hay empleados que coincidan con la busqueda.</td></tr></c:otherwise>
+          </c:choose>
+        </tbody>
+      </table>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="${ctx}/js/appAdmin.js"></script>
-<script>
-    const AdminEmpleados = (function () {
-        function abrirNuevo() {
-            document.getElementById('formEmpleado').reset();
-            document.getElementById('empleadoId').value = '';
-            document.getElementById('tituloModalEmpleado').textContent = 'Nuevo empleado';
-            document.getElementById('btnGuardarEmpleado').textContent = 'Crear empleado';
-            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEmpleado')).show();
-        }
-        function abrirEditar(boton) {
-            const d = boton.dataset;
-            document.getElementById('empleadoId').value = d.id;
-            document.getElementById('empleadoNombre').value = d.nombre;
-            document.getElementById('empleadoCorreo').value = d.correo;
-            document.getElementById('empleadoTelefono').value = d.telefono;
-            document.getElementById('empleadoEspecialidad').value = d.especialidad;
-            document.getElementById('tituloModalEmpleado').textContent = 'Editar empleado';
-            document.getElementById('btnGuardarEmpleado').textContent = 'Guardar cambios';
-            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEmpleado')).show();
-        }
-        return { abrirNuevo, abrirEditar };
-    })();
+    <div class="pager" id="pager">
+      <c:if test="${totalPaginas > 1}">
+        <c:if test="${paginaActual > 1}"><a href="${ctx}/admin/empleados?q=${busqueda}&pagina=${paginaActual-1}"><i class="fa-solid fa-chevron-left"></i></a></c:if>
+        <c:forEach var="p" begin="1" end="${totalPaginas}"><a href="${ctx}/admin/empleados?q=${busqueda}&pagina=${p}" class="${p == paginaActual ? 'active' : ''}">${p}</a></c:forEach>
+        <c:if test="${paginaActual < totalPaginas}"><a href="${ctx}/admin/empleados?q=${busqueda}&pagina=${paginaActual+1}"><i class="fa-solid fa-chevron-right"></i></a></c:if>
+      </c:if>
+    </div>
+  </div>
 
-    document.querySelectorAll('.sgc-btn-editar[data-id]').forEach(function (btn) {
-        btn.addEventListener('click', function () { AdminEmpleados.abrirEditar(btn); });
-    });
-</script>
+  <!-- Modal empleado -->
+  <div class="modal-backdrop" id="empleadoModal">
+    <div class="modal">
+      <h2 id="empleadoModalTitle">Nuevo empleado</h2>
+      <form method="post" action="${ctx}/admin/empleados/guardar">
+        <input type="hidden" name="id" id="eId">
+        <div style="display:grid;gap:10px;margin-top:10px">
+          <label>Nombre completo<input name="nombre" id="eNombre" required></label>
+          <label>Especialidad<input name="especialidad" id="eEspecialidad"></label>
+          <label>Correo<input name="correo" id="eCorreo" type="email" required></label>
+          <label>Teléfono<input name="telefono" id="eTelefono"></label>
+          <div style="display:flex;gap:10px">
+            <label style="flex:1">Hora inicio<input name="horaInicio" id="eHoraInicio" type="time"></label>
+            <label style="flex:1">Hora fin<input name="horaFin" id="eHoraFin" type="time"></label>
+          </div>
+        </div>
+        <div class="modal-actions" style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn-ghost" type="button" onclick="cerrarEmpleado()">Cancelar</button>
+          <button class="btn-primary" type="submit">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function abrirEmpleado() {
+      document.getElementById('empleadoModalTitle').textContent = 'Nuevo empleado';
+      ['eId','eNombre','eEspecialidad','eCorreo','eTelefono','eHoraInicio','eHoraFin'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('empleadoModal').classList.add('open');
+    }
+    function editarEmpleado(btn) {
+      const tr = btn.closest('tr');
+      document.getElementById('empleadoModalTitle').textContent = 'Editar empleado';
+      document.getElementById('eId').value = tr.dataset.id;
+      document.getElementById('eNombre').value = tr.dataset.nombre;
+      document.getElementById('eEspecialidad').value = tr.dataset.especialidad;
+      document.getElementById('eCorreo').value = tr.dataset.correo;
+      document.getElementById('eTelefono').value = tr.dataset.telefono;
+      document.getElementById('eHoraInicio').value = '';
+      document.getElementById('eHoraFin').value = '';
+      document.getElementById('empleadoModal').classList.add('open');
+    }
+    function cerrarEmpleado() { document.getElementById('empleadoModal').classList.remove('open'); }
+    document.getElementById('empleadoModal').addEventListener('click', (e) => { if (e.target.id === 'empleadoModal') cerrarEmpleado(); });
+  </script>
 </body>
 </html>

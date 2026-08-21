@@ -96,8 +96,32 @@ public class PerfilServlet extends HttpServlet {
                 }
                 jsonPagos.append("]");
 
+                // Promociones activas (para el panel del perfil)
+                String sqlPromos = "SELECT nombre, descripcion, descuento, TO_CHAR(fecha_fin, 'DD/MM/YYYY') AS fecha_fin " +
+                        "FROM promociones " +
+                        "WHERE TRUNC(SYSDATE) BETWEEN fecha_inicio AND fecha_fin " +
+                        "ORDER BY id_promocion DESC";
+
+                StringBuilder jsonPromos = new StringBuilder("[");
+                try (PreparedStatement stmtPromos = con.prepareStatement(sqlPromos)) {
+                    ResultSet rsPromos = stmtPromos.executeQuery();
+                    boolean primero = true;
+                    while (rsPromos.next()) {
+                        if (!primero) jsonPromos.append(",");
+                        jsonPromos.append("{")
+                                .append("\"nombre\":\"").append(escapeJson(rsPromos.getString("nombre"))).append("\",")
+                                .append("\"descripcion\":\"").append(escapeJson(rsPromos.getString("descripcion"))).append("\",")
+                                .append("\"descuento\":\"").append(escapeJson(rsPromos.getString("descuento"))).append("\",")
+                                .append("\"fechaFin\":\"").append(escapeJson(rsPromos.getString("fecha_fin"))).append("\"")
+                                .append("}");
+                        primero = false;
+                    }
+                }
+                jsonPromos.append("]");
+
                 String foto = usuario.getFotoPerfil() != null ? escapeJson(usuario.getFotoPerfil()) : "";
-                String respuestaFinal = "{\"citas\":" + jsonCitas.toString() + ",\"pagos\":" + jsonPagos.toString() + ",\"fotoPerfil\":\"" + foto + "\"}";
+                String respuestaFinal = "{\"citas\":" + jsonCitas.toString() + ",\"pagos\":" + jsonPagos.toString()
+                        + ",\"promociones\":" + jsonPromos.toString() + ",\"fotoPerfil\":\"" + foto + "\"}";
                 out.print(respuestaFinal);
 
             } catch (Exception e) {

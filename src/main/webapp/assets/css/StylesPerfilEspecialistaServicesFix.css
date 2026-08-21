@@ -1,0 +1,4 @@
+#servicesList { display: block !important; min-width: 0; overflow: hidden; }
+.service-profile-row { display: flex !important; align-items: center; gap: 10px; min-width: 0; color: #222; }
+.service-profile-row span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #222; font-size: 13px; }
+.services-card { overflow: hidden; }

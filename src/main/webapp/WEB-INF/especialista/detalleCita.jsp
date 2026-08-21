@@ -1,160 +1,75 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<c:set var="tituloPagina" value="Detalle cita - SGC Cosmetic" scope="request" />
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
+<c:set var="avatar" value="${not empty sessionScope.usuarioSesion.fotoPerfil ? sessionScope.usuarioSesion.fotoPerfil : 'https://www.gravatar.com/avatar/?d=mp&s=150'}" />
+<c:set var="nombreEsp" value="${sessionScope.usuarioSesion.nombreCompleto}" />
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <jsp:include page="/WEB-INF/vistas_esp/includes/head.jsp" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalle de cita - SGC Cosmetic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="${ctx}/assets/css/stylesSpecialistDashboard.css">
+  <link rel="stylesheet" href="${ctx}/assets/css/stylesDetalleCita.css">
 </head>
 <body>
-
-<jsp:include page="/WEB-INF/vistas_esp/includes/sidebar.jsp" />
-
-<div class="sgc-app-shell">
-    <jsp:include page="/WEB-INF/vistas_esp/includes/topbar.jsp" />
-
-    <main class="sgc-contenido flex-grow-1">
-        <jsp:include page="/WEB-INF/vistas_esp/includes/alertas.jsp" />
-
-        <div class="sgc-encabezado-hero d-flex align-items-center gap-2 mb-3">
-            <a href="${ctx}/especialista/agenda" class="btn btn-icono" title="Volver a la agenda">
-                <i class="bi bi-arrow-left"></i>
-            </a>
-            <h1 class="fuente-titulo mb-0">Detalle cita</h1>
-        </div>
-
-        <div class="row g-3">
-            <!-- Tarjeta del cliente -->
-            <div class="col-lg-3">
-                <div class="sgc-card p-4 text-center h-100">
-                    <div class="avatar-cliente-grande mb-3">
-                        <c:if test="${cita.cliente.rutaFoto != null}">
-                            <img src="${ctx}${cita.cliente.rutaFoto}" alt="Foto de ${cita.cliente.nombreCompleto}">
-                        </c:if>
-                    </div>
-                    <h2 class="h5 mb-1"><c:out value="${cita.cliente.nombreCompleto}" /></h2>
-                    <p class="text-muted mb-2"><c:out value="${cita.cliente.telefono}" /></p>
-                    <c:if test="${cita.cliente.frecuente}">
-                        <span class="fw-semibold" style="color: var(--sgc-verde);">
-                            <i class="bi bi-patch-check-fill"></i> Cliente frecuente
-                        </span>
-                    </c:if>
-                </div>
-            </div>
-
-            <!-- Info de la cita -->
-            <div class="col-lg-4">
-                <div class="sgc-card p-4 h-100">
-                    <dl class="row mb-0">
-                        <dt class="col-5 text-muted fw-normal">Servicio</dt>
-                        <dd class="col-7"><c:out value="${cita.servicio}" /></dd>
-
-                        <dt class="col-5 text-muted fw-normal">Fecha</dt>
-                        <dd class="col-7"><c:out value="${cita.fechaFormateadaLarga}" /></dd>
-
-                        <dt class="col-5 text-muted fw-normal">Hora</dt>
-                        <dd class="col-7"><c:out value="${cita.horaInicioFormateada}" /></dd>
-
-                        <dt class="col-5 text-muted fw-normal">Duracion</dt>
-                        <dd class="col-7"><c:out value="${cita.duracionMinutos}" /> Minutos</dd>
-
-                        <dt class="col-5 text-muted fw-normal">Ubicacion</dt>
-                        <dd class="col-7"><c:out value="${cita.ubicacion}" /></dd>
-
-                        <dt class="col-5 text-muted fw-normal">Precio</dt>
-                        <dd class="col-7"><c:out value="${cita.precioFormateado}" /></dd>
-
-                        <dt class="col-5 text-muted fw-normal">Estado</dt>
-                        <dd class="col-7">
-                            <span class="badge-estado ${cita.claseBadge}"><c:out value="${cita.etiquetaEstado}" /></span>
-                        </dd>
-                    </dl>
-
-                    <c:if test="${not empty cita.notas}">
-                        <div class="mt-3 p-3 rounded-3" style="background: var(--sgc-verde-clarisimo);">
-                            <div class="fw-semibold small mb-1" style="color: var(--sgc-verde-oscuro);">Notas</div>
-                            <div class="small" style="color: var(--sgc-verde-oscuro);"><c:out value="${cita.notas}" /></div>
-                        </div>
-                    </c:if>
-
-                    <!-- Acciones sobre la cita -->
-                    <c:if test="${cita.estado == 'PENDIENTE' || cita.estado == 'CONFIRMADA'}">
-                        <div class="d-flex flex-wrap gap-2 mt-4">
-                            <c:if test="${cita.estado == 'PENDIENTE'}">
-                                <form method="post" action="${ctx}/especialista/cita/accion">
-                                    <input type="hidden" name="id" value="${cita.idCita}">
-                                    <input type="hidden" name="accion" value="confirmar">
-                                    <button type="submit" class="btn btn-sgc btn-sm">
-                                        <i class="bi bi-check2"></i> Confirmar
-                                    </button>
-                                </form>
-                            </c:if>
-                            <c:if test="${cita.estado == 'CONFIRMADA' && !cita.fecha.isAfter(hoyServidor)}">
-                                <form method="post" action="${ctx}/especialista/cita/accion">
-                                    <input type="hidden" name="id" value="${cita.idCita}">
-                                    <input type="hidden" name="accion" value="completar">
-                                    <button type="submit" class="btn btn-sgc-suave btn-sm">
-                                        <i class="bi bi-flag"></i> Marcar completada
-                                    </button>
-                                </form>
-                            </c:if>
-                            <form method="post" action="${ctx}/especialista/cita/accion" class="js-confirmar-cancelacion">
-                                <input type="hidden" name="id" value="${cita.idCita}">
-                                <input type="hidden" name="accion" value="cancelar">
-                                <button type="submit" class="btn btn-outline-danger btn-sm">
-                                    <i class="bi bi-x-circle"></i> Cancelar
-                                </button>
-                            </form>
-                        </div>
-                    </c:if>
-                </div>
-            </div>
-
-            <!-- Historial del cliente -->
-            <div class="col-lg-5">
-                <div class="sgc-card p-4 h-100">
-                    <h2 class="h6 mb-3">Historial del cliente</h2>
-
-                    <c:choose>
-                        <c:when test="${empty historial}">
-                            <p class="text-center text-muted py-4 mb-0">Este cliente aun no tiene historial registrado.</p>
-                        </c:when>
-                        <c:otherwise>
-                            <c:forEach var="resena" items="${historial}" varStatus="st">
-                                <div class="d-flex justify-content-between align-items-start ${!st.last ? 'pb-3 mb-3 border-bottom' : ''}">
-                                    <div class="d-flex align-items-start gap-2">
-                                        <span class="sgc-stat-icono" style="width:32px;height:32px;"><i class="bi ${resena.icono}"></i></span>
-                                        <div>
-                                            <div class="fw-semibold small"><c:out value="${resena.servicio}" /></div>
-                                            <div class="text-muted small"><c:out value="${resena.fechaFormateada}" /></div>
-                                        </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <div>
-                                            <c:forEach begin="1" end="${resena.estrellasLlenas}">
-                                                <i class="bi bi-star-fill" style="color:#e0a458;"></i>
-                                            </c:forEach>
-                                            <c:if test="${resena.tieneMediaEstrella}">
-                                                <i class="bi bi-star-half" style="color:#e0a458;"></i>
-                                            </c:if>
-                                            <c:forEach begin="1" end="${resena.estrellasVacias}">
-                                                <i class="bi bi-star" style="color:#e0a458;"></i>
-                                            </c:forEach>
-                                        </div>
-                                        <div class="small text-muted"><c:out value="${resena.calificacion}" /></div>
-                                    </div>
-                                </div>
-                            </c:forEach>
-                        </c:otherwise>
-                    </c:choose>
-                </div>
-            </div>
-        </div>
+  <div class="menu-overlay" id="menuOverlay"></div>
+  <aside class="sidebar-menu" id="sidebarMenu">
+    <div class="sidebar-user-box"><div class="sidebar-user-avatar"><img src="${avatar}" alt="Especialista" style="width:100%;height:100%;border-radius:50%;object-fit:cover"></div><div class="sidebar-user-meta"><span class="sidebar-user-name"><c:out value="${nombreEsp}" /></span><span class="sidebar-user-role">Especialista</span></div></div>
+    <div class="sidebar-header"><hr class="sidebar-divider"></div><div class="sidebar-section-label">General</div>
+    <nav class="sidebar-nav"><a href="${ctx}/especialista/dashboard"><i class="fa-solid fa-house"></i> Inicio</a><a href="${ctx}/especialista/agenda"><i class="fa-regular fa-calendar"></i> Agenda</a><hr class="sidebar-divider"><a href="${ctx}/especialista/perfil"><i class="fa-regular fa-user"></i> Perfil</a></nav>
+    <button class="sidebar-logout" type="button" onclick="window.location.href='${ctx}/logout'"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button><hr class="sidebar-divider"><div class="sidebar-brand">SGC COSMETICS</div>
+  </aside>
+  <div class="detail-wrapper">
+    <header class="topbar"><button class="menu-trigger" id="menuTrigger" type="button" aria-label="Abrir menú"><i class="fa-solid fa-bars"></i></button><div class="topbar-actions"><div class="specialist-notification-wrap"><button class="notification-trigger" type="button" aria-label="Notificaciones" data-notification-toggle><i class="fa-regular fa-bell"></i><span class="notification-badge"></span></button><div class="notification-panel" id="notificationPanel"><div id="notificationList">Sin notificaciones nuevas</div></div></div><a class="specialist-chip" href="${ctx}/especialista/perfil"><img class="chip-avatar" src="${avatar}" alt="Especialista"><span><strong><c:out value="${nombreEsp}" /></strong><small>Especialista</small></span></a></div></header>
+    <main class="detail-page">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <h1 style="margin:0">Detalle cita</h1>
+        <a href="${ctx}/especialista/agenda" class="view-all-button" style="text-decoration:none"><i class="fa-solid fa-arrow-left"></i> Volver a la agenda</a>
+      </div>
+      <section class="detail-cards">
+        <article class="client-card" id="clientCard">
+          <div class="client-avatar"><i class="fa-regular fa-user"></i></div>
+          <h2><c:out value="${citaDetalle.clienteNombre}" /></h2>
+          <p><c:out value="${not empty citaDetalle.clienteTelefono ? citaDetalle.clienteTelefono : 'Teléfono no registrado'}" /></p>
+          <p><c:out value="${not empty citaDetalle.clienteCorreo ? citaDetalle.clienteCorreo : 'Correo no registrado'}" /></p>
+          <p class="client-frequency">Cliente frecuente</p>
+        </article>
+        <article class="service-card" id="serviceCard">
+          <dl>
+            <dt>Servicio</dt><dd><c:out value="${citaDetalle.servicioNombre}" /></dd>
+            <dt>Descripción</dt><dd><c:out value="${not empty citaDetalle.servicioDescripcion ? citaDetalle.servicioDescripcion : 'Sin descripción'}" /></dd>
+            <dt>Fecha</dt><dd><c:out value="${citaDetalle.fecha}" /></dd>
+            <dt>Hora</dt><dd><c:out value="${citaDetalle.hora}" /></dd>
+            <dt>Duración</dt><dd><c:out value="${not empty citaDetalle.duracion ? citaDetalle.duracion : 'No registrada'}" /></dd>
+            <dt>Precio</dt><dd>$<c:out value="${citaDetalle.costo}" /> MXN</dd>
+            <dt>Estado</dt><dd><span class="status-pill"><c:out value="${not empty citaDetalle.estado ? citaDetalle.estado : 'Pendiente'}" /></span></dd>
+          </dl>
+        </article>
+        <article class="history-card">
+          <div class="history-heading"><h2>Historial del cliente</h2></div>
+          <div id="clientHistory" class="client-history-list">
+            <div class="history-entry"><i class="history-icon fa-regular fa-calendar-check" aria-hidden="true"></i><div><strong><c:out value="${citaDetalle.servicioNombre}" /></strong><small><c:out value="${citaDetalle.fecha}" /></small></div></div>
+            <p class="meta" style="margin-top:8px">El historial completo del cliente estará disponible próximamente.</p>
+          </div>
+        </article>
+      </section>
     </main>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="${pageContext.request.contextPath}/js/app.js"></script>
+  </div>
+  <script>
+    (function () {
+      const sidebar = document.getElementById('sidebarMenu');
+      const overlay = document.getElementById('menuOverlay');
+      document.getElementById('menuTrigger')?.addEventListener('click', () => { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); });
+      overlay?.addEventListener('click', () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); });
+      document.querySelector('[data-notification-toggle]')?.addEventListener('click', () => {
+        document.getElementById('notificationPanel')?.classList.toggle('active');
+      });
+    })();
+  </script>
 </body>
 </html>
