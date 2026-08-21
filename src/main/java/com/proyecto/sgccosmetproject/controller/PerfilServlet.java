@@ -103,6 +103,8 @@ public class PerfilServlet extends HttpServlet {
                         "ORDER BY id_promocion DESC";
 
                 StringBuilder jsonPromos = new StringBuilder("[");
+                // La tabla 'promociones' puede no existir en algunos esquemas; si falla,
+                // se devuelve una lista vacía sin romper el resto del perfil.
                 try (PreparedStatement stmtPromos = con.prepareStatement(sqlPromos)) {
                     ResultSet rsPromos = stmtPromos.executeQuery();
                     boolean primero = true;
@@ -116,6 +118,9 @@ public class PerfilServlet extends HttpServlet {
                                 .append("}");
                         primero = false;
                     }
+                } catch (Exception promoEx) {
+                    jsonPromos.setLength(0);
+                    jsonPromos.append("[");
                 }
                 jsonPromos.append("]");
 
