@@ -45,7 +45,7 @@ body { font-family: 'Inter', sans-serif; color: var(--green-900); background: #2
 .sidebar-logout:hover { background: var(--green-600); }
 .sidebar-brand { position: relative; z-index: 1; padding-top: 14px; color: #526b4a; font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; font-weight: 700; letter-spacing: .12em; text-align: center; }
 
-.main-wrapper { min-height: 100vh; padding: 116px 3.33vw 48px; background: linear-gradient(rgba(0,0,0,.28), rgba(0,0,0,.28)), url('https://www.figma.com/api/mcp/asset/00a9529b-4fe8-4e69-9332-04b13d2536d1.png') center / cover fixed, #3d5233; }
+.main-wrapper { min-height: 100vh; padding: 116px 3.33vw 48px; background: linear-gradient(rgba(0,0,0,.28), rgba(0,0,0,.28)), url('../img/fondo-especialista.jpg') center / cover fixed, #3d5233; }
 .topbar { position: absolute; inset: 0 0 auto; z-index: 120; height: 80px; display: flex; align-items: center; justify-content: flex-end; padding: 0 3.33vw; background: transparent; pointer-events: none; transition: opacity .2s ease, visibility .2s ease; }
 .topbar.is-hidden { visibility: visible; opacity: 1; pointer-events: auto; }
 .topbar.is-visible { visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; }

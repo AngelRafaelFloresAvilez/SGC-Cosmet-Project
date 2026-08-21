@@ -1,5 +1,5 @@
 :root { --agenda-green:#4b613f; --agenda-light:#aad791; --agenda-muted:#87775f; }
-.agenda-wrapper { min-height:100vh; padding:128px 5.5vw 48px; background:linear-gradient(rgba(0,0,0,.3),rgba(0,0,0,.3)),url('https://www.figma.com/api/mcp/asset/00a9529b-4fe8-4e69-9332-04b13d2536d1.png') center/cover fixed; }
+.agenda-wrapper { min-height:100vh; padding:128px 5.5vw 48px; background:linear-gradient(rgba(0,0,0,.3),rgba(0,0,0,.3)),url('../img/fondo-especialista.jpg') center/cover fixed; }
 .agenda-page { max-width:1344px; margin:auto; }
 .agenda-heading { display:flex; align-items:flex-start; justify-content:space-between; color:#fff; text-shadow:0 3px 4px rgba(0,0,0,.2); margin-bottom:28px; }
 .agenda-heading h1 { font:700 44px/1 'Cormorant Garamond',serif; }

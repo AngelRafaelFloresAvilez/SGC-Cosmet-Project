@@ -33,7 +33,7 @@ body { font-family: 'Inter', sans-serif; color: var(--green-900); background: #2
 .main-wrapper {
   min-height: 100vh;
   padding: 124px 3.33vw 48px;
-  background: linear-gradient(rgba(0, 0, 0, .3), rgba(0, 0, 0, .3)), url('https://www.figma.com/api/mcp/asset/00a9529b-4fe8-4e69-9332-04b13d2536d1.png') center / cover fixed;
+  background: linear-gradient(rgba(0, 0, 0, .3), rgba(0, 0, 0, .3)), url('../img/fondo-especialista.jpg') center / cover fixed;
 }
 .topbar {
   position: absolute;
@@ -55,7 +55,7 @@ body { font-family: 'Inter', sans-serif; color: var(--green-900); background: #2
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: url('https://www.figma.com/api/mcp/asset/529a9472-5aff-4122-b7bc-aac329f6e67b.svg') center / cover;
+  background: none center / cover;
   font-size: 22px;
 }
 .specialist-notification-wrap { position: relative; z-index: 120; }
@@ -82,7 +82,7 @@ body { font-family: 'Inter', sans-serif; color: var(--green-900); background: #2
   padding: 4px 14px 4px 8px;
   border: 0;
   border-radius: 28px;
-  background: url('https://www.figma.com/api/mcp/asset/3eb817cb-59bd-405a-89f0-953aa94e0959.svg') center / cover;
+  background: none center / cover;
   color: #fff;
   text-align: left;
   cursor: pointer;
