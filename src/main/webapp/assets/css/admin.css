@@ -1,0 +1,414 @@
+/* =====================================================
+   SGC Cosmetic - Modulo Administrador
+   Reutiliza las variables de color de estilos.css.
+   ===================================================== */
+
+/* ---------- Modales (Nuevo empleado, Nueva promocion, Nuevo servicio, etc.) ---------- */
+.modal-backdrop.show {
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    background-color: rgba(10, 15, 8, .35);
+}
+
+.sgc-modal-content {
+    border: none;
+    border-radius: 22px;
+    overflow: hidden;
+}
+
+.sgc-modal-content .modal-header {
+    border-bottom: none;
+    padding: 1.5rem 1.5rem .5rem;
+}
+
+.sgc-modal-content .modal-body {
+    padding: 0 1.5rem 1.5rem;
+}
+
+/* ---------- Tarjetas de estadisticas con icono de color ---------- */
+.sgc-stat-admin {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.4rem;
+}
+
+.sgc-stat-admin .icono {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: #fff;
+}
+
+.sgc-stat-admin .valor {
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--sgc-verde-negro);
+    line-height: 1.1;
+}
+
+.sgc-stat-admin .etiqueta {
+    color: var(--sgc-verde-negro);
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+.sgc-stat-admin .subetiqueta {
+    color: var(--sgc-gris-texto);
+    font-size: 1.0rem;
+}
+
+.icono-gris { background: #9a9a95; }
+.icono-verde { background: var(--sgc-verde); }
+.icono-rojo { background: #c0504d; }
+.icono-morado { background: #8a6fc9; }
+.icono-amarillo { background: #d9a441; }
+.icono-azul { background: #4a80b5; }
+
+/* ---------- Barra de busqueda ---------- */
+.sgc-buscador {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: var(--sgc-sombra);
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .8rem 1.1rem;
+}
+
+.sgc-buscador input {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 1rem;
+}
+
+.sgc-buscador i {
+    color: var(--sgc-gris-texto);
+}
+
+/* ---------- Tablas de administracion ---------- */
+.sgc-tabla-admin {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.sgc-tabla-admin thead th {
+    text-align: left;
+    color: var(--sgc-gris-texto);
+    font-weight: 600;
+    font-size: .98rem;
+    padding: 1rem 1.1rem;
+    border-bottom: 1px solid var(--sgc-gris-borde);
+}
+
+.sgc-tabla-admin tbody td {
+    padding: .9rem 1.1rem;
+    border-bottom: 1px solid var(--sgc-gris-borde);
+    vertical-align: middle;
+    font-size: 1.02rem;
+}
+
+.sgc-tabla-admin tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.sgc-avatar-tabla {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--sgc-verde-suave);
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.sgc-avatar-tabla img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sgc-nombre-fila {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+
+/* ---------- Menu de acciones (3 puntos) ---------- */
+.sgc-menu-acciones .btn {
+    border: none;
+    background: transparent;
+    color: var(--sgc-verde-negro);
+    font-size: 1.2rem;
+    padding: .2rem .5rem;
+}
+
+.sgc-btn-editar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--sgc-fondo);
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sgc-verde-negro);
+}
+
+.sgc-btn-editar:hover {
+    background: var(--sgc-verde-clarisimo);
+}
+
+.sgc-btn-eliminar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #fbe3e1;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #c0504d;
+}
+
+.sgc-btn-eliminar:hover {
+    background: #f6c9c6;
+}
+
+/* ---------- Tabs tipo pestañas (Promociones, Horarios, Perfil) ---------- */
+.sgc-tabs-admin {
+    display: flex;
+    gap: .5rem;
+    background: #fff;
+    border-radius: 14px;
+    padding: .5rem;
+    box-shadow: var(--sgc-sombra);
+    flex-wrap: wrap;
+}
+
+.sgc-tabs-admin a {
+    padding: .6rem 1.1rem;
+    border-radius: 10px;
+    color: var(--sgc-gris-texto);
+    font-weight: 600;
+    font-size: 1.0rem;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.sgc-tabs-admin a.activo {
+    background: var(--sgc-fondo);
+    color: var(--sgc-verde-negro);
+    box-shadow: inset 0 -3px 0 var(--sgc-verde);
+}
+
+.sgc-tabs-admin a .contador {
+    background: var(--sgc-verde-clarisimo);
+    color: var(--sgc-verde-oscuro);
+    border-radius: 999px;
+    padding: .05rem .5rem;
+    font-size: .88rem;
+}
+
+/* ---------- Horarios: tabla + vista semanal en barras ---------- */
+.sgc-horario-fila-admin {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .9rem 0;
+    border-bottom: 1px solid var(--sgc-gris-borde);
+}
+
+.sgc-horario-fila-admin:last-child {
+    border-bottom: none;
+}
+
+.sgc-aplicar-todos {
+    background: var(--sgc-verde-clarisimo);
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.sgc-barras-semana {
+    display: flex;
+    align-items: flex-end;
+    gap: .6rem;
+    height: 260px;
+    padding-top: 1rem;
+}
+
+.sgc-barra-dia {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+}
+
+.sgc-barra-dia .barra {
+    width: 100%;
+    border-radius: 8px 8px 0 0;
+    background: var(--sgc-verde-clarisimo);
+    border: 1px solid var(--sgc-verde-claro);
+}
+
+.sgc-barra-dia .barra.no-disponible {
+    background: #fbe3e1;
+    border-color: #f2b8b4;
+}
+
+.sgc-barra-dia .etiqueta {
+    margin-top: .5rem;
+    font-size: .9rem;
+    color: var(--sgc-gris-texto);
+    text-align: center;
+}
+
+.sgc-leyenda-horario {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    margin-top: 1rem;
+    font-size: .95rem;
+    color: var(--sgc-gris-texto);
+}
+
+.sgc-leyenda-horario .cuadro {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-right: .4rem;
+    vertical-align: middle;
+}
+
+/* ---------- Grafica simple de barras (citas semanales) ---------- */
+.sgc-grafica-barras {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    height: 180px;
+    padding-top: 1rem;
+}
+
+.sgc-grafica-barras .columna {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+}
+
+.sgc-grafica-barras .barra {
+    width: 60%;
+    background: linear-gradient(180deg, var(--sgc-verde-suave), var(--sgc-verde-clarisimo));
+    border-radius: 6px 6px 0 0;
+    min-height: 4px;
+}
+
+.sgc-grafica-barras .etiqueta {
+    margin-top: .5rem;
+    font-size: .88rem;
+    color: var(--sgc-gris-texto);
+}
+
+/* ---------- Modal "Clientes con inasistencias" y similares ---------- */
+.sgc-fila-numerada {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    padding: .8rem 1rem;
+    background: var(--sgc-fondo);
+    border-radius: 12px;
+    margin-bottom: .6rem;
+}
+
+/* ---------- Foto de servicio (subir archivo o pegar URL) ---------- */
+.sgc-foto-servicio-preview {
+    width: 100%;
+    height: 140px;
+    border-radius: 12px;
+    background: var(--sgc-fondo);
+    border: 1px dashed var(--sgc-gris-borde);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.sgc-foto-servicio-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sgc-subtabs-foto .nav-link {
+    border-radius: 999px;
+    padding: .35rem 1rem;
+    font-size: .88rem;
+    color: var(--sgc-gris-texto);
+    background: var(--sgc-fondo);
+}
+
+.sgc-subtabs-foto .nav-link.active {
+    background: var(--sgc-verde);
+    color: #fff;
+}
+
+.sgc-numero-circulo {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--sgc-verde-claro);
+    color: var(--sgc-verde-oscuro);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ---------- Actividad reciente / recordatorios ---------- */
+.sgc-actividad-item {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    padding: .7rem 0;
+    border-bottom: 1px solid var(--sgc-gris-borde);
+}
+
+.sgc-actividad-item:last-child {
+    border-bottom: none;
+}
+
+.sgc-actividad-icono {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ---------- Especialistas disponibles (dashboard) ---------- */
+.sgc-fila-especialista {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    padding: .7rem 0;
+    border-bottom: 1px solid var(--sgc-gris-borde);
+}
+
+.sgc-fila-especialista:last-child {
+    border-bottom: none;
+}
