@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horarios - SGC Cosmetic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="StylesAdmin.css">
+</head>
+<body data-admin-page="horarios">
+  <div class="main-wrapper">
+    <section class="page-head">
+      <div><h1>Horarios</h1></div>
+    </section>
+
+    <section class="grid-2">
+      <article class="panel">
+        <div class="tabs" style="padding:0;margin-bottom:14px;background:none">
+          <button type="button" class="active" data-tab="general">Horario general</button>
+          <button type="button" data-tab="employee">Horario por empleado</button>
+        </div>
+
+        <div id="generalPane">
+          <div class="panel-head">
+            <span class="panel-title">Horario de atencion</span>
+            <span class="panel-title">Estado</span>
+          </div>
+          <div class="schedule-list" id="generalList"></div>
+        </div>
+
+        <div id="employeePane" hidden>
+          <div class="panel-head">
+            <span class="panel-title">Horario por empleado</span>
+            <span class="panel-title">Estado</span>
+          </div>
+          <div class="schedule-list" id="employeeList"></div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <span class="panel-title">Vista semanal</span>
+          <span class="week-nav">
+            <button type="button" id="prevWeek" aria-label="Semana anterior"><i class="fa-solid fa-chevron-left"></i></button>
+            <span id="weekLabel"></span>
+            <button type="button" id="nextWeek" aria-label="Semana siguiente"><i class="fa-solid fa-chevron-right"></i></button>
+          </span>
+        </div>
+        <div class="week-grid" id="weekGrid"></div>
+        <div class="week-legend">
+          <span><i></i> Disponible</span>
+          <span><i class="off"></i> No disponible</span>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <script src="appointments-system.js"></script>
+  <script src="admin-data.js"></script>
+  <script src="admin-shell.js"></script>
+  <script src="admin-horarios.js"></script>
+</body>
+</html>

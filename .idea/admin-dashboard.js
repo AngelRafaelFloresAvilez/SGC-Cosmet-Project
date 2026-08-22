@@ -1,359 +1,231 @@
-document.addEventListener('DOMContentLoaded', function () {
-  const session = (function () {
-    try {
-      if (window.appointmentsSystem && typeof window.appointmentsSystem.getSession === 'function') {
-        const s = window.appointmentsSystem.getSession();
-        if (s) return s;
-      }
-      if (window.sgcAuth && typeof window.sgcAuth.getSession === 'function') {
-        const s2 = window.sgcAuth.getSession();
-        if (s2) return s2;
-      }
-      // fallback to direct sessionStorage read
-      const raw = sessionStorage.getItem('sgc_active_session_v1');
-      if (raw) return JSON.parse(raw);
-    } catch (e) {
-      // ignore and treat as no session
+/* Dashboard del administrador: resumen del negocio calculado en vivo. */
+document.addEventListener('admin-shell-ready', function (event) {
+  const data = window.sgcAdminData;
+  const charts = window.sgcAdminCharts;
+  const ui = window.sgcAdminShell;
+  const session = event.detail.session;
+
+  function relativeTime(isoDate) {
+    if (!isoDate) return '';
+    const diff = Date.now() - new Date(isoDate).getTime();
+    if (Number.isNaN(diff)) return '';
+    if (diff < 0) return 'Ahora'; // una marca futura no deberia pasar, pero no rompe la vista
+    const minutes = Math.round(diff / 60000);
+    if (minutes < 1) return 'Ahora';
+    if (minutes < 60) return `Hace ${minutes} min`;
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return `Hace ${hours} hrs`;
+    const days = Math.round(hours / 24);
+    return days === 1 ? 'Ayer' : `Hace ${days} días`;
+  }
+
+  function appointmentDateLabel(appointment) {
+    const date = data.appointmentDate(appointment);
+    if (!date || Number.isNaN(date.getTime())) return appointment.date || '';
+    return date.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+  }
+
+  function renderHeader() {
+    document.getElementById('welcomeName').textContent = session.name || 'administrador';
+    const today = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+    document.getElementById('todayLabel').textContent = `Hoy: ${today}, aqui tienes un resumen del rendimiento del negocio`;
+  }
+
+  function renderStats() {
+    const summary = data.stats();
+    document.getElementById('statToday').textContent = summary.appointmentsToday;
+    document.getElementById('statNewClients').textContent = summary.clientsNewThisMonth;
+    document.getElementById('statSpecialists').textContent = summary.specialistsActive;
+    document.getElementById('statRevenue').textContent = data.formatMoney(summary.revenueThisMonth);
+  }
+
+  function renderWeeklyChart() {
+    charts.lineChart(
+      document.getElementById('weeklyChart'),
+      data.weeklySeries().map((point) => ({ label: point.label, value: point.value })),
+      { legend: String(new Date().getFullYear()) }
+    );
+  }
+
+  function renderPending() {
+    const container = document.getElementById('pendingList');
+    const users = data.readUsers();
+    const pending = data.getAppointments()
+      .filter((appointment) => appointment.status === 'pending')
+      .slice(0, 4);
+
+    if (!pending.length) {
+      container.innerHTML = '<p class="muted">No hay citas pendientes por confirmar.</p>';
+      return;
     }
-    return null;
-  })();
 
-  if (!session || session.role !== 'admin') {
-    if (window.appointmentsSystem && typeof window.appointmentsSystem.signOut === 'function') {
-      window.appointmentsSystem.signOut();
-    } else if (window.appointmentsSystem && typeof window.appointmentsSystem.clearSession === 'function') {
-      window.appointmentsSystem.clearSession();
-      window.location.href = 'Loggin.html';
-    } else {
-      window.location.href = 'Loggin.html';
+    container.innerHTML = pending.map((appointment) => `
+      <a class="pending-item" href="admin-citas.html?cita=${encodeURIComponent(appointment.id)}" style="text-decoration:none;color:inherit">
+        <span class="avatar"><i class="fa-regular fa-user"></i></span>
+        <span class="who">
+          <b>${ui.escapeHtml(data.clientNameOf(appointment, users))}</b>
+          <small>${ui.escapeHtml(appointment.serviceName || 'Servicio')}</small>
+        </span>
+        <span class="when">
+          <b>${ui.escapeHtml(appointmentDateLabel(appointment))}</b>
+          ${ui.escapeHtml(appointment.time || '')}
+        </span>
+      </a>
+    `).join('');
+  }
+
+  function renderTopServices() {
+    const container = document.getElementById('topServicesList');
+    const rows = data.topServices(4);
+    if (!rows.length) {
+      container.innerHTML = '<p class="muted">Aun no hay citas registradas.</p>';
+      return;
     }
-    return;
-  }
-
-  let state = window.appointmentsSystem && typeof window.appointmentsSystem.readState === 'function'
-    ? window.appointmentsSystem.readState()
-    : { appointments: [], services: [], payments: [] };
-  let users = window.appointmentsSystem && typeof window.appointmentsSystem.readUsers === 'function'
-    ? window.appointmentsSystem.readUsers()
-    : [];
-  let specialistUsers = users.filter((user) => user.role === 'specialist');
-
-  const adminName = document.getElementById('adminName');
-  const statAppointmentsToday = document.getElementById('statAppointmentsToday');
-  const statNewClients = document.getElementById('statNewClients');
-  const statSpecialistsActive = document.getElementById('statSpecialistsActive');
-  const statSalesMonth = document.getElementById('statSalesMonth');
-  const pendingAppointmentsList = document.getElementById('pendingAppointmentsList');
-  const topServicesList = document.getElementById('topServicesList');
-  const activityFeed = document.getElementById('activityFeed');
-  const remindersList = document.getElementById('remindersList');
-  const specialistsList = document.getElementById('specialistsList');
-  const signOutBtn = document.getElementById('signOutBtn');
-  const viewAllBtn = document.getElementById('viewAllAppointments');
-
-  function formatCurrency(value) {
-    return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value);
-  }
-
-  function parseCurrency(value) {
-    const sanitized = String(value || '').replace(/[^0-9,.]/g, '').replace(/,/g, '.');
-    const numeric = Number(sanitized);
-    return Number.isFinite(numeric) ? numeric : 0;
-  }
-
-  function buildChart() {
-    const chart = document.getElementById('appointmentsChart');
-    if (!chart) return;
-    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-    const dailyCounts = days.map((day) => {
-      return (state.appointments || []).filter((appt) => {
-        const dateText = String(appt.date || '').toLowerCase();
-        return dateText.includes(day.toLowerCase().slice(0, 3));
-      }).length;
-    });
-    const maxCount = Math.max(...dailyCounts, 10);
-
-    chart.innerHTML = `
-      <div class="chart-grid">
-        ${days.map((day, index) => `
-          <div class="chart-column">
-            <span class="chart-bar chart-bar-primary" style="height:${Math.max((dailyCounts[index] / maxCount) * 220, 24)}px"></span>
-            <small>${day.slice(0, 3)}</small>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-
-  function buildPendingAppointments() {
-    if (!pendingAppointmentsList) return;
-    const appointments = (state.appointments || []).filter((appt) => appt.status === 'pending').slice(0, 3);
-        pendingAppointmentsList.innerHTML = appointments.length
-          ? appointments.map((appt) => `
-              <div class="item">
-                <div>
-                  <strong>${appt.client || appt.createdBy?.name || 'Cliente'}</strong>
-                  <small>${appt.serviceName || 'Servicio pendiente'}</small>
-                </div>
-                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-                  <div style="text-align:right"><small>${appt.date || ''}</small> · <strong>${appt.time || ''}</strong></div>
-                  <div style="display:flex;gap:8px;margin-top:6px">
-                    <button class="text-button" data-action="view">Ver</button>
-                    <button class="text-button" data-action="delete" data-id="${appt.id}">Eliminar</button>
-                  </div>
-                </div>
-              </div>
-            `).join('')
-          : '<div class="item"><strong>No hay citas pendientes</strong></div>';
-
-        // Delegated handlers for pending appointments actions
-        pendingAppointmentsList.addEventListener('click', (e) => {
-          const btn = e.target.closest('button[data-action]');
-          if (!btn) return;
-          const action = btn.dataset.action;
-          const id = btn.dataset.id;
-          if (action === 'delete' && id) {
-            if (window.appointmentsSystem && typeof window.appointmentsSystem.removeAppointment === 'function') {
-              window.appointmentsSystem.removeAppointment(id);
-              window.dispatchEvent(new Event('sgc-state-updated'));
-            }
-          } else if (action === 'view') {
-            window.location.href = 'citas.html';
-          }
-        });
-  }
-
-  function buildTopServices() {
-    if (!topServicesList) return;
-    const services = state.services || [];
-    const counts = {};
-    (state.appointments || []).forEach((appt) => {
-      const serviceName = appt.serviceName || appt.service || 'Servicio';
-      counts[serviceName] = (counts[serviceName] || 0) + 1;
-    });
-    const serviceCounts = services.map((service) => ({
-      title: service.title || service.name || 'Servicio',
-      description: service.description || '',
-      count: counts[service.title] || 0
-    })).sort((a, b) => b.count - a.count).slice(0, 4);
-    topServicesList.innerHTML = serviceCounts.length
-      ? serviceCounts.map((service) => `
-          <div class="item">
-            <div>
-              <strong>${service.title}</strong>
-              <small>${service.description || 'Servicio destacado'}</small>
-            </div>
-            <div>
-              <strong>${service.count}</strong>
-              <small>citas</small>
-            </div>
-          </div>
-        `).join('')
-      : '<div class="item"><strong>No hay servicios registrados</strong></div>';
-  }
-
-  function buildActivityFeed() {
-    if (!activityFeed) return;
-    const appointmentEvents = (state.appointments || []).slice(0, 3).map((appt) => ({
-      title: `${appt.status === 'pending' ? 'Nueva cita pendiente' : appt.status === 'cancelled' ? 'Cita cancelada' : 'Cita registrada'}: ${appt.serviceName || 'Servicio'}`,
-      time: appt.createdAt ? new Date(appt.createdAt).toLocaleString('es-MX', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }) : 'Reciente'
-    }));
-    const paymentEvents = (state.payments || []).slice(0, 2).map((payment) => ({
-      title: `Pago registrado de ${payment.amount || '$0'} para ${payment.description || 'servicio'}`,
-      time: payment.date || 'Reciente'
-    }));
-    const events = [...appointmentEvents, ...paymentEvents].slice(0, 4);
-    activityFeed.innerHTML = events.length
-      ? events.map((event) => `
-          <div class="activity-item">
-            <strong>${event.title}</strong>
-            <small>${event.time}</small>
-          </div>
-        `).join('')
-      : '<div class="activity-item"><strong>No hay actividad reciente</strong></div>';
-  }
-
-  function buildReminders() {
-    if (!remindersList) return;
-    const pendingCount = (state.appointments || []).filter((appt) => appt.status === 'pending').length;
-    const cancelledCount = (state.appointments || []).filter((appt) => appt.status === 'cancelled').length;
-    const reminders = [
-      { title: `${pendingCount} citas pendientes por confirmar`, subtitle: 'Atiende los pendientes para mantener la agenda al día.' },
-      { title: `${cancelledCount} citas canceladas`, subtitle: 'Revisa las cancelaciones y verifica si hay reprogramaciones.' }
-    ];
-    remindersList.innerHTML = reminders.map((reminder) => `
-      <div class="reminder-item">
-        <strong>${reminder.title}</strong>
-        <small>${reminder.subtitle}</small>
+    container.innerHTML = rows.map((row) => `
+      <div class="top-service">
+        ${row.image
+          ? `<img class="swatch" src="${ui.escapeHtml(row.image)}" alt="">`
+          : '<span class="swatch"></span>'}
+        <b>${ui.escapeHtml(row.name)}</b>
+        <span class="count">${row.count}<small>citas</small></span>
       </div>
     `).join('');
   }
 
-  function buildSpecialistsList() {
-    if (!specialistsList) return;
-    specialistsList.innerHTML = specialistUsers.slice(0, 4).map((specialist) => {
-      const avatar = specialist.avatar || '';
-      const avatarHtml = avatar ? `<img src="${avatar}" alt="${specialist.name}" style="width:44px;height:44px;border-radius:50%;object-fit:cover">` : `<span class="specialist-avatar">${specialist.name?.charAt(0) || 'S'}</span>`;
-      return `
-      <div class="specialist-item">
-        <div style="display:flex;gap:12px;align-items:center">
-          ${avatarHtml}
-          <div class="specialist-meta">
-            <strong>${specialist.name}</strong>
-            <small>${specialist.email}</small>
-          </div>
-        </div>
-        <div>
-          <small>${specialist.phone || 'Sin teléfono'}</small>
-        </div>
+  function renderActivity() {
+    const container = document.getElementById('activityList');
+    const users = data.readUsers();
+
+    const events = data.getAppointments()
+      .filter((appointment) => appointment.createdAt)
+      .map((appointment) => {
+        const who = data.clientNameOf(appointment, users);
+        if (appointment.status === 'cancelled') {
+          return { icon: 'fa-regular fa-clock', tone: 'red', text: `${who} cancelo una cita`, at: appointment.createdAt };
+        }
+        if (appointment.status === 'no_show') {
+          return { icon: 'fa-regular fa-circle-xmark', tone: 'red', text: `${who} no asistio a su cita`, at: appointment.createdAt };
+        }
+        if (appointment.status === 'previous' || appointment.status === 'completed') {
+          return { icon: 'fa-regular fa-circle-check', tone: '', text: `Cita atendida de ${who}`, at: appointment.createdAt };
+        }
+        return { icon: 'fa-regular fa-calendar', tone: '', text: `Nueva cita realizada por ${who}`, at: appointment.createdAt };
+      });
+
+    const clientEvents = users
+      .filter((user) => user.role === 'client' && user.createdAt)
+      .map((user) => ({
+        icon: 'fa-regular fa-user', tone: 'grey',
+        text: `Nuevo cliente registrado: ${data.fullName(user)}`, at: user.createdAt
+      }));
+
+    const feed = [...events, ...clientEvents]
+      .sort((a, b) => new Date(b.at) - new Date(a.at))
+      .slice(0, 5);
+
+    if (!feed.length) {
+      container.innerHTML = '<p class="muted">Sin actividad registrada todavia.</p>';
+      return;
+    }
+
+    container.innerHTML = feed.map((item) => `
+      <div class="activity-item">
+        <i class="${item.icon} ${item.tone}"></i>
+        <span class="txt">${ui.escapeHtml(item.text)}</span>
+        <span class="ago">${ui.escapeHtml(relativeTime(item.at))}</span>
       </div>
+    `).join('');
+  }
+
+  function renderReminders() {
+    const container = document.getElementById('remindersList');
+    const summary = data.stats();
+    const atRisk = data.clientsWithNoShows().filter((row) => row.count >= 2).length;
+    const unassigned = data.getAppointments().filter((appointment) =>
+      !appointment.specialistEmail && appointment.status !== 'cancelled' && appointment.status !== 'previous'
+    ).length;
+
+    const reminders = [];
+    if (summary.pending) {
+      reminders.push({
+        accent: true, icon: 'fa-regular fa-calendar',
+        title: `Tienes ${summary.pending} ${summary.pending === 1 ? 'cita pendiente' : 'citas pendientes'} por confirmar`,
+        subtitle: 'Revisa para evitar cancelaciones'
+      });
+    }
+    if (atRisk) {
+      reminders.push({
+        icon: 'fa-regular fa-clock',
+        title: `${atRisk} ${atRisk === 1 ? 'cliente tiene' : 'clientes tienen'} 2 o mas faltas`,
+        subtitle: 'Podrian ser vetados si reciben otra falta'
+      });
+    }
+    if (unassigned) {
+      reminders.push({
+        icon: 'fa-solid fa-user-plus',
+        title: `${unassigned} ${unassigned === 1 ? 'cita sin especialista' : 'citas sin especialista'} asignado`,
+        subtitle: 'Asignalas desde Gestion de citas'
+      });
+    }
+    if (!reminders.length) {
+      reminders.push({ accent: true, icon: 'fa-regular fa-circle-check', title: 'Todo en orden', subtitle: 'No hay pendientes que requieran tu atencion' });
+    }
+
+    container.innerHTML = reminders.map((reminder) => `
+      <div class="reminder${reminder.accent ? ' accent' : ''}">
+        <i class="${reminder.icon}"></i>
+        <div><b>${ui.escapeHtml(reminder.title)}</b><small>${ui.escapeHtml(reminder.subtitle)}</small></div>
+      </div>
+    `).join('');
+  }
+
+  function renderSpecialists() {
+    const container = document.getElementById('specialistsList');
+    const specialists = data.getSpecialists().slice(0, 4);
+    if (!specialists.length) {
+      container.innerHTML = '<p class="muted">No hay especialistas registrados.</p>';
+      return;
+    }
+
+    // "En cita" = tiene una cita confirmada hoy; si no, esta disponible.
+    const today = new Date();
+    const appointments = data.getAppointments();
+
+    container.innerHTML = specialists.map((specialist) => {
+      const email = String(specialist.email || '').toLowerCase();
+      const busy = appointments.some((appointment) => {
+        if (String(appointment.specialistEmail || '').toLowerCase() !== email) return false;
+        if (appointment.status !== 'confirmed' && appointment.status !== 'pending') return false;
+        const date = data.appointmentDate(appointment);
+        return date && date.toDateString() === today.toDateString();
+      });
+      const inactive = specialist.active === false;
+      return `
+        <div class="person-row">
+          <span class="avatar">${specialist.avatar
+            ? `<img src="${ui.escapeHtml(specialist.avatar)}" alt="">`
+            : '<i class="fa-regular fa-user"></i>'}</span>
+          <span class="meta">
+            <b>${ui.escapeHtml(data.fullName(specialist))}</b>
+            <small>${ui.escapeHtml(specialist.specialty || 'Especialista')}</small>
+          </span>
+          <span class="tag ${inactive ? 'tag-neutral' : busy ? 'tag-warn' : 'tag-ok'}">${inactive ? 'Inactivo' : busy ? 'En cita' : 'Disponible'}</span>
+        </div>
       `;
     }).join('');
   }
 
-  // Promotions rendering
-  const promotionsList = document.getElementById('promotionsList');
-  const createPromotionBtn = document.getElementById('createPromotionBtn');
-
-  function buildPromotions() {
-    if (!promotionsList) return;
-    const promos = (window.appointmentsSystem && typeof window.appointmentsSystem.getPromotions === 'function') ? window.appointmentsSystem.getPromotions() : (state.promotions || []);
-        promotionsList.innerHTML = promos.length
-          ? promos.map((p) => `
-            <div class="promo-item">
-              <div>
-                <strong>${p.title}</strong>
-                <small>${p.description || ''}</small>
-              </div>
-              <div style="display:flex;gap:8px;align-items:center">
-                <small>${p.validUntil || ''}</small>
-                <button class="text-button" data-action="edit-promo" data-id="${p.id}">Editar</button>
-                <button class="text-button" data-action="delete-promo" data-id="${p.id}">Eliminar</button>
-              </div>
-            </div>
-          `).join('')
-          : '<div class="item"><strong>No hay promociones</strong></div>';
-
-        // Delegated handlers for promotions
-        promotionsList.addEventListener('click', (e) => {
-          const btn = e.target.closest('button[data-action]');
-          if (!btn) return;
-          const action = btn.dataset.action;
-          const id = btn.dataset.id;
-          if (action === 'edit-promo' && id) {
-            const newTitle = prompt('Editar título', '');
-            if (newTitle != null && window.appointmentsSystem && typeof window.appointmentsSystem.updatePromotion === 'function') {
-              window.appointmentsSystem.updatePromotion(id, { title: newTitle });
-            }
-          } else if (action === 'delete-promo' && id) {
-            if (window.appointmentsSystem && typeof window.appointmentsSystem.deletePromotion === 'function') {
-              if (confirm('Eliminar promoción?')) {
-                window.appointmentsSystem.deletePromotion(id);
-              }
-            }
-          }
-        });
+  function renderAll() {
+    renderStats();
+    renderWeeklyChart();
+    renderPending();
+    renderTopServices();
+    renderActivity();
+    renderReminders();
+    renderSpecialists();
   }
 
-  if (createPromotionBtn) {
-    createPromotionBtn.addEventListener('click', () => {
-      const title = prompt('Nombre de la promoción (ej. 20% en tu próxima cita)');
-      if (!title) return;
-      const description = prompt('Descripción (opcional)') || '';
-      const validUntil = prompt('Válida hasta (dd/mm/aaaa)') || '';
-      if (window.appointmentsSystem && typeof window.appointmentsSystem.createPromotion === 'function') {
-        window.appointmentsSystem.createPromotion({ title, description, validUntil, tag: 'Admin' });
-      }
-    });
-  }
-
-  function updateStats() {
-    if (statAppointmentsToday) {
-      const today = new Date().toLocaleDateString('es-MX');
-      const todayCount = (state.appointments || []).filter((appointment) => String(appointment.date || '').toLowerCase().includes('hoy') || String(appointment.date || '').includes(today)).length;
-      statAppointmentsToday.textContent = `${todayCount}`;
-    }
-    if (statNewClients) {
-      const clientEmails = new Set(
-        (users || []).filter((user) => user.role === 'client' && user.email).map((user) => user.email.toLowerCase())
-      );
-      const appointmentClients = new Set(
-        (state.appointments || [])
-          .map((appointment) => (appointment.createdBy && appointment.createdBy.email ? appointment.createdBy.email.toLowerCase() : null))
-          .filter(Boolean)
-      );
-      statNewClients.textContent = `${Math.max(clientEmails.size, appointmentClients.size)}`;
-    }
-    if (statSpecialistsActive) statSpecialistsActive.textContent = `${specialistUsers.length}`;
-    if (statSalesMonth) {
-        const paymentsTotal = (state.payments || []).reduce((total, payment) => total + parseCurrency(payment.amount), 0);
-      const appointmentTotal = (state.appointments || []).reduce((total, appt) => {
-        const priceValue = parseCurrency(appt.price);
-        return total + priceValue;
-      }, 0);
-      statSalesMonth.textContent = formatCurrency(paymentsTotal || appointmentTotal || 0);
-    }
-  }
-
-  function init() {
-    if (adminName) adminName.textContent = session.name || 'Administrador';
-    buildChart();
-    buildPendingAppointments();
-    buildTopServices();
-    buildActivityFeed();
-    buildReminders();
-    buildSpecialistsList();
-    buildPromotions();
-    updateStats();
-  }
-
-  if (viewAllBtn) {
-    viewAllBtn.addEventListener('click', () => {
-      window.location.href = 'citas.html';
-    });
-  }
-
-  function handleSignOut() {
-    if (window.appointmentsSystem && typeof window.appointmentsSystem.signOut === 'function') {
-      window.appointmentsSystem.signOut();
-      return;
-    }
-    if (window.appointmentsSystem && typeof window.appointmentsSystem.clearSession === 'function') {
-      window.appointmentsSystem.clearSession();
-    }
-    const basePath = window.location.pathname.replace(/[^/]*$/, '');
-    window.location.href = window.location.pathname.includes('/.idea/') ? 'Loggin.html' : basePath + '.idea/Loggin.html';
-  }
-
-  if (signOutBtn) {
-    signOutBtn.addEventListener('click', handleSignOut);
-  }
-  const sidebarSignOut = document.getElementById('sidebarSignOut');
-  if (sidebarSignOut) {
-    sidebarSignOut.addEventListener('click', handleSignOut);
-  }
-
-  init();
-  // refresh when global state changes
-  window.addEventListener('sgc-state-updated', function () {
-    try {
-      // re-read state and users
-      const freshState = window.appointmentsSystem && typeof window.appointmentsSystem.readState === 'function' ? window.appointmentsSystem.readState() : state;
-      const freshUsers = window.appointmentsSystem && typeof window.appointmentsSystem.readUsers === 'function' ? window.appointmentsSystem.readUsers() : users;
-      if (freshState) {
-        state = freshState;
-        users = freshUsers || users;
-        specialistUsers = users.filter((u) => u.role === 'specialist');
-        // rebuild UI
-        buildChart();
-        buildPendingAppointments();
-        buildTopServices();
-        buildActivityFeed();
-        buildReminders();
-        buildSpecialistsList();
-        buildPromotions();
-        updateStats();
-      }
-    } catch (e) { /* ignore */ }
-  });
+  renderHeader();
+  renderAll();
+  window.addEventListener('sgc-state-updated', renderAll);
 });

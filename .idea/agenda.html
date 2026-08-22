@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda - SGC Cosmetic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="StylesSpecialistDashboard.css">
+  <link rel="stylesheet" href="StylesAgenda.css">
+</head>
+<body>
+  <div class="menu-overlay" id="menuOverlay"></div>
+  <aside class="sidebar-menu" id="sidebarMenu">
+    <div class="sidebar-user-box"><div class="sidebar-user-avatar"><i class="fa-solid fa-circle-user"></i></div><div class="sidebar-user-meta"><span class="sidebar-user-name" id="sidebarUserName">Sofía Vega</span><span class="sidebar-user-role" id="sidebarUserRole">Especialista</span></div></div>
+    <div class="sidebar-header"><hr class="sidebar-divider"></div>
+    <div class="sidebar-section-label">General</div>
+    <nav class="sidebar-nav"><a href="specialist-dashboard.html"><i class="fa-solid fa-house"></i> Inicio</a><a href="agenda.html" class="active"><i class="fa-regular fa-calendar"></i> Agenda</a><hr class="sidebar-divider"><a href="perfil-especialista.html"><i class="fa-regular fa-user"></i> Perfil</a></nav>
+    <button class="sidebar-logout" type="button" id="signOutBtn"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button><hr class="sidebar-divider"><div class="sidebar-brand">SGC COSMETICS</div>
+  </aside>
+  <div class="agenda-wrapper">
+    <header class="topbar"><button class="menu-trigger" id="menuTrigger" type="button" aria-label="Abrir menú"><i class="fa-solid fa-bars"></i></button><div class="topbar-actions"><div class="specialist-notification-wrap"><button class="notification-trigger" type="button" aria-label="Notificaciones" data-notification-toggle><i class="fa-regular fa-bell"></i><span class="notification-badge"></span></button><div class="notification-panel" id="notificationPanel"><div id="notificationList"></div></div></div><div class="specialist-chip"><img class="chip-avatar" id="specialistAvatar" src="https://www.gravatar.com/avatar/?d=mp&s=150" alt="Especialista"><span><strong id="specialistName">Sofía Vega</strong><small>Especialista</small></span></div></div></header>
+    <main class="agenda-page">
+      <section class="agenda-heading"><div><h1>Agenda</h1><p>Administra tus citas y horarios</p></div><a class="view-all-button" href="specialist-dashboard.html#agenda">Ver todas las citas <i class="fa-solid fa-arrow-right"></i></a></section>
+      <section class="agenda-toolbar"><button class="today-button" id="todayButton">Hoy</button><div class="period-selector"><button id="previousPeriod" aria-label="Periodo anterior">‹</button><strong id="periodLabel">29 Jun - 06 Jul 2026</strong><button id="nextPeriod" aria-label="Periodo siguiente">›</button></div><div class="range-selector"><button class="active" data-range="day">Día</button><button data-range="week">Semana</button><button data-range="month">Mes</button></div></section>
+      <section class="agenda-grid"><div class="calendar-panel"><div class="time-column" id="timeColumn"></div><div class="schedule-grid" id="scheduleGrid"></div></div><aside class="agenda-summary"><article class="next-card"><h2>Próxima cita</h2><div id="nextAppointment"></div><div class="next-reminder"><i class="fa-regular fa-clock"></i><span>En 15 min</span></div></article><article class="day-summary"><h2>Resumen del día</h2><div id="daySummary"></div></article></aside></section>
+    </main>
+  </div>
+  <script src="appointments-system.js"></script><script src="agenda.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion de clientes - SGC Cosmetic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="StylesAdmin.css">
+</head>
+<body data-admin-page="clientes">
+  <div class="main-wrapper">
+    <section class="page-head">
+      <div><h1>Gestion de clientes</h1></div>
+    </section>
+
+    <section class="stat-row cols-4">
+      <article class="stat-icon tone-grey"><i class="fa-solid fa-users"></i><div><strong id="statTotal">0</strong><small>Clientes registrados<span class="stat-sub">Total en el sistema</span></small></div></article>
+      <article class="stat-icon"><i class="fa-regular fa-user"></i><div><strong id="statActive">0</strong><small>Clientes activos<span class="stat-sub">Sin restricciones</span></small></div></article>
+      <article class="stat-icon tone-red"><i class="fa-solid fa-user-slash"></i><div><strong id="statBanned">0</strong><small>Clientes vetados<span class="stat-sub">Por inasistencias</span></small></div></article>
+      <article class="stat-icon tone-purple"><i class="fa-regular fa-calendar-xmark"></i><div><strong id="statNoShows">0</strong><small>Faltas acumuladas<span class="stat-sub">Total del sistema</span></small></div></article>
+    </section>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" id="search" placeholder="Buscar cliente...">
+      </div>
+      <select class="select-box" id="statusFilter">
+        <option value="">Estado: Todos</option>
+        <option value="active">Activo</option>
+        <option value="banned">Vetado</option>
+      </select>
+    </div>
+
+    <div class="table-card">
+      <table class="data">
+        <thead>
+          <tr><th>Cliente</th><th>Telefono</th><th>Email</th><th>Faltas</th><th>Estado</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="pager" id="pager"></div>
+  </div>
+
+  <script src="appointments-system.js"></script>
+  <script src="admin-data.js"></script>
+  <script src="admin-shell.js"></script>
+  <script src="admin-clientes.js"></script>
+</body>
+</html>

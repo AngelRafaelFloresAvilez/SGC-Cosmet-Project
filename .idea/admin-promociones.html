@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Promociones - SGC Cosmetic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="StylesAdmin.css">
+</head>
+<body data-admin-page="promociones">
+  <div class="main-wrapper">
+    <section class="page-head">
+      <div>
+        <h1>Promociones</h1>
+        <p>Administra y controla las promociones y descuentos disponibles para tus clientes</p>
+      </div>
+      <button class="btn-primary" type="button" id="newPromoBtn">+ Nueva promocion</button>
+    </section>
+
+    <div class="tabs" id="tabs">
+      <button type="button" class="active" data-tab="all">Todas las promociones</button>
+      <button type="button" data-tab="active">Activas <span class="count" id="countActive">0</span></button>
+      <button type="button" data-tab="scheduled">Programadas <span class="count" id="countScheduled">0</span></button>
+      <button type="button" data-tab="expired">Expiradas <span class="count" id="countExpired">0</span></button>
+    </div>
+
+    <div class="toolbar" style="border-radius:0">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" id="search" placeholder="Buscar por servicio, tipo...">
+      </div>
+      <select class="select-box" id="typeFilter">
+        <option value="">Tipo: Todos</option>
+        <option value="Porcentaje">Porcentaje</option>
+        <option value="2×1">2×1</option>
+        <option value="Paquete">Paquete</option>
+      </select>
+    </div>
+
+    <div class="table-card">
+      <table class="data">
+        <thead>
+          <tr><th>Promocion</th><th>Tipo</th><th>Descuento</th><th>Vigencia</th><th>Estado</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="pager" id="pager"></div>
+  </div>
+
+  <script src="appointments-system.js"></script>
+  <script src="admin-data.js"></script>
+  <script src="admin-shell.js"></script>
+  <script src="admin-promociones.js"></script>
+</body>
+</html>

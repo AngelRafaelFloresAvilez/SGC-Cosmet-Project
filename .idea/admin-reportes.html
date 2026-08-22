@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reportes - SGC Cosmetic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="StylesAdmin.css">
+</head>
+<body data-admin-page="reportes">
+  <div class="main-wrapper">
+    <section class="page-head">
+      <div>
+        <h1>Reportes</h1>
+        <p>Consulta el rendimiento de tu negocio</p>
+      </div>
+      <div class="range-switch" id="rangeSwitch">
+        <button type="button" data-range="day">Dia</button>
+        <button type="button" data-range="week">Semana</button>
+        <button type="button" data-range="month" class="active">Mes</button>
+      </div>
+    </section>
+
+    <section class="stat-row cols-4">
+      <article class="stat-bar"><div><strong id="statAppointments">0</strong><small id="statAppointmentsLabel">Citas realizadas</small></div></article>
+      <article class="stat-bar"><div><strong id="statClients">0</strong><small>Clientes nuevos este mes</small></div></article>
+      <article class="stat-bar"><div><strong id="statSpecialists">0</strong><small>Especialistas activos</small></div></article>
+      <article class="stat-bar"><div><strong id="statRevenue">$0</strong><small id="statRevenueLabel">Ventas</small></div></article>
+    </section>
+
+    <section class="grid-3">
+      <article class="panel">
+        <div class="panel-head"><span class="panel-title">Ingresos</span></div>
+        <div class="chart-box" id="revenueChart"></div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head"><span class="panel-title">Citas por dia de la semana</span></div>
+        <div class="chart-box" id="weekdayChart"></div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head"><span class="panel-title">Clientes con inasistencias</span></div>
+        <div class="rank-list" id="noShowList"></div>
+        <div class="pager" id="noShowPager"></div>
+      </article>
+    </section>
+
+    <section class="grid-2">
+      <article class="panel">
+        <div class="panel-head"><span class="panel-title">Servicios mas solicitados</span></div>
+        <table class="data">
+          <thead><tr><th>Servicio</th><th>Citas realizadas</th><th>Ingresos generados</th></tr></thead>
+          <tbody id="serviceRows"></tbody>
+        </table>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">
+          <small class="muted" id="serviceSummary"></small>
+          <div class="pager" id="servicePager" style="margin:0"></div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head"><span class="panel-title">Cancelaciones recientes</span></div>
+        <table class="data">
+          <thead><tr><th>Cliente</th><th>Servicio</th><th>Fecha</th><th>Hora</th><th>Motivo</th></tr></thead>
+          <tbody id="cancelRows"></tbody>
+        </table>
+      </article>
+    </section>
+  </div>
+
+  <script src="appointments-system.js"></script>
+  <script src="admin-data.js"></script>
+  <script src="admin-charts.js"></script>
+  <script src="admin-shell.js"></script>
+  <script src="admin-reportes.js"></script>
+</body>
+</html>

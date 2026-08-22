@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion de empleados - SGC Cosmetic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="StylesAdmin.css">
+</head>
+<body data-admin-page="empleados">
+  <div class="main-wrapper">
+    <section class="page-head">
+      <div><h1>Gestion de empleados</h1></div>
+      <button class="btn-primary" type="button" id="newEmployeeBtn">+ Nuevo empleado</button>
+    </section>
+
+    <section class="stat-row cols-4">
+      <article class="stat-icon tone-grey"><i class="fa-solid fa-users"></i><div><strong id="statTotal">0</strong><small>Empleados registrados<span class="stat-sub">Total en el sistema</span></small></div></article>
+      <article class="stat-icon"><i class="fa-regular fa-user"></i><div><strong id="statActive">0</strong><small>Empleados activos<span class="stat-sub">Actualmente trabajando</span></small></div></article>
+      <article class="stat-icon tone-red"><i class="fa-regular fa-calendar"></i><div><strong id="statDaysOff">0</strong><small>Días no laborales<span class="stat-sub">Configurados</span></small></div></article>
+      <article class="stat-icon tone-purple"><i class="fa-regular fa-clock"></i><div><strong id="statHours">0 hrs</strong><small>Jornada laboral<span class="stat-sub">Horas por día</span></small></div></article>
+    </section>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" id="search" placeholder="Buscar empleado...">
+      </div>
+    </div>
+
+    <div class="table-card">
+      <table class="data">
+        <thead>
+          <tr><th>Empleado</th><th>Especialidad</th><th>Horario laboral</th><th>Días no laborales</th><th>Estado</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="pager" id="pager"></div>
+  </div>
+
+  <script src="appointments-system.js"></script>
+  <script src="admin-data.js"></script>
+  <script src="admin-shell.js"></script>
+  <script src="admin-empleados.js"></script>
+</body>
+</html>

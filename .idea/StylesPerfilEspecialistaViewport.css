@@ -1,0 +1,46 @@
+html, body { height: 100%; overflow: hidden; }
+.professional-profile-wrapper { height: 100vh; min-height: 0; padding: 96px 3.33vw 16px; overflow: hidden; }
+.professional-profile { height: 100%; min-height: 0; }
+.profile-heading { margin-bottom: 10px; }
+.profile-heading h1 { font-size: clamp(30px, 3vw, 42px); }
+.profile-heading p { margin-top: 5px; }
+.info-tab { padding: 10px 28px; }
+.professional-grid { height: calc(100vh - 172px); min-height: 0; padding: 12px; gap: 14px; overflow: hidden; }
+.professional-identity, .professional-info, .services-card, .hours-card { min-height: 0; overflow: hidden; }
+.professional-identity { padding: 22px 22px; }
+.identity-avatar { width: 112px; height: 112px; margin-bottom: 14px; }
+.change-photo { margin: 12px 0; padding: 8px; }
+.identity-contact { gap: 10px; margin-top: 16px; }
+.professional-info { padding: 20px 24px; }
+.professional-info h2, .services-card h2, .hours-card h2 { margin-bottom: 14px; }
+.professional-info label { margin-bottom: 10px; }
+.professional-info input { margin-top: 4px; padding: 9px 12px; }
+.professional-side { min-height: 0; gap: 14px; }
+.services-card { min-height: 0; padding: 16px; }
+.hours-card { min-height: 0; padding: 16px; }
+.service-profile-row { margin-top: 9px; }
+.hour-row { margin-top: 7px; }
+@media (max-width: 1300px) {
+  .professional-grid { height: calc(100vh - 172px); }
+}
+@media (max-width: 700px) {
+  html, body { overflow: hidden; }
+  .professional-profile-wrapper { height: 100vh; padding: 82px 10px 10px; }
+  .profile-heading h1 { font-size: 28px; }
+  .profile-heading p { font-size: 12px; }
+  .info-tab { margin-top: 8px; padding: 8px 18px; }
+  .professional-grid { height: calc(100vh - 150px); padding: 8px; gap: 8px; overflow: hidden; }
+  .professional-grid, .professional-side { grid-template-columns: minmax(0, 1fr); }
+  .professional-side { grid-column: auto; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+  .professional-identity { padding: 12px; }
+  .identity-avatar { width: 74px; height: 74px; font-size: 34px; margin-bottom: 6px; }
+  .professional-identity h2 { font-size: 20px; }
+  .identity-contact { gap: 5px; margin-top: 8px; font-size: 11px; }
+  .professional-info { padding: 14px; }
+  .professional-info label { margin-bottom: 6px; font-size: 11px; }
+  .professional-info input { padding: 7px 9px; font-size: 12px; }
+  .services-card, .hours-card { padding: 12px; }
+  .service-profile-row { margin-top: 5px; font-size: 11px; }
+  .hour-row { grid-template-columns: 62px minmax(10px, 1fr) 115px; margin-top: 4px; font-size: 10px; }
+  .hour-time { padding: 4px; }
+}

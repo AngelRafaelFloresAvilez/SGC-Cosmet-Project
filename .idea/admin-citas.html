@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de citas - SGC Cosmetic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="StylesAdmin.css">
+</head>
+<body data-admin-page="citas">
+  <div class="main-wrapper">
+    <section class="page-head">
+      <div><h1>Control de citas</h1></div>
+    </section>
+
+    <section class="stat-row cols-4">
+      <article class="stat-icon"><i class="fa-regular fa-calendar"></i><div><strong id="statTotal">0</strong><small>Total de citas</small></div></article>
+      <article class="stat-icon"><i class="fa-regular fa-circle-check"></i><div><strong id="statPending">0</strong><small>Citas pendientes</small></div></article>
+      <article class="stat-icon tone-red"><i class="fa-solid fa-xmark"></i><div><strong id="statCancelled">0</strong><small>Citas canceladas este mes</small></div></article>
+      <article class="stat-icon"><i class="fa-solid fa-user-clock"></i><div><strong id="statUnassigned">0</strong><small>Sin especialista asignado</small></div></article>
+    </section>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" id="search" placeholder="Buscar por cliente, servicio o especialista...">
+      </div>
+      <select class="select-box" id="statusFilter">
+        <option value="">Estado: Todos</option>
+        <option value="pending">Pendiente</option>
+        <option value="confirmed">Confirmada</option>
+        <option value="previous">Atendida</option>
+        <option value="no_show">No asistió</option>
+        <option value="cancelled">Cancelada</option>
+      </select>
+    </div>
+
+    <div class="table-card">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>Cliente</th><th>Servicio</th><th>Especialista</th>
+            <th>Fecha</th><th>Hora</th><th>Estado</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="pager" id="pager"></div>
+  </div>
+
+  <script src="appointments-system.js"></script>
+  <script src="admin-data.js"></script>
+  <script src="admin-shell.js"></script>
+  <script src="admin-citas.js"></script>
+</body>
+</html>

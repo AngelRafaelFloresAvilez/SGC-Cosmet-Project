@@ -1,0 +1,7 @@
+.professional-grid { grid-template-columns: minmax(220px, .8fr) minmax(360px, 1.4fr) minmax(220px, .9fr); align-items: stretch; }
+.professional-side { grid-column: auto; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.professional-identity, .professional-info, .professional-side { min-height: 0; }
+@media (max-width: 900px) {
+  .professional-grid { grid-template-columns: minmax(0, 1fr); overflow: hidden; }
+  .professional-side { grid-column: auto; grid-template-columns: minmax(0, 1fr); }
+}

@@ -11,83 +11,99 @@
   <link rel="stylesheet" href="StylesSpecialistDashboard.css">
 </head>
 <body>
+  <div class="menu-overlay" id="menuOverlay"></div>
+  <aside class="sidebar-menu" id="sidebarMenu">
+    <div class="sidebar-user-box">
+      <div class="sidebar-user-avatar" id="sidebarUserAvatar"><i class="fa-solid fa-circle-user"></i></div>
+      <div class="sidebar-user-meta">
+        <span class="sidebar-user-name" id="sidebarUserName">Sofía Vega</span>
+        <span class="sidebar-user-role" id="sidebarUserRole">Especialista</span>
+      </div>
+    </div>
+    <div class="sidebar-header"><hr class="sidebar-divider"></div>
+    <div class="sidebar-section-label">General</div>
+    <nav class="sidebar-nav">
+      <a href="specialist-dashboard.html" class="active"><i class="fa-solid fa-house"></i> Inicio</a>
+      <a href="agenda.html"><i class="fa-regular fa-calendar"></i> Agenda</a>
+      <hr class="sidebar-divider">
+      <a href="perfil-especialista.html" class="nav-profile-link"><i class="fa-regular fa-user"></i> Perfil</a>
+    </nav>
+    <button class="sidebar-logout" type="button" id="specialistSignOut"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
+    <hr class="sidebar-divider">
+    <div class="sidebar-brand">SGC COSMETICS</div>
+  </aside>
   <div class="main-wrapper">
     <header class="topbar">
-      <div class="brand">Panel del especialista</div>
+      <button class="menu-trigger" type="button" aria-label="Abrir menú"><i class="fa-solid fa-bars"></i></button>
       <div class="topbar-actions">
-        <button class="btn btn-login" id="specialistSignOut">Cerrar sesión</button>
+        <div class="specialist-notification-wrap"><button class="notification-trigger" type="button" aria-label="Notificaciones" data-notification-toggle><i class="fa-regular fa-bell"></i><span class="notification-badge"></span></button><div class="notification-panel" id="notificationPanel"><div id="notificationList"></div></div></div>
+        <button class="specialist-chip" type="button" id="editProfileBtn" aria-label="Abrir perfil del especialista">
+          <img class="chip-avatar" id="specialistAvatar" src="https://www.gravatar.com/avatar/?d=mp&s=150" alt="Especialista">
+          <span><strong id="specialistName">Dra. Sofía Reyes</strong><small id="specialistRole">Especialista</small></span>
+        </button>
       </div>
     </header>
 
-    <div class="profile-card">
-      <img class="avatar" id="specialistAvatar" src="https://www.gravatar.com/avatar/?d=mp&s=150" alt="Especialista">
-      <div>
-        <p id="specialistName">Dra. Sofía Reyes</p>
-        <p id="specialistRole">Especialista en estética facial</p>
-        <p id="specialistContact" class="meta">sofia@sgc.com · +52 55 1234 5678</p>
-        <div style="margin-top:10px;display:flex;gap:8px">
-          <button class="btn secondary" id="editProfileBtn">Editar perfil</button>
-        </div>
-      </div>
-    </div>
+    <main class="specialist-dashboard">
+      <section class="welcome-block">
+        <h1>Hola de nuevo, <span id="welcomeName">Dra. Sofía Reyes</span></h1>
+        <p id="todayLabel"></p>
+      </section>
 
-    <div class="stats">
-      <div class="stat"><span>Citas hoy</span><strong id="todayCount">0</strong></div>
-      <div class="stat"><span>Próximas</span><strong id="upcomingCount">0</strong></div>
-      <div class="stat"><span>Servicios activos</span><strong id="servicesCount">0</strong></div>
-    </div>
+      <section class="stats">
+        <div class="stat stat-calendar"><i class="fa-regular fa-calendar"></i><span><strong id="todayCount">0</strong><small>Citas hoy</small></span></div>
+        <div class="stat stat-clock"><i class="fa-regular fa-clock"></i><span><strong id="upcomingCount">0</strong><small>Pendiente</small></span></div>
+        <div class="stat stat-check"><i class="fa-regular fa-circle-check"></i><span><strong id="completedCount">0</strong><small>Citas completadas</small></span></div>
+        <div class="stat stat-star"><i class="fa-regular fa-star"></i><span><strong id="averageRating">0</strong><small>Calificación promedio</small></span></div>
+      </section>
 
-    <div class="grid">
-      <div class="card">
-        <div class="section-title">Agenda</div>
+      <section class="dashboard-columns">
+        <div class="dashboard-panel agenda-panel" id="agenda">
+          <div class="section-title">Agenda hoy</div>
         <div class="filters">
           <button class="filter-btn active" data-range="day">Día</button>
           <button class="filter-btn" data-range="week">Semana</button>
           <button class="filter-btn" data-range="month">Mes</button>
         </div>
         <div class="appointment-list" id="appointmentList"></div>
-      </div>
-
-      <div class="card detail-card" id="appointmentDetail">
-        <p class="section-title">Detalle de cita</p>
-        <div class="detail-grid">
-          <div><span>Servicio</span><strong>Selecciona una cita</strong></div>
-          <div><span>Horario</span><strong>---</strong></div>
-          <div><span>Cliente</span><strong>---</strong></div>
-          <div><span>Contacto</span><strong>---</strong></div>
+        <div class="dashboard-pager" id="agendaPager" aria-label="Paginación de agenda"></div>
         </div>
-        <div class="meta" style="margin-top:16px;">Selecciona una cita para ver más detalles y confirmar estado.</div>
-      </div>
-    </div>
+        <div class="dashboard-panel upcoming-panel">
+          <div class="section-title">Próximas citas</div>
+          <div id="upcomingAppointmentsList" class="upcoming-list"></div>
+          <div class="dashboard-pager" id="upcomingPager" aria-label="Paginación de próximas citas"></div>
+        </div>
+        <div class="dashboard-panel reminders-panel">
+          <div class="section-title">Recordatorios</div>
+          <div id="remindersList" class="reminder-list"></div>
+        </div>
+      </section>
 
-    <div class="card services-card">
-      <div class="section-title">Servicios activos</div>
-      <div style="margin-bottom:12px; display:flex; justify-content:flex-end;">
-        <button id="addServiceBtn" type="button" class="btn" style="padding:8px 12px; border-radius:12px;">Agregar servicio</button>
-      </div>
-      <div class="service-list" id="servicesList"></div>
-    </div>
+      <div id="appointmentDetail" class="detail-modal" hidden></div>
+      <div id="servicesList" hidden></div>
+      <button id="addServiceBtn" hidden type="button">Agregar servicio</button>
+      <span id="servicesCount" hidden>0</span>
+      <span id="specialistContact" hidden></span>
 
-    <!-- Edit profile modal -->
-    <div class="modal-backdrop" id="editProfileModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center">
-      <div class="modal-box" style="background:#fff;padding:20px;border-radius:12px;max-width:420px;width:100%">
-        <h3>Editar perfil</h3>
-        <div style="display:grid;gap:8px;margin-top:10px">
-          <input id="profileNameInput" placeholder="Nombre completo" style="padding:10px;border:1px solid var(--border-color);border-radius:8px">
-          <input id="profileEmailInput" placeholder="Correo" style="padding:10px;border:1px solid var(--border-color);border-radius:8px">
-          <input id="profilePhoneInput" placeholder="Teléfono" style="padding:10px;border:1px solid var(--border-color);border-radius:8px">
-          <div style="display:flex;gap:8px;align-items:center">
-            <label for="profileAvatarInput" class="btn secondary" style="margin:0;cursor:pointer">Subir foto</label>
-            <input id="profileAvatarInput" type="file" accept="image/*" style="display:none">
-            <small id="avatarFileName" class="meta">Ningún archivo seleccionado</small>
-          </div>
-          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">
-            <button id="cancelEditProfile" type="button" class="btn secondary">Cancelar</button>
-            <button id="saveEditProfile" type="button" class="btn">Guardar</button>
+      <div class="modal-backdrop" id="editProfileModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center">
+        <div class="modal-box" style="background:#fff;padding:20px;border-radius:12px;max-width:420px;width:100%">
+          <h3>Editar perfil</h3>
+          <div style="display:grid;gap:8px;margin-top:10px">
+            <input id="profileNameInput" placeholder="Nombre completo" style="padding:10px;border:1px solid var(--border-color);border-radius:8px">
+            <input id="profileEmailInput" placeholder="Correo" style="padding:10px;border:1px solid var(--border-color);border-radius:8px">
+            <input id="profilePhoneInput" placeholder="Teléfono" style="padding:10px;border:1px solid var(--border-color);border-radius:8px">
+            <div style="display:flex;gap:8px;align-items:center">
+              <label for="profileAvatarInput" class="btn secondary" style="margin:0;cursor:pointer">Subir foto</label>
+              <input id="profileAvatarInput" type="file" accept="image/*" style="display:none">
+              <small id="avatarFileName" class="meta">Ningún archivo seleccionado</small>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">
+              <button id="cancelEditProfile" type="button" class="btn secondary">Cancelar</button>
+              <button id="saveEditProfile" type="button" class="btn">Guardar</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
     <!-- Add service modal (simple) -->
     <div class="modal-backdrop" id="addServiceModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center">
@@ -105,6 +121,7 @@
         </div>
       </div>
     </div>
+    </main>
   </div>
 
   <script src="appointments-system.js"></script>

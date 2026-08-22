@@ -50,6 +50,10 @@ function formatBookingDate(date) {
   return `${bookingDayNames[date.getDay()]} ${date.getDate()}`;
 }
 
+function localDateIso(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 function formatMonthLabel(date) {
   return date.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }).replace(/^./, (letter) => letter.toUpperCase());
 }
@@ -73,7 +77,7 @@ function renderSmallBookingCalendar() {
     const outsideMonth = date.getMonth() !== bookingCalendarMonth.getMonth();
     const beforeMinimum = isDateBeforeMinimum(date);
     const selected = date.toDateString() === selectedBookingDate.toDateString();
-    return `<span class="${outsideMonth ? 'calendar-muted' : 'calendar-date'} ${beforeMinimum ? 'calendar-disabled' : ''} ${selected ? 'active' : ''}" data-date="${formatBookingDate(date)}" data-iso-date="${date.toISOString()}" ${beforeMinimum ? 'aria-disabled="true"' : ''}>${date.getDate()}</span>`;
+    return `<span class="${outsideMonth ? 'calendar-muted' : 'calendar-date'} ${beforeMinimum ? 'calendar-disabled' : ''} ${selected ? 'active' : ''}" data-date="${formatBookingDate(date)}" data-iso-date="${localDateIso(date)}" ${beforeMinimum ? 'aria-disabled="true"' : ''}>${date.getDate()}</span>`;
   }).join('');
   if (monthLabel) monthLabel.textContent = formatMonthLabel(bookingCalendarMonth);
 }
@@ -99,14 +103,32 @@ function timeInMinutes(time) {
   return hour * 60 + Number(match[2]);
 }
 
+function workTimeInMinutes(time) {
+  const match = String(time || '').match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
 function specialistWorkingHours(date, specialist) {
-  if (specialist && specialist !== 'Cualquiera. Mejor disponible' && specialist !== 'Dra. Sofía Reyes') {
-    return null;
-  }
-  const day = date.getDay();
-  if (day === 0) return null;
-  if (day === 6) return { start: 9 * 60, end: 14 * 60 };
-  return { start: 9 * 60, end: 18 * 60 };
+  const users = window.appointmentsSystem?.readUsers?.() || [];
+  const selected = String(specialist || '').toLowerCase();
+  const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const dayKey = dayKeys[date.getDay()];
+  const candidates = users.filter((user) => {
+    if (user.role !== 'specialist' || user.active === false) return false;
+    if (!selected || selected === 'cualquiera. mejor disponible') return true;
+    return String(user.email || '').toLowerCase() === selected
+      || `${user.name || ''} ${user.lastName || ''}`.trim().toLowerCase() === selected;
+  });
+  const schedules = candidates
+    .filter((user) => !(Array.isArray(user.daysOff) ? user.daysOff : []).includes(dayKey))
+    .map((user) => ({
+      start: workTimeInMinutes(user.workStart || ''),
+      end: workTimeInMinutes(user.workEnd || '')
+    }))
+    .filter((schedule) => schedule.start !== null && schedule.end !== null && schedule.end > schedule.start);
+  if (!schedules.length) return null;
+  return { start: Math.min(...schedules.map((schedule) => schedule.start)), end: Math.max(...schedules.map((schedule) => schedule.end)) };
 }
 
 function isOutsideWorkingHours(date, time) {
@@ -137,8 +159,13 @@ function hasBookingWindow(date, time) {
 
 function activeAppointmentOccupies(appointment, date, time, specialist, requestedDuration = 30) {
   if (!appointment || appointment.status === 'cancelled' || appointment.status === 'previous' || appointment.status === 'completed') return false;
-  const appointmentDay = Number(String(appointment.date || '').match(/\d{1,2}/)?.[0]);
-  if (appointmentDay !== date.getDate()) return false;
+  if (appointment.iso) {
+    const appointmentDate = new Date(appointment.iso);
+    if (Number.isNaN(appointmentDate.getTime()) || appointmentDate.toDateString() !== date.toDateString()) return false;
+  } else {
+    const appointmentDay = Number(String(appointment.date || '').match(/\d{1,2}/)?.[0]);
+    if (appointmentDay !== date.getDate()) return false;
+  }
   const assignedSpecialist = appointment.specialist || appointment.createdBy?.specialist || '';
   const hasSpecificAssignment = assignedSpecialist && assignedSpecialist !== 'Cualquiera. Mejor disponible';
   if (specialist && specialist !== 'Cualquiera. Mejor disponible' && hasSpecificAssignment && assignedSpecialist !== specialist) return false;
@@ -175,6 +202,7 @@ function renderBookingSchedule() {
 
   dayHeader.innerHTML = weekDates.map((date) => `<span class="${date.toDateString() === selectedBookingDate.toDateString() ? 'selected' : ''}">${bookingDayNames[date.getDay()]}<b>${date.getDate()}</b></span>`).join('');
   if (timeColumn) timeColumn.innerHTML = `<span></span>${bookingTimes.map((time) => `<span>${time}</span>`).join('')}`;
+  let availableSlotCount = 0;
   slots.innerHTML = weekDates.map((date, columnIndex) => `
     <div class="schedule-column ${date.toDateString() === selectedBookingDate.toDateString() ? 'selected' : ''}">
       ${bookingTimes.map((time, timeIndex) => {
@@ -183,11 +211,15 @@ function renderBookingSchedule() {
         const invalidStartTime = isInvalidStartTime(time);
         const availableWindow = hasBookingWindow(date, time);
         const unavailable = Boolean(occupiedAppointment) || !availableWindow || isDateBeforeMinimum(date) || outsideWorkingHours || invalidStartTime;
+        if (!unavailable) availableSlotCount += 1;
         const active = date.toDateString() === selectedBookingDate.toDateString() && time === selectedBookingTime;
         const occupiedLabel = occupiedAppointment ? 'Ocupado' : 'No disponible';
-        return `<button type="button" class="time-btn schedule-block ${unavailable ? 'unavailable' : ''} ${occupiedAppointment ? 'occupied' : ''} ${active && !unavailable ? 'active' : ''}" data-time="${time}" ${unavailable ? 'disabled' : ''}>${unavailable ? '<i class="fa-solid fa-lock"></i>' : active ? '<i class="fa-solid fa-check"></i>' : ''}${unavailable ? ` ${occupiedLabel}` : time}</button>`;
+        return `<button type="button" class="time-btn schedule-block ${unavailable ? 'unavailable' : ''} ${occupiedAppointment ? 'occupied' : ''} ${active && !unavailable ? 'active' : ''}" data-time="${time}" data-date-iso="${localDateIso(date)}" ${unavailable ? 'disabled' : ''}>${unavailable ? '<i class="fa-solid fa-lock"></i>' : active ? '<i class="fa-solid fa-check"></i>' : ''}${unavailable ? ` ${occupiedLabel}` : time}</button>`;
       }).join('')}
     </div>`).join('');
+  if (!availableSlotCount) {
+    slots.innerHTML = '<div class="booking-empty-schedule">No hay horarios disponibles para el especialista y las fechas seleccionadas.</div>';
+  }
 
   if (todayButton) todayButton.textContent = `Hoy · ${formatBookingDate(new Date())}`;
 }
@@ -247,6 +279,22 @@ function abrirModal(titulo, categoria, desc, incluye, duracion, precio, img) {
   const ratingEl = document.getElementById('modalRating');
   if (ratingEl) ratingEl.innerText = (document.querySelector('[data-rating]')?.dataset?.rating) || '4.8';
 
+  const selectedService = window.appointmentsSystem?.getServices?.().find((service) =>
+    String(service.title || '').trim().toLowerCase() === String(titulo || '').trim().toLowerCase()
+  );
+  const bookingButton = document.querySelector('.btn-agendar');
+  const inactive = selectedService?.active === false;
+  if (availabilityEl) availabilityEl.innerText = inactive ? 'No disponible' : 'Disponible';
+  const availabilityHint = availabilityEl?.closest('.meta-item')?.querySelector('.muted');
+  if (availabilityHint) availabilityHint.innerText = inactive ? 'Servicio inhabilitado' : 'Disponible';
+  if (bookingButton) {
+    bookingButton.disabled = inactive;
+    bookingButton.classList.toggle('service-disabled', inactive);
+    bookingButton.innerHTML = inactive
+      ? '<i class="fa-solid fa-ban"></i> Servicio inactivo'
+      : 'Agendar cita';
+  }
+
   document.getElementById('serviceModal').classList.add('active');
 }
 
@@ -302,6 +350,22 @@ function abrirModalAgendamiento() {
   confirmationBack.classList.remove('return-to-catalog');
 
   setupBookingCalendar();
+
+  // El listado de especialistas sale de los empleados dados de alta por el admin.
+  try {
+    const specialistSelect = document.getElementById('bookingSpecialistSelect');
+    if (specialistSelect && window.appointmentsSystem && typeof window.appointmentsSystem.readUsers === 'function') {
+      const specialists = window.appointmentsSystem.readUsers()
+        .filter((user) => user.role === 'specialist' && user.active !== false);
+      specialistSelect.innerHTML = '<option value="">Cualquiera. Mejor disponible</option>' +
+        specialists.map((user) => {
+          const name = `${user.name || ''} ${user.lastName || ''}`.trim();
+          return `<option value="${user.email}">${name}${user.specialty ? ` — ${user.specialty}` : ''}</option>`;
+        }).join('');
+    }
+  } catch (e) {
+    /* si falla se conserva la opcion por defecto del HTML */
+  }
 
   try {
     const select = document.getElementById('bookingPromotionSelect');
@@ -444,6 +508,7 @@ window.addEventListener('DOMContentLoaded', () => {
       modifyingAppointmentId = modificationId;
       abrirModal(service.title, service.category || '', service.description || '', service.includes || '', service.duration, service.price, service.image);
       abrirModalAgendamiento();
+      selectedBookingDuration = durationInMinutes(appointment.duration) || selectedBookingDuration;
       selectedBookingTime = appointment.time;
       if (appointment.iso) {
         selectedBookingDate = new Date(appointment.iso);
@@ -539,6 +604,7 @@ document.addEventListener('click', (e) => {
 
   // Agendar button on service modal
   if (target.closest('.btn-agendar')) {
+    if (target.closest('.btn-agendar').disabled) return;
     abrirModalAgendamiento();
     return;
   }
@@ -563,13 +629,18 @@ document.addEventListener('click', (e) => {
     const dateBtn = target.closest('.date-btn, .calendar-date');
     if (dateBtn) {
       if (dateBtn.classList.contains('calendar-disabled')) return;
-      const selectedDate = dateBtn.dataset.isoDate ? new Date(dateBtn.dataset.isoDate) : selectedBookingDate;
+      const selectedDate = dateBtn.dataset.isoDate ? new Date(`${dateBtn.dataset.isoDate}T00:00:00`) : selectedBookingDate;
       syncBookingDate(selectedDate);
       return;
     }
     const timeBtn = target.closest('.time-btn');
     if (timeBtn) {
       if (timeBtn.classList.contains('unavailable')) return;
+      if (timeBtn.dataset.dateIso) {
+        selectedBookingDate = new Date(`${timeBtn.dataset.dateIso}T00:00:00`);
+        bookingCalendarMonth = new Date(selectedBookingDate.getFullYear(), selectedBookingDate.getMonth(), 1);
+        renderSmallBookingCalendar();
+      }
       selectedBookingTime = timeBtn.dataset.time || timeBtn.textContent.trim();
       renderBookingSchedule();
       return;
@@ -613,9 +684,9 @@ document.addEventListener('click', (e) => {
       const selectedDateBtn = bookingModal.querySelector('.date-btn.active, .calendar-date.active');
       const selectedTimeBtn = bookingModal.querySelector('.time-btn.active');
 
-      const date = selectedDateBtn?.dataset.date || (selectedDateBtn
+      const date = selectedBookingDate ? formatBookingDate(selectedBookingDate) : (selectedDateBtn?.dataset.date || (selectedDateBtn
         ? `${selectedDateBtn.querySelector('.day')?.innerText || ''} ${selectedDateBtn.querySelector('.num')?.innerText || ''}`.trim()
-        : '');
+        : ''));
       const time = selectedTimeBtn?.dataset.time || (selectedTimeBtn ? selectedTimeBtn.textContent.trim() : '');
       const specialist = document.getElementById('bookingSpecialistSelect')?.value || 'Cualquiera. Mejor disponible';
 
@@ -627,7 +698,7 @@ document.addEventListener('click', (e) => {
           : { allowed: false, reason: 'missing_datetime' };
       } else {
         result = window.appointmentsSystem && typeof window.appointmentsSystem.createAppointment === 'function'
-          ? window.appointmentsSystem.createAppointment(serviceName, price, date, time, '', { duration: selectedBookingDuration, specialist, draft: true })
+          ? window.appointmentsSystem.createAppointment(serviceName, price, date, time, '', { duration: selectedBookingDuration, specialist, dateISO: localDateIso(selectedBookingDate), draft: true })
           : { allowed: false, reason: 'missing_system' };
       }
 
@@ -683,9 +754,9 @@ document.addEventListener('click', (e) => {
     }
     const draft = pendingBookingDraft;
     const result = modifyingAppointmentId && window.appointmentsSystem && typeof window.appointmentsSystem.updateAppointment === 'function'
-      ? window.appointmentsSystem.updateAppointment(modifyingAppointmentId, draft.date, draft.time, { duration: draft.duration, specialist: draft.specialist })
+      ? window.appointmentsSystem.updateAppointment(modifyingAppointmentId, draft.date, draft.time, { duration: draft.duration, specialist: draft.specialist, dateISO: localDateIso(selectedBookingDate) })
       : window.appointmentsSystem && typeof window.appointmentsSystem.createAppointment === 'function'
-        ? window.appointmentsSystem.createAppointment(draft.serviceName, draft.price, draft.date, draft.time, '', { duration: draft.duration, specialist: draft.specialist })
+        ? window.appointmentsSystem.createAppointment(draft.serviceName, draft.price, draft.date, draft.time, '', { duration: draft.duration, specialist: draft.specialist, dateISO: localDateIso(selectedBookingDate) })
       : { allowed: false, reason: 'missing_system' };
     if (!result.allowed) {
       document.getElementById('confirmationModal').classList.remove('active');

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalle de cita - SGC Cosmetic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="StylesSpecialistDashboard.css">
+  <link rel="stylesheet" href="StylesDetalleCita.css">
+</head>
+<body>
+  <div class="menu-overlay" id="menuOverlay"></div>
+  <aside class="sidebar-menu" id="sidebarMenu">
+    <div class="sidebar-user-box"><div class="sidebar-user-avatar"><i class="fa-solid fa-circle-user"></i></div><div class="sidebar-user-meta"><span class="sidebar-user-name" id="sidebarUserName">Sofía Vega</span><span class="sidebar-user-role">Especialista</span></div></div>
+    <div class="sidebar-header"><hr class="sidebar-divider"></div><div class="sidebar-section-label">General</div>
+    <nav class="sidebar-nav"><a href="specialist-dashboard.html"><i class="fa-solid fa-house"></i> Inicio</a><a href="agenda.html"><i class="fa-regular fa-calendar"></i> Agenda</a><hr class="sidebar-divider"><a href="perfil-especialista.html"><i class="fa-regular fa-user"></i> Perfil</a></nav>
+    <button class="sidebar-logout" type="button" id="signOutBtn"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button><hr class="sidebar-divider"><div class="sidebar-brand">SGC COSMETICS</div>
+  </aside>
+  <div class="detail-wrapper">
+    <header class="topbar"><button class="menu-trigger" id="menuTrigger" type="button" aria-label="Abrir menú"><i class="fa-solid fa-bars"></i></button><div class="topbar-actions"><div class="specialist-notification-wrap"><button class="notification-trigger" type="button" aria-label="Notificaciones" data-notification-toggle><i class="fa-regular fa-bell"></i><span class="notification-badge"></span></button><div class="notification-panel" id="notificationPanel"><div id="notificationList"></div></div></div><div class="specialist-chip"><img class="chip-avatar" id="specialistAvatar" src="https://www.gravatar.com/avatar/?d=mp&s=150" alt="Especialista"><span><strong id="specialistName">Sofía Vega</strong><small>Especialista</small></span></div></div></header>
+    <main class="detail-page"><h1>Detalle cita</h1><section class="detail-cards"><article class="client-card" id="clientCard"></article><article class="service-card" id="serviceCard"></article><article class="history-card"><div class="history-heading"><h2>Historial del cliente</h2></div><div id="clientHistory" class="client-history-list"></div></article></section></main>
+  </div>
+  <script src="appointments-system.js"></script><script src="detalle-cita.js"></script>
+</body>
+</html>

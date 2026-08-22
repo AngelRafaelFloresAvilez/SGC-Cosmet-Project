@@ -1,0 +1,11 @@
+.professional-profile { max-width: 1440px; }
+.professional-grid { grid-template-columns: minmax(280px, 328px) minmax(0, 540px) minmax(300px, 1fr); min-width: 0; }
+.professional-grid > *, .professional-side, .services-card, .hours-card { min-width: 0; }
+.hour-row { grid-template-columns: minmax(58px, 75px) minmax(20px, 1fr) minmax(112px, 137px); }
+@media (max-width: 1300px) {
+  .professional-grid { grid-template-columns: minmax(280px, 328px) minmax(0, 1fr); }
+  .professional-side { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+  .professional-grid, .professional-side { grid-template-columns: minmax(0, 1fr); }
+}

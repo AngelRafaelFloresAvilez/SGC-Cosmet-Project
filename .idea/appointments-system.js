@@ -16,10 +16,7 @@
       statusMessage: 'Tienes acceso completo a tratamientos y promociones exclusivas.',
       notes: 'Disfruta de citas semanales y descuentos especiales para clientes recurrentes.'
     },
-    payments: [
-      { id: 'pay-1', amount: '$450 MXN', date: '12 Jun 2025', description: 'Limpieza facial profunda', status: 'Pagado' },
-      { id: 'pay-2', amount: '$600 MXN', date: '20 Jun 2025', description: 'Masaje relajante', status: 'Pagado' }
-    ],
+    payments: [],
     promotions: [
       { id: 'promo-1', title: '20% en tu próxima cita', description: 'Válido en tratamientos faciales y corporales.', validUntil: '31/08/2025', tag: 'Nueva' },
       { id: 'promo-2', title: 'Paquete de relajación', description: 'Incluye masaje + limpieza facial con un precio especial.', validUntil: '15/09/2025', tag: 'Popular' }
@@ -86,11 +83,12 @@
           message: 'Revisa tu próxima cita en gestión de citas.',
           unread: true,
           createdAt: new Date().toISOString(),
-          type: 'appointment'
+          type: 'appointment',
+          audienceEmail: 'ana@sgc.com'
         }
       ],
       profile: defaults.profile,
-      payments: defaults.payments,
+      payments: [],
       promotions: defaults.promotions,
       services: defaults.services,
       activePromotionId: null
@@ -103,6 +101,24 @@
     return window.sgcAuth && typeof window.sgcAuth.getSession === 'function'
       ? window.sgcAuth.getSession()
       : null;
+  }
+
+  function sessionEmail() {
+    return String(getSession()?.email || '').trim().toLowerCase();
+  }
+
+  function isOwnedByCurrentClient(appointment) {
+    const session = getSession() || {};
+    if (session.role !== 'client') return true;
+    return String(appointment?.createdBy?.email || '').toLowerCase() === sessionEmail();
+  }
+
+  function activePromotionId(state = readState()) {
+    const email = sessionEmail();
+    const session = getSession() || {};
+    return email
+      ? (state.activePromotionByUser?.[email] || (session.role === 'client' ? null : state.activePromotionId) || null)
+      : (state.activePromotionId || null);
   }
 
   function readUsers() {
@@ -123,16 +139,22 @@
     if (!session.email) {
       return (state.appointments || []).filter((appointment) => !appointment.createdBy || !appointment.createdBy.email);
     }
-    if (session.role === 'admin' || session.role === 'specialist') {
+    // El administrador supervisa todo el sistema.
+    if (session.role === 'admin') {
       return Array.isArray(state.appointments) ? state.appointments : [];
+    }
+    // El especialista solo ve lo suyo, mas lo que aun no tiene dueño.
+    if (session.role === 'specialist') {
+      const email = session.email.toLowerCase();
+      return (state.appointments || []).filter((appointment) => {
+        const assigned = String(appointment.specialistEmail || '').toLowerCase();
+        return !assigned || assigned === email;
+      });
     }
     const userAppointments = (state.appointments || []).filter((appointment) =>
       appointment.createdBy && appointment.createdBy.email && appointment.createdBy.email.toLowerCase() === session.email.toLowerCase()
     );
-    if (userAppointments.length) {
-      return userAppointments;
-    }
-    return (state.appointments || []).filter((appointment) => !appointment.createdBy || !appointment.createdBy.email);
+    return userAppointments;
   }
 
   function createProfileFromUser(user, stateProfile = {}) {
@@ -172,8 +194,37 @@
   function setProfileForCurrentSession(profileValues) {
     try {
       const state = readState();
-      state.profile = createProfileFromUser(getSessionUser(state), { ...(state.profile || {}), ...profileValues });
+      const session = getSession() || {};
+      const previousEmail = session.email || '';
+      const nextEmail = String(profileValues.email || previousEmail || state.profile?.email || '').trim();
+      const users = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || '[]');
+      const user = users.find((item) => item.email && item.email.toLowerCase() === previousEmail.toLowerCase());
+      if (user) {
+        user.email = nextEmail;
+        if (profileValues.name !== undefined) user.name = String(profileValues.name).trim();
+        if (profileValues.lastName !== undefined) user.lastName = String(profileValues.lastName).trim();
+        if (profileValues.phone !== undefined) user.phone = profileValues.phone;
+        if (profileValues.birthDate !== undefined) user.birthDate = profileValues.birthDate;
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(users));
+      }
+      if (previousEmail && nextEmail && previousEmail.toLowerCase() !== nextEmail.toLowerCase()) {
+        state.appointments = state.appointments.map((appointment) => {
+          const createdByMatches = appointment.createdBy?.email?.toLowerCase() === previousEmail.toLowerCase();
+          const specialistMatches = appointment.specialistEmail?.toLowerCase() === previousEmail.toLowerCase();
+          if (!createdByMatches && !specialistMatches) return appointment;
+          return {
+            ...appointment,
+            ...(createdByMatches ? { createdBy: { ...appointment.createdBy, email: nextEmail } } : {}),
+            ...(specialistMatches ? { specialistEmail: nextEmail } : {})
+          };
+        });
+        if (window.sgcAuth && typeof window.sgcAuth.setSession === 'function') {
+          window.sgcAuth.setSession({ ...session, email: nextEmail });
+        }
+      }
+      state.profile = { ...(state.profile || {}), ...profileValues, email: nextEmail };
       saveState(state);
+      window.dispatchEvent(new Event('sgc-state-updated'));
     } catch (e) {
       // ignore
     }
@@ -184,13 +235,21 @@
       const saved = localStorage.getItem(STORAGE_KEY);
       if (!saved) return buildSeedState();
       const parsed = JSON.parse(saved);
+      const seedClient = { email: 'ana@sgc.com', role: 'client', name: 'Ana López', phone: '+52 55 1234 5678' };
+      const appointments = Array.isArray(parsed?.appointments) ? parsed.appointments.map((appointment) =>
+        appointment.id?.startsWith('seed-') && !appointment.createdBy
+          ? { ...appointment, createdBy: seedClient }
+          : appointment
+      ) : [];
       return {
         ...defaults,
         ...parsed,
-        appointments: Array.isArray(parsed?.appointments) ? parsed.appointments : [],
+        appointments,
         notifications: Array.isArray(parsed?.notifications) ? parsed.notifications : [],
         profile: { ...defaults.profile, ...(parsed?.profile || {}) },
-        payments: Array.isArray(parsed?.payments) ? parsed.payments : defaults.payments,
+        payments: Array.isArray(parsed?.payments)
+          ? parsed.payments.filter((payment) => !['pay-1', 'pay-2'].includes(payment.id))
+          : [],
         promotions: Array.isArray(parsed?.promotions) ? parsed.promotions : defaults.promotions,
         services: mergeServices(Array.isArray(parsed?.services) ? parsed.services : defaults.services),
         activePromotionId: parsed?.activePromotionId || null
@@ -218,6 +277,9 @@
 
   function parseDisplayedDateTime(dateStr, timeStr) {
     if (!dateStr || !timeStr) return null;
+    const exactDate = /^\d{4}-\d{2}-\d{2}$/.test(String(dateStr))
+      ? new Date(`${dateStr}T00:00:00`)
+      : null;
     // dateStr expected like 'Lun 12' or '12'
     const num = (String(dateStr).match(/(\d{1,2})/) || [])[1];
     const timeMatches = String(timeStr).match(/(\d{1,2}:\d{2}\s*(AM|PM)?)/i);
@@ -225,10 +287,12 @@
     const day = Number(num);
     const now = new Date();
     // Try current month/year first
-    let candidate = new Date(now.getFullYear(), now.getMonth(), day);
+    let candidate = exactDate && !Number.isNaN(exactDate.getTime())
+      ? new Date(exactDate)
+      : new Date(now.getFullYear(), now.getMonth(), day);
     // If candidate is before today, assume next month
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    if (candidate < today) {
+    if (!exactDate && candidate < today) {
       // move to next month
       candidate = new Date(now.getFullYear(), now.getMonth() + 1, day);
     }
@@ -246,10 +310,41 @@
     return parsed;
   }
 
-  function isTimeSlotTaken(date, time, state = readState(), requestedDuration = 30, specialist = '') {
+  /**
+   * Fecha real de una cita. Es la unica fuente de verdad para esto: las citas
+   * guardan `iso` cuando se crean, pero las antiguas solo tienen el texto
+   * visible ("Lun 12", que es el dia del mes), asi que hay que reconstruirlas
+   * tomando como referencia su fecha de alta.
+   */
+  function resolveAppointmentDate(appointment) {
+    if (!appointment) return null;
+    if (appointment.iso) {
+      const exact = new Date(appointment.iso);
+      if (!Number.isNaN(exact.getTime())) return exact;
+    }
+
+    const raw = appointment.dateISO || appointment.isoDate || appointment.date;
+    if (raw && /^\d{4}-\d{2}-\d{2}/.test(raw)) {
+      const iso = new Date(raw);
+      if (!Number.isNaN(iso.getTime())) return iso;
+    }
+
+    const base = appointment.createdAt ? new Date(appointment.createdAt) : new Date();
+    if (Number.isNaN(base.getTime())) return null;
+
+    const day = Number((String(raw || '').match(/(\d{1,2})/) || [])[1]);
+    if (!day) return base;
+
+    let candidate = new Date(base.getFullYear(), base.getMonth(), day);
+    const baseDay = new Date(base.getFullYear(), base.getMonth(), base.getDate());
+    if (candidate < baseDay) candidate = new Date(base.getFullYear(), base.getMonth() + 1, day);
+    return candidate;
+  }
+
+  function isTimeSlotTaken(date, time, state = readState(), requestedDuration = 30, specialist = '', dateISO = '') {
     if (!date || !time) return false;
-    const attempted = parseDisplayedDateTime(date, time);
-    const attemptedDay = Number(String(date).match(/\d{1,2}/)?.[0]);
+    const attempted = parseDisplayedDateTime(dateISO || date, time);
+    const attemptedDay = attempted ? attempted.getDate() : Number(String(date).match(/\d{1,2}/)?.[0]);
     const attemptedStart = attempted ? attempted.getTime() : null;
     return state.appointments.some((appointment) => {
       if (appointment.status === 'cancelled' || appointment.status === 'previous' || appointment.status === 'completed') return false;
@@ -260,7 +355,9 @@
       const sameDay = appointmentDay === attemptedDay || (appointment.iso && attempted && new Date(appointment.iso).toDateString() === attempted.toDateString());
       if (!sameDay) return false;
       if (specialist && specialist !== 'Cualquiera. Mejor disponible' && !assignedSpecialist) return true;
-      const appointmentStartDate = parseDisplayedDateTime(appointment.date, appointment.time);
+      const appointmentStartDate = appointment.iso
+        ? new Date(appointment.iso)
+        : parseDisplayedDateTime(appointment.date, appointment.time);
       const appointmentStart = appointmentStartDate ? appointmentStartDate.getTime() : null;
       if (attemptedStart === null || appointmentStart === null) return appointment.date === date && appointment.time === time;
       const appointmentEnd = appointmentStart + (Number(appointment.duration) || 60) * 60 * 1000;
@@ -270,12 +367,28 @@
   }
 
   function isWithinSpecialistSchedule(date, duration, specialist = '') {
-    if (specialist && specialist !== 'Cualquiera. Mejor disponible' && specialist !== 'Dra. Sofía Reyes') return false;
-    const day = date.getDay();
-    if (day === 0) return false;
-    const start = date.getHours() * 60 + date.getMinutes();
-    const end = day === 6 ? 14 * 60 : 18 * 60;
-    return start >= 9 * 60 && start + duration <= end;
+    const requested = date.getHours() * 60 + date.getMinutes();
+    const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayKey = dayKeys[date.getDay()];
+    const users = readUsers();
+    const candidates = users.filter((user) => {
+      if (user.role !== 'specialist' || user.active === false) return false;
+      if (!specialist || specialist === 'Cualquiera. Mejor disponible') return true;
+      const email = String(user.email || '').toLowerCase();
+      const name = `${user.name || ''} ${user.lastName || ''}`.trim().toLowerCase();
+      const selected = String(specialist).toLowerCase();
+      return email === selected || name === selected;
+    });
+    return candidates.some((user) => {
+      const daysOff = Array.isArray(user.daysOff) ? user.daysOff : [];
+      if (daysOff.includes(dayKey)) return false;
+      const startParts = String(user.workStart || '').split(':').map(Number);
+      const endParts = String(user.workEnd || '').split(':').map(Number);
+      if (startParts.length !== 2 || endParts.length !== 2 || startParts.some(Number.isNaN) || endParts.some(Number.isNaN)) return false;
+      const start = startParts[0] * 60 + startParts[1];
+      const end = endParts[0] * 60 + endParts[1];
+      return requested >= start && requested + duration <= end;
+    });
   }
 
   // Simple site alert/toast helper — appended to body and auto-dismissed
@@ -308,7 +421,13 @@
   }
 
   function getUnreadCount(state = readState()) {
-    return state.notifications.filter((item) => item.unread).length;
+    return visibleNotifications(state).filter((item) => item.unread).length;
+  }
+
+  function visibleNotifications(state = readState()) {
+    const email = sessionEmail();
+    if (!email) return state.notifications || [];
+    return (state.notifications || []).filter((item) => String(item.audienceEmail || '').toLowerCase() === email);
   }
 
   function getCancelledCount(state = readState()) {
@@ -316,6 +435,9 @@
   }
 
   function canBookNewAppointment(state = readState()) {
+    // Un cliente vetado por el administrador no puede agendar.
+    const sessionUser = getSessionUser(state);
+    if (sessionUser && sessionUser.status === 'banned') return false;
     return getCancelledCount(state) < 3;
   }
 
@@ -327,7 +449,8 @@
       message,
       unread: true,
       createdAt: new Date().toISOString(),
-      type
+      type,
+      audienceEmail: sessionEmail() || null
     });
     saveState(state);
     renderNotifications();
@@ -338,7 +461,7 @@
     if (!id) return null;
     const state = readState();
     const before = state.notifications.length;
-    state.notifications = state.notifications.filter((n) => n.id !== id);
+    state.notifications = state.notifications.filter((n) => n.id !== id || !visibleNotifications(state).some((item) => item.id === id));
     saveState(state);
     renderNotifications();
     syncProfileUI();
@@ -351,13 +474,22 @@
       return { allowed: false, reason: 'limit_reached' };
     }
 
+    const selectedService = getServices(state).find((service) =>
+      String(service.title || '').trim().toLowerCase() === String(serviceName || '').trim().toLowerCase()
+    );
+    if (selectedService && selectedService.active === false) {
+      return { allowed: false, reason: 'service_inactive' };
+    }
+
     const invalidDateTime = !date || !time || date === 'Sin definir' || time === 'Sin definir';
     if (invalidDateTime) {
       return { allowed: false, reason: 'missing_datetime' };
     }
 
     // enforce real date/time constraints (no past, min 1 day ahead)
-    const appointmentDateObj = parseDisplayedDateTime(date, time);
+    const appointmentDateObj = options.dateISO
+      ? parseDisplayedDateTime(options.dateISO, time)
+      : parseDisplayedDateTime(date, time);
     if (!appointmentDateObj) {
       return { allowed: false, reason: 'missing_datetime' };
     }
@@ -373,7 +505,7 @@
       return { allowed: false, reason: 'outside_working_hours' };
     }
 
-    if (isTimeSlotTaken(date, time, state, Number(options.duration) || 60, options.specialist || '')) {
+    if (isTimeSlotTaken(date, time, state, Number(options.duration) || 60, options.specialist || '', options.dateISO || '')) {
       return { allowed: false, reason: 'slot_taken' };
     }
 
@@ -385,7 +517,7 @@
     let originalPrice = price;
     let discountedPrice = null;
     try {
-      const promoId = state.activePromotionId;
+      const promoId = activePromotionId(state);
       if (promoId) {
         const promo = (state.promotions || []).find(p => p.id === promoId);
         if (promo) {
@@ -412,6 +544,19 @@
       notes,
       duration: options.duration || 60,
       specialist: options.specialist || 'Cualquiera. Mejor disponible',
+      // El selector envia el correo del especialista; sirve para que el panel de
+      // administrador sepa a quien quedo asignada la cita.
+      specialistEmail: (function () {
+        const chosen = String(options.specialist || '').trim();
+        if (!chosen) return '';
+        const match = users.find((user) =>
+          user.role === 'specialist' && (
+            String(user.email || '').toLowerCase() === chosen.toLowerCase() ||
+            `${user.name || ''} ${user.lastName || ''}`.trim().toLowerCase() === chosen.toLowerCase()
+          )
+        );
+        return match ? match.email : '';
+      })(),
       status: 'pending',
       createdAt: new Date().toISOString(),
       summary: 'Tu cita está pendiente de confirmación.',
@@ -440,7 +585,7 @@
   function cancelAppointment(id, reason = '') {
     const state = readState();
     const target = state.appointments.find((item) => item.id === id);
-    if (!target) return { allowed: false };
+    if (!target || !isOwnedByCurrentClient(target)) return { allowed: false, reason: 'not_allowed' };
 
     target.status = 'cancelled';
     target.summary = 'Cita cancelada por el usuario.';
@@ -454,8 +599,10 @@
   function updateAppointment(id, date, time, options = {}) {
     const state = readState();
     const target = state.appointments.find((appointment) => appointment.id === id);
-    if (!target || target.status !== 'pending') return { allowed: false, reason: 'not_editable' };
-    const appointmentDate = parseDisplayedDateTime(date, time);
+    if (!target || !isOwnedByCurrentClient(target) || target.status !== 'pending') return { allowed: false, reason: 'not_editable' };
+    const appointmentDate = options.dateISO
+      ? parseDisplayedDateTime(options.dateISO, time)
+      : parseDisplayedDateTime(date, time);
     const duration = Number(options.duration) || Number(target.duration) || 60;
     if (!appointmentDate) return { allowed: false, reason: 'missing_datetime' };
     const now = new Date();
@@ -465,7 +612,7 @@
       return { allowed: false, reason: 'outside_working_hours' };
     }
     const stateWithoutTarget = { ...state, appointments: state.appointments.filter((appointment) => appointment.id !== id) };
-    if (isTimeSlotTaken(date, time, stateWithoutTarget, duration, options.specialist || target.specialist || '')) {
+    if (isTimeSlotTaken(date, time, stateWithoutTarget, duration, options.specialist || target.specialist || '', options.dateISO || '')) {
       return { allowed: false, reason: 'slot_taken' };
     }
     target.date = date;
@@ -483,7 +630,7 @@
   function rateAppointment(id, rating, comment = '') {
     const state = readState();
     const target = state.appointments.find((appointment) => appointment.id === id);
-    if (!target || !['previous', 'completed'].includes(target.status)) return { allowed: false };
+    if (!target || !isOwnedByCurrentClient(target) || !['previous', 'completed'].includes(target.status)) return { allowed: false };
     target.rating = Number(rating);
     target.ratingComment = comment;
     saveState(state);
@@ -671,9 +818,108 @@
     state.promotions = (state.promotions || []).filter((p) => p.id !== id);
     // if active promotion was deleted, clear activePromotionId
     if (state.activePromotionId === id) state.activePromotionId = null;
+    if (state.activePromotionByUser) {
+      Object.keys(state.activePromotionByUser).forEach((email) => {
+        if (state.activePromotionByUser[email] === id) delete state.activePromotionByUser[email];
+      });
+    }
     saveState(state);
     window.dispatchEvent(new Event('sgc-state-updated'));
     return state.promotions;
+  }
+
+  // El catalogo trae tarjetas escritas a mano en el HTML. Esto lo reconcilia con
+  // los servicios que administra el panel de admin: agrega los que faltan y
+  // saca de circulacion los marcados como inactivos.
+  function syncCatalogWithState(grid) {
+    const services = getServices(readState());
+    if (!Array.isArray(services) || !services.length) return;
+
+    const cardTitle = (card) =>
+      (card.dataset.title || card.querySelector('.service-title')?.textContent || '').trim().toLowerCase();
+
+    const serviceTitles = new Set(services.map((service) => String(service.title || '').trim().toLowerCase()));
+    Array.from(grid.querySelectorAll('.service-card')).forEach((card) => {
+      if (!serviceTitles.has(cardTitle(card))) card.remove();
+    });
+
+    services.forEach((service) => {
+      const title = String(service.title || '').trim();
+      if (!title) return;
+      const existing = Array.from(grid.querySelectorAll('.service-card'))
+        .find((card) => cardTitle(card) === title.toLowerCase());
+
+      if (existing) {
+        existing.classList.toggle('service-inactive', service.active === false);
+        existing.dataset.active = service.active === false ? 'false' : 'true';
+        existing.dataset.title = title;
+        existing.dataset.category = service.category || '';
+        existing.dataset.desc = service.description || '';
+        existing.dataset.includes = service.includes || '';
+        existing.dataset.duration = service.duration || '';
+        existing.dataset.price = service.price || '';
+        existing.dataset.image = service.image || '';
+        const titleElement = existing.querySelector('.service-title');
+        if (titleElement) titleElement.textContent = title;
+        const imageElement = existing.querySelector('.service-img');
+        if (imageElement) {
+          imageElement.src = service.image || '';
+          imageElement.alt = title;
+        }
+        const metaValue = (label) => {
+          const row = [...existing.querySelectorAll('.service-meta-row')]
+            .find((item) => item.querySelector('.service-meta-label')?.textContent.trim() === label);
+          return row?.querySelector('.service-meta-value');
+        };
+        const availability = metaValue('Disponibilidad');
+        const price = metaValue('Precio');
+        const duration = metaValue('Duración');
+        if (availability) availability.textContent = service.active === false ? 'No disponible' : 'Disponible';
+        if (price) price.textContent = service.price || '';
+        if (duration) duration.textContent = service.duration || '';
+        return;
+      }
+
+      const attr = (value) => String(value == null ? '' : value).replace(/"/g, '&quot;');
+      const card = document.createElement('article');
+      card.className = `service-card${service.active === false ? ' service-inactive' : ''}`;
+      card.dataset.active = service.active === false ? 'false' : 'true';
+      card.dataset.title = title;
+      card.dataset.category = service.category || '';
+      card.dataset.desc = service.description || '';
+      card.dataset.includes = service.includes || '';
+      card.dataset.duration = service.duration || '';
+      card.dataset.price = service.price || '';
+      card.dataset.image = service.image || '';
+      card.innerHTML = `
+        <div class="service-img-container">
+          <img src="${attr(service.image)}" alt="${attr(title)}" class="service-img">
+        </div>
+        <div class="service-info">
+          <h3 class="service-title">${attr(title)}</h3>
+          <div class="service-meta">
+            <div class="service-meta-row">
+              <span class="service-meta-label">Disponibilidad</span>
+              <span class="service-meta-value">${service.active === false ? 'No disponible' : 'Disponible'}</span>
+            </div>
+            <div class="service-meta-row">
+              <span class="service-meta-label">Precio</span>
+              <span class="service-meta-value">${attr(service.price)}</span>
+            </div>
+            <div class="service-meta-row">
+              <span class="service-meta-label">Duración</span>
+              <span class="service-meta-value">${attr(service.duration)}</span>
+            </div>
+            <div class="service-meta-row">
+              <span class="service-meta-label">Calificación</span>
+              <span class="service-meta-value rating">Nuevo</span>
+            </div>
+          </div>
+          <button class="cta-arrow" aria-label="Ver detalles"><i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
   }
 
   function renderCatalogServices() {
@@ -681,6 +927,7 @@
     if (!grid) return;
 
     if (document.body.classList.contains('catalog-page')) {
+      syncCatalogWithState(grid);
       const existingCards = Array.from(grid.querySelectorAll('.service-card'));
       if (existingCards.length) {
         const pageSize = 6;
@@ -721,7 +968,8 @@
 
   function markNotificationsRead() {
     const state = readState();
-    state.notifications = state.notifications.map((item) => ({ ...item, unread: false }));
+    const visibleIds = new Set(visibleNotifications(state).map((item) => item.id));
+    state.notifications = state.notifications.map((item) => visibleIds.has(item.id) ? { ...item, unread: false } : item);
     saveState(state);
     renderNotifications();
   }
@@ -830,13 +1078,13 @@
 
     if (!panel) return;
 
-    if (!state.notifications.length) {
+    const notifications = visibleNotifications(state);
+    if (!notifications.length) {
       panel.innerHTML = '<div class="empty-state">No tienes notificaciones por revisar.</div>';
       return;
     }
 
-    const notifications = state.notifications.slice(0, 4);
-    panel.innerHTML = notifications
+    panel.innerHTML = notifications.slice(0, 4)
       .map((item) => `
         <div class="notification-item ${item.unread ? 'unread' : ''}" data-notif-id="${item.id}">
           <div class="notification-title">${item.title}</div>
@@ -863,8 +1111,11 @@
     const state = readState();
     const profile = getProfileForCurrentSession(state);
     const firstName = profile.name.split(' ')[0] || 'Ana';
+    const formattedBirthDate = /^\d{4}-\d{2}-\d{2}$/.test(profile.birthDate || '')
+      ? `${profile.birthDate.slice(8, 10)}/${profile.birthDate.slice(5, 7)}/${profile.birthDate.slice(0, 4)}`
+      : profile.birthDate;
 
-    document.querySelectorAll('.user-name').forEach((element) => {
+    document.querySelectorAll('.user-name, .sidebar-user-name').forEach((element) => {
       element.textContent = profile.name;
     });
 
@@ -889,7 +1140,7 @@
     });
 
     document.querySelectorAll('.profile-birth').forEach((element) => {
-      element.textContent = profile.birthDate;
+      element.textContent = formattedBirthDate;
     });
 
     document.querySelectorAll('.profile-member').forEach((element) => {
@@ -988,7 +1239,7 @@
     const cancelledCount = getCancelledCount(state);
     const status = cancelledCount >= 3 ? 'Vetado temporal' : 'Normal';
     const statusMessage = cancelledCount >= 3
-      ? 'Tienes varias cancelaciones registradas y se requiere revisión para volver a reservar.'
+      ? 'Tu cuenta está vetada temporalmente. Debes esperar a que el administrador revise tu caso.'
       : 'Tu acceso sigue activo y puedes seguir disfrutando de tratamientos y promociones.';
 
     document.querySelectorAll('.profile-status').forEach((element) => {
@@ -1031,7 +1282,7 @@
     const profile = getProfileForCurrentSession(state);
     const cancelledCount = getCancelledCount(state);
     const status = cancelledCount >= 3 ? 'Vetado temporal' : 'Normal';
-    const activePromotion = state.promotions.find((promo) => promo.id === state.activePromotionId) || state.promotions[0];
+    const activePromotion = state.promotions.find((promo) => promo.id === activePromotionId(state)) || state.promotions[0];
 
     const profileStatusEl = document.getElementById('profileStatus');
     const profileStatusMessageEl = document.getElementById('profileStatusMessage');
@@ -1045,7 +1296,7 @@
     const historyPaginationEl = document.getElementById('profileHistoryPagination');
 
     if (profileStatusEl) profileStatusEl.textContent = status;
-    if (profileStatusMessageEl) profileStatusMessageEl.textContent = cancelledCount >= 3 ? 'Tienes varias cancelaciones registradas y se requiere revisión para volver a reservar.' : 'Tu acceso sigue activo y puedes seguir disfrutando de tratamientos y promociones.';
+    if (profileStatusMessageEl) profileStatusMessageEl.textContent = cancelledCount >= 3 ? 'Tu cuenta está vetada temporalmente. Debes esperar a que el administrador revise tu caso.' : 'Tu acceso sigue activo y puedes seguir disfrutando de tratamientos y promociones.';
     const recoveryButton = document.getElementById('restoreAccessBtn');
     if (recoveryButton) {
       recoveryButton.hidden = cancelledCount < 3;
@@ -1097,11 +1348,15 @@
     }
 
     if (paymentsListEl) {
+      const session = getSession() || {};
+      const customerPayments = state.payments.filter((payment) =>
+        String(payment.clientEmail || '').toLowerCase() === String(session.email || '').toLowerCase()
+      );
       const paymentPageSize = 3;
-      const paymentPageCount = Math.max(1, Math.ceil(state.payments.length / paymentPageSize));
+      const paymentPageCount = Math.max(1, Math.ceil(customerPayments.length / paymentPageSize));
       const currentPaymentPage = Math.min(Math.max(Number(localStorage.getItem('sgc_profile_payments_page') || 1), 1), paymentPageCount);
-      const visiblePayments = state.payments.slice((currentPaymentPage - 1) * paymentPageSize, currentPaymentPage * paymentPageSize);
-      paymentsListEl.innerHTML = visiblePayments.map((payment) => `
+      const visiblePayments = customerPayments.slice((currentPaymentPage - 1) * paymentPageSize, currentPaymentPage * paymentPageSize);
+      paymentsListEl.innerHTML = visiblePayments.length ? visiblePayments.map((payment) => `
         <div class="payment-item">
           <div>
             <strong>${payment.description}</strong>
@@ -1109,7 +1364,7 @@
           </div>
           <span class="payment-status">${payment.status}</span>
         </div>
-      `).join('');
+      `).join('') : '<div class="empty-state">No tienes pagos registrados.</div>';
       const paymentPaginationEl = document.getElementById('profilePaymentsPagination');
       if (paymentPaginationEl) {
         paymentPaginationEl.innerHTML = [
@@ -1133,7 +1388,7 @@
             <p>${promo.description}</p>
             <small>Válido hasta ${promo.validUntil}</small>
           </div>
-          <button class="promo-btn" data-promo-id="${promo.id}">${state.activePromotionId === promo.id ? 'Activa' : 'Usar'}</button>
+          <button class="promo-btn" data-promo-id="${promo.id}">${activePromotionId(state) === promo.id ? 'Activa' : 'Usar'}</button>
         </div>
       `).join('');
 
@@ -1141,7 +1396,10 @@
         button.addEventListener('click', () => {
           const promoId = button.dataset.promoId;
           const stateNow = readState();
-          stateNow.activePromotionId = promoId;
+          const email = sessionEmail();
+          stateNow.activePromotionByUser = { ...(stateNow.activePromotionByUser || {}) };
+          if (email) stateNow.activePromotionByUser[email] = promoId;
+          else stateNow.activePromotionId = promoId;
           saveState(stateNow);
           addNotification('Promoción activada', 'Tu próxima cita ya podrá aprovechar la promoción seleccionada.', 'promotion');
           renderProfilePage();
@@ -1190,7 +1448,8 @@
 
     Object.entries(summaryCards).forEach(([status, el]) => {
       if (el) {
-        el.textContent = userAppointments.filter((item) => item.status === status).length;
+        const counted = status === 'pending' ? ['pending', 'confirmed'] : [status];
+        el.textContent = userAppointments.filter((item) => counted.includes(item.status)).length;
       }
     });
 
@@ -1200,7 +1459,12 @@
     const pagination = document.getElementById('appointmentPagination');
     const storedStatus = localStorage.getItem('sgc_active_tab');
     const activeStatus = ['pending', 'previous', 'cancelled'].includes(storedStatus) ? storedStatus : 'pending';
-    const filtered = userAppointments.filter((item) => item.status === activeStatus).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // La pestaña "Próximas" agrupa lo que aun no ocurre: una cita confirmada por
+    // el especialista sigue siendo proxima para el cliente, no debe desaparecer.
+    const statusesFor = (tab) => (tab === 'pending' ? ['pending', 'confirmed'] : [tab]);
+    const filtered = userAppointments
+      .filter((item) => statusesFor(activeStatus).includes(item.status))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     const pageSize = 3;
     const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
     const storedPage = Number(localStorage.getItem(`sgc_appointments_page_${activeStatus}`) || 1);
@@ -1311,8 +1575,9 @@
               <div><span>Estado</span><strong class="appointment-badge ${currentStatusClass}">${currentStatusLabel}</strong></div>
               <div><span>Duración</span><strong>${detailDuration}</strong></div>
               <div><span>Precio</span><strong>${current.price || '--'}</strong></div>
+              ${current.status === 'previous' || current.status === 'completed' ? `<div><span>Metodo de pago</span><strong>${current.paymentMethod || '--'}</strong></div><div><span>Subtotal</span><strong>${current.subtotal != null ? new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(current.subtotal) : current.price || '--'}</strong></div><div><span>Total pagado</span><strong>${current.total != null ? new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(current.total) : current.price || '--'}</strong></div>` : ''}
             </div>
-            ${current.status === 'pending' ? `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-modify" data-modify-id="${current.id}">Modificar cita</button>` + (getSession() && getSession().role === 'specialist' ? `<button class="btn-confirm" data-confirm-id="${current.id}">Confirmar</button>` : '') + `<button class="btn-cancel" data-cancel-id="${current.id}">Cancelar cita</button></div>` : (getSession() && getSession().role === 'specialist' ? `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-complete" data-complete-id="${current.id}">Marcar como atendida</button><button class="btn-delete" data-delete-id="${current.id}">Eliminar cita</button></div>` : '')}
+            ${current.status === 'pending' ? `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-modify" data-modify-id="${current.id}">Modificar cita</button>` + (getSession() && getSession().role === 'specialist' ? `<button class="btn-confirm" data-confirm-id="${current.id}">Confirmar</button>` : '') + `</div>` : (getSession() && getSession().role === 'specialist' ? `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-complete" data-complete-id="${current.id}">Marcar como atendida</button><button class="btn-delete" data-delete-id="${current.id}">Eliminar cita</button></div>` : '')}
           </div>
         `;
         const detailClose = detail.querySelector('.detail-close');
@@ -1470,7 +1735,7 @@
         if (id) {
           const reason = document.getElementById('cancelReason')?.value || '';
           if (!reason) {
-            showSiteAlert('Selecciona un motivo para cancelar la cita.', 'info');
+            showSiteAlert('Selecciona un motivo para cancelar la cita.', 'warning');
             return;
           }
           cancelAppointment(id, reason);
@@ -1574,6 +1839,7 @@
     removeAppointment,
       discardAppointment,
     readState,
+    resolveAppointmentDate,
     getProfileForCurrentSession,
     canBookNewAppointment,
     restoreAccess,
@@ -1628,14 +1894,17 @@
     },
     applyPromotion: function (promoId) {
       const state = readState();
-      state.activePromotionId = promoId;
+      const email = sessionEmail();
+      state.activePromotionByUser = { ...(state.activePromotionByUser || {}) };
+      if (email) state.activePromotionByUser[email] = promoId;
+      else state.activePromotionId = promoId;
       saveState(state);
       if (promoId) {
         addNotification('Promoción activada', 'Tu próxima cita ya podrá aprovechar la promoción seleccionada.', 'promotion');
       }
       renderProfilePage();
       syncProfileUI();
-      return state.activePromotionId;
+      return activePromotionId(state);
     }
   };
 
@@ -1710,7 +1979,10 @@
           phone: '+52 55 1111 2222',
           birthDate: '1994-06-15',
           password: 'sgc2026',
-          role: 'specialist'
+          role: 'specialist',
+          workStart: '10:00',
+          workEnd: '19:00',
+          daysOff: ['saturday', 'sunday']
         },
         {
           name: 'Administrador',
@@ -2101,27 +2373,6 @@
       window.appointmentsSystem.signOut = function () { clearSession(); window.location.href = resolveRelative('Loggin.html'); };
       window.appointmentsSystem.setProfileAvatar = setProfileAvatar;
       window.appointmentsSystem.navigateByRole = navigateByRole;
-      window.appointmentsSystem.setProfile = function (values) {
-        try {
-          const state = readState();
-          state.profile = { ...(state.profile || {}), ...(values || {}) };
-          saveState(state);
-          // if current session user exists, also update user record
-          const session = getSession() || {};
-          if (session.email) {
-            try {
-              const users = readUsers();
-              const idx = users.findIndex(u => u.email && u.email.toLowerCase() === session.email.toLowerCase());
-              if (idx !== -1) {
-                users[idx] = { ...(users[idx] || {}), ...(values || {}) };
-                localStorage.setItem('sgc_auth_users_v1', JSON.stringify(users));
-              }
-            } catch (e) { /* ignore */ }
-          }
-          try { window.dispatchEvent(new Event('sgc-state-updated')); } catch(e) {}
-          return { ok: true };
-        } catch (e) { return { ok: false }; }
-      };
       if (typeof specialistMarkConfirmed === 'function') {
         window.appointmentsSystem.specialistMarkConfirmed = specialistMarkConfirmed;
       }

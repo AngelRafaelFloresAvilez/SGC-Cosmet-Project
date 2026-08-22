@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuracion - SGC Cosmetic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="StylesAdmin.css">
+</head>
+<body data-admin-page="configuracion">
+  <div class="main-wrapper">
+    <section class="page-head">
+      <div>
+        <h1>Configuracion</h1>
+        <p>Datos de tu cuenta y reglas generales del sistema</p>
+      </div>
+    </section>
+
+    <section class="config-grid">
+      <article class="panel">
+        <div class="panel-head">
+          <span class="panel-title">Mi cuenta</span>
+          <button class="btn-ghost" type="button" id="editAccountBtn"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
+        </div>
+        <div class="config-row"><div><b>Nombre</b><small id="accName">—</small></div></div>
+        <div class="config-row"><div><b>Correo</b><small id="accEmail">—</small></div></div>
+        <div class="config-row"><div><b>Telefono</b><small id="accPhone">—</small></div></div>
+        <div class="config-row"><div><b>Rol</b><small>Administrador</small></div></div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <span class="panel-title">Reglas de inasistencias</span>
+          <button class="btn-ghost" type="button" id="editRulesBtn"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
+        </div>
+        <div class="config-row">
+          <div><b>Faltas para vetar automaticamente</b><small>Al alcanzar este numero el cliente queda vetado</small></div>
+          <span class="tag tag-neutral" id="ruleLimit">3</span>
+        </div>
+        <div class="config-row">
+          <div><b>Clientes en riesgo</b><small>Estan a una falta del limite</small></div>
+          <span class="tag tag-warn" id="ruleAtRisk">0</span>
+        </div>
+        <div class="config-row">
+          <div><b>Clientes vetados</b><small>Actualmente sin poder agendar</small></div>
+          <span class="tag tag-danger" id="ruleBanned">0</span>
+        </div>
+        <button class="btn-primary" type="button" id="applyRuleBtn" style="align-self:flex-start">Aplicar regla ahora</button>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head"><span class="panel-title">Resumen del sistema</span></div>
+        <div class="config-row"><div><b>Clientes registrados</b></div><span id="sumClients">0</span></div>
+        <div class="config-row"><div><b>Especialistas</b></div><span id="sumSpecialists">0</span></div>
+        <div class="config-row"><div><b>Servicios en catalogo</b></div><span id="sumServices">0</span></div>
+        <div class="config-row"><div><b>Promociones</b></div><span id="sumPromos">0</span></div>
+        <div class="config-row"><div><b>Citas totales</b></div><span id="sumAppointments">0</span></div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head"><span class="panel-title">Accesos rapidos</span></div>
+        <div class="config-row"><div><b>Horario de atencion</b><small>Define los dias y horas del negocio</small></div><a class="btn-ghost" href="admin-horarios.html">Abrir</a></div>
+        <div class="config-row"><div><b>Catalogo de servicios</b><small>Lo que ven los clientes al agendar</small></div><a class="btn-ghost" href="admin-servicios.html">Abrir</a></div>
+        <div class="config-row"><div><b>Reportes</b><small>Rendimiento e ingresos</small></div><a class="btn-ghost" href="admin-reportes.html">Abrir</a></div>
+        <div class="config-row">
+          <div><b>Datos de demostracion</b><small>Reemplaza usuarios, citas y promociones por un juego de prueba</small></div>
+          <button class="btn-ghost" type="button" id="seedDemoBtn">Restablecer</button>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <script src="appointments-system.js"></script>
+  <script src="admin-data.js"></script>
+  <script src="admin-demo-data.js"></script>
+  <script src="admin-shell.js"></script>
+  <script src="admin-configuracion.js"></script>
+</body>
+</html>

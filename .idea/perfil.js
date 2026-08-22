@@ -105,6 +105,13 @@ window.addEventListener('DOMContentLoaded', () => {
   const saveBtn = document.getElementById('saveProfileBtn');
   const cancelBtn = document.getElementById('cancelProfileBtn');
 
+  function toDateInputValue(value) {
+    const normalized = String(value || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return normalized;
+    const match = normalized.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    return match ? `${match[3]}-${match[2]}-${match[1]}` : '';
+  }
+
   function enterEditMode() {
     const emailEl = document.querySelector('.profile-email');
     const phoneEl = document.querySelector('.profile-phone');
@@ -115,7 +122,7 @@ window.addEventListener('DOMContentLoaded', () => {
     birthEl.dataset.value = birthEl.textContent;
     emailEl.innerHTML = `<input id="editEmailInput" type="email" value="${(emailEl.dataset.value||'').trim()}" />`;
     phoneEl.innerHTML = `<input id="editPhoneInput" type="tel" value="${(phoneEl.dataset.value||'').trim()}" />`;
-    birthEl.innerHTML = `<input id="editBirthInput" type="date" value="${(birthEl.dataset.value||'').trim()}" />`;
+    birthEl.innerHTML = `<input id="editBirthInput" type="date" value="${toDateInputValue(birthEl.dataset.value)}" />`;
     editBtn.style.display = 'none';
     saveBtn.style.display = 'inline-block';
     cancelBtn.style.display = 'inline-block';
@@ -134,6 +141,27 @@ window.addEventListener('DOMContentLoaded', () => {
       const newEmail = document.getElementById('editEmailInput')?.value || emailEl.dataset.value || '';
       const newPhone = document.getElementById('editPhoneInput')?.value || phoneEl.dataset.value || '';
       const newBirth = document.getElementById('editBirthInput')?.value || birthEl.dataset.value || '';
+      const name = document.querySelector('.profile-name')?.textContent.trim() || '';
+      const errors = [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const birthDate = newBirth ? new Date(`${newBirth}T00:00:00`) : null;
+      if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñÜü]+(?:[ '\-][A-Za-zÁÉÍÓÚáéíóúÑñÜü]+)+$/.test(name)) {
+        errors.push('El nombre debe incluir nombre y apellido, usando solo letras.');
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+        errors.push('El correo electrónico no tiene un formato válido.');
+      }
+      if (!/^\+?\d[\d\s()-]{8,17}\d$/.test(newPhone) || newPhone.replace(/\D/g, '').length < 10) {
+        errors.push('El teléfono debe contener al menos 10 dígitos.');
+      }
+      if (!birthDate || Number.isNaN(birthDate.getTime()) || birthDate > today || birthDate.getFullYear() < 1900) {
+        errors.push('La fecha de nacimiento debe ser válida, posterior a 1900 y no futura.');
+      }
+      if (errors.length) {
+        window.showSiteAlert?.(errors.join(' '), 'warning');
+        return false;
+      }
       emailEl.textContent = newEmail;
       phoneEl.textContent = newPhone;
       birthEl.textContent = newBirth;
@@ -144,6 +172,7 @@ window.addEventListener('DOMContentLoaded', () => {
     editBtn.style.display = 'inline-block';
     saveBtn.style.display = 'none';
     cancelBtn.style.display = 'none';
+    return true;
   }
 
   if (editBtn) editBtn.addEventListener('click', enterEditMode);
